@@ -6,6 +6,30 @@ __pycache__/
 # C extensions
 *.so
 
+venv/
+myenv/
+
+ ../../1-Month Learning Plan_ AI Executive Assistant Tech Stack.pdf
+        ../../All Codes.zip
+        ../Classification/
+        ../Clustering/
+        ../Deployment/
+        ../Ensemble/
+        ../Feature Engineering/
+        ../HPO/
+        ../Regression/
+        ../../Andrew_ML_course/
+        ../../App/
+        ../../Release-24.08.0-0.zip
+        ../../Release-24.08.0-0/
+        ../../Udemy_course/
+        ../../db/
+        ../../edacasestudy.ipynb
+        ../../outputs_5525/
+        ../../plan.ipynb
+        ../../plan_tough.ipynb
+        ../../requirements.txt
+
 # Distribution / packaging
 .Python
 build/
