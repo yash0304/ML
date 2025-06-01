@@ -1,4 +1,4 @@
-def greet(name):
+def greet(name,surname):
     return print("Hello: ",+ name)
     
 def add(a,b):
