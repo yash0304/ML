@@ -1,12 +1,15 @@
+import numpy as np
 from sklearn.model_selection import train_test_split,cross_val_score
 from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LinearRegression,LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier,DecisionTreeRegressor
+from sklearn.ensemble import RandomForestClassifier,AdaBoostClassifier,AdaBoostRegressor,GradientBoostingClassifier,GradientBoostingRegressor
+from sklearn.ensemble import BaggingClassifier,BaggingRegressor
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.svm import SVC
-from sklearn.metrics import mean_absolute_percentage_error, classification_report,mean_squared_error
+from xgboost import XGBClassifier
+from sklearn.metrics import mean_absolute_percentage_error, classification_report,mean_squared_error,accuracy_score
 from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import Lasso, Ridge, ElasticNet
 import eda as eda
@@ -23,7 +26,13 @@ def model_pipeline(feature_df,target_df,num_cols, cat_cols,task):
     model.fit(X_train,y_train)
     y_pred=model.predict(X_test)
     y_test = y_test.values.ravel()
-    return model,y_test,y_pred
+
+    if task == 'xgboost':    #adding xgboost related code so that it will work smoothly with xgboost. 
+        y_test = np.array(y_test).astype(int)
+        y_pred = np.array(y_pred).astype(int)
+        return model, y_test, y_pred
+    else:
+        return model,y_test,y_pred
 
 def get_task(task):
     '''
@@ -43,9 +52,24 @@ def get_task(task):
         model = SVC()
     elif task == 'naive_bayes':
         model = BernoulliNB()
+    elif task == 'Ada Boost classifier':
+        model = AdaBoostClassifier(n_estimators=200,estimator=DecisionTreeClassifier)
+    elif task == 'Ada Boost regressor':
+        model = AdaBoostRegressor(n_estimators=200,estimator=DecisionTreeRegressor)
+    elif task == 'Gradient boost classifier':
+        model = GradientBoostingClassifier(n_estimators=200)
+    elif task == 'Gradient boost regressor':
+        model = GradientBoostingRegressor(n_estimators=200)
+    elif task == 'Bagging classifier':
+        model = BaggingClassifier(estimator=DecisionTreeClassifier,n_estimators=100,random_state=42)
+    elif task == 'Bagging regressor':
+        model = BaggingClassifier(estimator=DecisionTreeRegressor,n_estimators=100,random_state=42)
+    elif task == 'xgboost':
+        model = XGBClassifier(learning_rate = 0.1, max_depth = 4,enable_categorical = True,n_estimators = 100)
     else:
         print("Kindly enter valid task name; task name includes [linear_regression,logistic_regression,knn," \
-        "      decision_tree,randon_forest,svm,naive_bayes]")
+        "      decision_tree,randon_forest,svm,naive_bayes, Ada Boost classifier, Ada Boost regressor, " \
+        "Gradient boost classifier, Gradient boost regrssor, Bagging regressor, Bagging classifier, xgboost]")
     return model
 
 def model_poly_pipeline(feature_df,target_df,num_cols, cat_cols):
@@ -145,6 +169,9 @@ def evaluate_model(y_test,y_pred,task):
             'MSE' : mean_squared_error(y_test,y_pred)
             }
         else:
-            return classification_report(y_test,y_pred)
+            return{
+                'Accuracy Score' : f'{accuracy_score(y_test,y_pred)*100}%',
+                'Classification report':print(classification_report(y_test,y_pred))
+            }
     except Exception as e:
-        print("Enter 'regression' for numerical variables otherwise it will run classification report")
+        print(e, "Enter 'regression' for numerical variables otherwise it will run classification report or gives predicted y value")
