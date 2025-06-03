@@ -55,7 +55,7 @@ def get_cat_transformer():
     with one hot encoder. 
     should not pass anything, it returns pipeline with imputed values as median and scaled values so that model will be efficient.
     '''
-    return Pipeline(steps=[('Imputer',SimpleImputer(strategy='most_frequent')),('Encoder',OneHotEncoder(handle_unknown='ignore'))])
+    return Pipeline(steps=[('Imputer',SimpleImputer(strategy='most_frequent')),('Encoder',OneHotEncoder(handle_unknown='ignore',sparse_output=False))])
 
 def get_num_poly_transformer(degree =3):
     '''

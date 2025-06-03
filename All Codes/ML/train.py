@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import train_test_split,cross_val_score
 from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LinearRegression,LogisticRegression
@@ -12,27 +13,50 @@ from xgboost import XGBClassifier
 from sklearn.metrics import mean_absolute_percentage_error, classification_report,mean_squared_error,accuracy_score
 from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import Lasso, Ridge, ElasticNet
+from imblearn.over_sampling import SMOTE
 import eda as eda
 
-def model_pipeline(feature_df,target_df,num_cols, cat_cols,task):
+def model_pipeline(feature_df,target_df,num_cols, cat_cols,task,smote=0):
     '''
     Returning model with prediction and testing values after train and test split
     and model fitting on train data and predicting on test data
     '''
     X_train,X_test,y_train,y_test = train_test_split(feature_df,target_df,test_size=0.2,random_state=42)
-    model_type = get_task(task)
-    model = make_pipeline(get_preprocessing(num_cols,cat_cols),model_type)
+    model_type = get_task(task)    
     y_train = y_train.values.ravel()
-    model.fit(X_train,y_train)
-    y_pred=model.predict(X_test)
     y_test = y_test.values.ravel()
+   
 
-    if task == 'xgboost':    #adding xgboost related code so that it will work smoothly with xgboost. 
-        y_test = np.array(y_test).astype(int)
-        y_pred = np.array(y_pred).astype(int)
-        return model, y_test, y_pred
+    if smote == 1:
+        X_train_raw = X_train.copy()
+        num_columns = eda.get_numerical_cols(X_train_raw)
+        cat_columns = eda.get_categorical_cols(X_train_raw)
+        preprocessor = get_preprocessing(num_columns,cat_columns)
+        model = model_type
+        X_train_transformed = preprocessor.fit_transform(X_train_raw)
+        preprocessor_columns = preprocessor.get_feature_names_out()
+        X_train_df = pd.DataFrame(X_train_transformed,columns=preprocessor_columns)
+        y_train = pd.Series(y_train).astype(int)
+        print("Entering into smote")
+        print(y_train.shape,y_train.dtype,np.unique(y_train))
+        X_train_resampled,y_train_resampled = get_resampled_smote(X_train_df,y_train)
+        print("finished smoting")
+        print(X_train_resampled.columns)
+        print("Preprocessing on the model done")
+        model.fit(X_train_resampled,y_train_resampled)
+        print("fit completed")
+        X_test_transformed = preprocessor.transform(X_test)
+        X_test_df = pd.DataFrame(X_test_transformed,columns=preprocessor_columns)
+        y_pred = model.predict(X_test_df)
     else:
-        return model,y_test,y_pred
+        model = make_pipeline(get_preprocessing(num_cols,cat_cols),model_type)
+        model.fit(X_train,y_train)
+        y_pred=model.predict(X_test)    
+
+    if task in['xgboost', 'randon_forest']:    #adding xgboost related code so that it will work smoothly with xgboost. 
+        y_test = pd.Series(y_test).astype(int)
+    y_pred = pd.Series(y_pred).astype(int)
+    return model,y_test,y_pred
 
 def get_task(task):
     '''
@@ -53,17 +77,17 @@ def get_task(task):
     elif task == 'naive_bayes':
         model = BernoulliNB()
     elif task == 'Ada Boost classifier':
-        model = AdaBoostClassifier(n_estimators=200,estimator=DecisionTreeClassifier)
+        model = AdaBoostClassifier(n_estimators=200,estimator=DecisionTreeClassifier())
     elif task == 'Ada Boost regressor':
-        model = AdaBoostRegressor(n_estimators=200,estimator=DecisionTreeRegressor)
+        model = AdaBoostRegressor(n_estimators=200,estimator=DecisionTreeRegressor())
     elif task == 'Gradient boost classifier':
         model = GradientBoostingClassifier(n_estimators=200)
     elif task == 'Gradient boost regressor':
         model = GradientBoostingRegressor(n_estimators=200)
     elif task == 'Bagging classifier':
-        model = BaggingClassifier(estimator=DecisionTreeClassifier,n_estimators=100,random_state=42)
+        model = BaggingClassifier(estimator=DecisionTreeClassifier(),n_estimators=100,random_state=42)
     elif task == 'Bagging regressor':
-        model = BaggingClassifier(estimator=DecisionTreeRegressor,n_estimators=100,random_state=42)
+        model = BaggingClassifier(estimator=DecisionTreeRegressor(),n_estimators=100,random_state=42)
     elif task == 'xgboost':
         model = XGBClassifier(learning_rate = 0.1, max_depth = 4,enable_categorical = True,n_estimators = 100)
     else:
@@ -71,6 +95,13 @@ def get_task(task):
         "      decision_tree,randon_forest,svm,naive_bayes, Ada Boost classifier, Ada Boost regressor, " \
         "Gradient boost classifier, Gradient boost regrssor, Bagging regressor, Bagging classifier, xgboost]")
     return model
+
+#using SMOTE.
+def get_resampled_smote(X_trainining,y_trainining):
+    smote = SMOTE(random_state=42)
+    X_resampled, y_resampled = smote.fit_resample(X_trainining,y_trainining)
+    return X_resampled,y_resampled
+
 
 def model_poly_pipeline(feature_df,target_df,num_cols, cat_cols):
     '''
