@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelEncoder,OneHotEncoder,OrdinalEncoder,PolynomialFeatures
@@ -40,7 +41,18 @@ def del_cols(data, cols):
     takes dataframe and column to be deleted and returns dataframe without the column(s) specified as an argument. 
     '''
     return data.drop(cols, axis =1)
-    
+
+def get_col_names(data):
+    return data.columns
+
+def convert_dtype(data,convert_to):
+    if convert_to == 'numeric':
+        return pd.to_numeric(data)
+    elif convert_to == 'datetime':
+        return pd.to_datetime(data)
+    elif convert_to == 'dataframe':
+        return pd.DataFrame(data)
+
 def get_num_transformer():
     '''
     This method can be called for transformation of numeric columns by imputing null values (as median) and 
@@ -64,6 +76,13 @@ def get_num_poly_transformer(degree =3):
     should not pass anything, it returns pipeline with imputed values as median and scaled values so that model will be efficient.
     '''
     return Pipeline(steps=[('poly',PolynomialFeatures(degree=3,include_bias=False)),('scaler',StandardScaler())])
+
+def get_df_from_others_eith_column_names(data,columns = None): # type: ignore
+    '''
+    This method can convert your series and array type to dataframe.
+    '''
+    columns = get_col_names(data)
+    return pd.DataFrame(data=data,columns=columns)
 
 def get_scatter_plot(data,x,y):
     '''

@@ -34,6 +34,11 @@ def get_churn_df():
     '''
     return pd.read_csv("data/WA_Fn-UseC_-Telco-Customer-Churn.csv")
     
-
+def get_mall_df():
+    '''
+    This method is used to call mall datset which has consumer centric data that includes age, gender, spending score, income.\n
+    Good dataset for clustering problems.
+    '''
+    return pd.read_csv("data/mall.csv")
 
 

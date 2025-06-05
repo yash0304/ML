@@ -16,6 +16,13 @@ from sklearn.linear_model import Lasso, Ridge, ElasticNet
 from imblearn.over_sampling import SMOTE
 import eda as eda
 
+def get_train_test_split_data(feature_df,target_df,test_size =0.25,random_state=42):
+    '''
+    This method can be called to create train test split and return Xtrain and test data 
+    and ytrain and test data.
+    '''
+    return train_test_split(feature_df,target_df,test_size=test_size,random_state=random_state)
+
 def model_pipeline(feature_df,target_df,num_cols, cat_cols,task,smote=0):
     '''
     Returning model with prediction and testing values after train and test split
@@ -37,26 +44,21 @@ def model_pipeline(feature_df,target_df,num_cols, cat_cols,task,smote=0):
         preprocessor_columns = preprocessor.get_feature_names_out()
         X_train_df = pd.DataFrame(X_train_transformed,columns=preprocessor_columns)
         y_train = pd.Series(y_train).astype(int)
-        print("Entering into smote")
         print(y_train.shape,y_train.dtype,np.unique(y_train))
         X_train_resampled,y_train_resampled = get_resampled_smote(X_train_df,y_train)
-        print("finished smoting")
-        print(X_train_resampled.columns)
-        print("Preprocessing on the model done")
         model.fit(X_train_resampled,y_train_resampled)
-        print("fit completed")
         X_test_transformed = preprocessor.transform(X_test)
         X_test_df = pd.DataFrame(X_test_transformed,columns=preprocessor_columns)
-        y_pred = model.predict(X_test_df)
+        
     else:
         model = make_pipeline(get_preprocessing(num_cols,cat_cols),model_type)
         model.fit(X_train,y_train)
-        y_pred=model.predict(X_test)    
+    y_pred=model.predict(X_test)    
 
     if task in['xgboost', 'randon_forest']:    #adding xgboost related code so that it will work smoothly with xgboost. 
         y_test = pd.Series(y_test).astype(int)
     y_pred = pd.Series(y_pred).astype(int)
-    return model,y_test,y_pred
+    return model,y_test,y_pred,X_train,y_train
 
 def get_task(task):
     '''
@@ -101,7 +103,6 @@ def get_resampled_smote(X_trainining,y_trainining):
     smote = SMOTE(random_state=42)
     X_resampled, y_resampled = smote.fit_resample(X_trainining,y_trainining)
     return X_resampled,y_resampled
-
 
 def model_poly_pipeline(feature_df,target_df,num_cols, cat_cols):
     '''
