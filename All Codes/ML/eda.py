@@ -47,7 +47,7 @@ def get_col_names(data):
 
 def convert_dtype(data,convert_to):
     if convert_to == 'numeric':
-        return pd.to_numeric(data)
+        return pd.to_numeric(data,errors='coerce')
     elif convert_to == 'datetime':
         return pd.to_datetime(data)
     elif convert_to == 'dataframe':
