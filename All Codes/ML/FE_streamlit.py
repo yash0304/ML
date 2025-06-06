@@ -1,12 +1,16 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from sklearn.feature_selection import RFECV,SequentialFeatureSelector
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
+from sklearn.decomposition import PCA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.linear_model import LogisticRegression
+import matplotlib.pyplot as plt
 import eda
 import train as t
 
@@ -51,7 +55,7 @@ if uploaded_file:
         df_new = eda.drop_null_values(df_new)
 
     method = st.selectbox("Enter your choice of feature selection method",
-                 ('--Select a method--','Recursive Feature engineering(RFE)','Sequential Feature Selector')
+                 ('--Select a method--','Recursive Feature engineering(RFE)','Sequential Feature Selector','PCA','LDA')
                  ) 
 
 
@@ -76,12 +80,8 @@ if uploaded_file:
     st.write("Shows null values")
     st.write("X_train null values",X_train.isnull().sum())
     st.write("y_train null values",y_train.isnull().sum())
-
-
     
     model = LogisticRegression(penalty='l1',solver = 'liblinear',max_iter=300)
-    
-
 
     if method == 'Recursive Feature engineering(RFE)':
         rfe = RFECV(model,min_features_to_select=1,cv=5,scoring='accuracy')
@@ -97,6 +97,14 @@ if uploaded_file:
         rfe2_pred = rfe2.predict(X_test_rfe)
         st.write("Accuracy of this model is :   " )
         st.write(f"{accuracy_score(y_test,rfe2_pred)*100} %")
+
+        st.subheader("Accuracy vs. number of feature selectors")
+        fig,ax = plt.subplots()
+        ax.plot(range(1,len(rfe.cv_results_['mean_test_score'])+1),rfe.cv_results_['mean_test_score'])
+        ax.set_title("RFECV feature selection curve")
+        ax.set_xlabel("Number of selected features")
+        ax.set_ylabel("accuracy")
+        st.pyplot(fig)
 
     elif method =='Sequential Feature Selector':
         num_features = st.slider("Please select features",1,min(X_train.shape[1],50),5)
@@ -115,3 +123,47 @@ if uploaded_file:
 
         st.write("Accuracy of this model is :   " )
         st.write(f"{accuracy_score(y_test,y_pred_sfs)*100} %")
+
+        fig,ax = plt.subplots()
+        ax.barh(selected_features,range(len(selected_features)))
+        ax.invert_yaxis()
+        ax.set_title("Feature ranking")
+        ax.set_xlabel("Selection order by ranking")
+        st.pyplot(fig)
+
+    elif method == 'PCA':
+        num_features = st.slider("Enter number of features to see accuracy on: ",1,X_train.shape[1],5)
+        pca = PCA(n_components=num_features)
+        X_train_transformed = pca.fit_transform(X_train)
+        X_test_transformed = pca.transform(X_test)
+        
+        if st.checkbox("Whether you want to see the variance?"):
+                         st.write(pca.explained_variance_ratio_)
+        model.fit(X_train_transformed,y_train)
+        y_pred_pca = model.predict(X_test_transformed)
+        st.write("Accuracy score is:  ",accuracy_score(y_test,y_pred_pca))
+
+        if st.checkbox("You want to visualize variance explanation by components?"):
+             explain_variances_ratio = pca.explained_variance_ratio_
+             cumulative_variance = np.cumsum(explain_variances_ratio)
+
+             fig,ax = plt.subplots()
+             ax.plot(range(1,len(cumulative_variance)+1),cumulative_variance)
+             ax.set_title("Cumulative variance explained by PCA components")
+             ax.set_xlabel("PCA components")
+             ax.set_ylabel("Cumulative explained variance")
+             ax.grid(True)
+             st.pyplot(fig)
+
+    elif method == 'LDA':
+         lda = LinearDiscriminantAnalysis()
+         X_train_lda = lda.fit_transform(X_train,y_train)
+         X_test_lda = lda.transform(X_test)
+         selected_features = lda.get_feature_names_out()
+         st.write("Selected_features")
+         st.write(list(selected_features))
+         model_lda = LogisticRegression()
+         model_lda.fit(X_train_lda,y_train)
+         y_pred_lda = model_lda.predict(X_test_lda)
+         st.write("Accuracy score is:  ",accuracy_score(y_test,y_pred_lda))
+         
