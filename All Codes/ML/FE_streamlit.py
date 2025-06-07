@@ -40,12 +40,13 @@ if uploaded_file:
     if target_column != '--select a column--':
         st.info(f"column {target_column} has been selected as target")
     
-    deletion_column = st.selectbox("Select any column to delete",options=['--select a column--']+ list(df.columns))
+    deletion_columns = st.multiselect("Select any column to delete (Can select multiple)",
+                                     options=['--select a column--']+ list(df.columns))
 
     df_new = df.copy()
-    if deletion_column != '--select a column--':
-        df_new = eda.del_cols(df,deletion_column)
-        st.success(f"Column {deletion_column} has been deleted")
+    if deletion_columns != '--select a column--':
+        df_new = eda.del_cols(df,deletion_columns)
+        st.success(f"Deleted Columns ,{''.join(deletion_columns)} ")
     else:
         st.info("You have not selected any column to be deleted")
 
@@ -63,15 +64,23 @@ if uploaded_file:
     if target_column == 'Churn':
         df_new[target_column] = df_new[target_column].map({'Yes':1,'No':0})
     y = df_new[target_column]
+
     cat_cols = eda.get_categorical_cols(X)
     num_cols = eda.get_numerical_cols(X)
     st.write("Numerical Columns")
     st.write(list(num_cols))
     st.write("Categorical Columns")
     st.write(list(cat_cols))
-    X_encoded = pd.get_dummies(X[cat_cols],drop_first=True)
-    X_num = X[num_cols]
-    X = pd.concat([X_encoded,X_num],axis=1)
+    if cat_cols:
+         X_encoded = pd.get_dummies(X[cat_cols],drop_first=True)
+         if num_cols:
+              X[num_cols] = StandardScaler().fit_transform(X[num_cols])
+              #X_num = X[num_cols]
+         X = pd.concat([X_encoded,X[num_cols]],axis=1)
+    else:
+         X[num_cols] = StandardScaler().fit_transform(X[num_cols])
+         X = X[num_cols]
+    
     st.write("Total columns to go into train test split")
     st.write(X.columns)
     X_train,X_test,y_train,y_test = t.get_train_test_split_data(X,y)
