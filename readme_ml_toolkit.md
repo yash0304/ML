@@ -25,26 +25,29 @@ A clean, modular ML codebase where each responsibility is separated into its own
 ## 🗂️ Project Structure
 
 ```
-ML/
-│
-├── main.py                          # Entry point — runs full ML pipeline on Boston dataset
-├── train.py                         # 13+ models, SMOTE, regularization, evaluation
-├── eda.py                           # EDA utilities — column detection, transformers, plots
-├── dataframe.py                     # Dataset loaders (Boston, Startups, Churn, Mall)
-├── visualize.py                     # Actual vs Predicted + Residuals plots
-├── requirements.txt                 # Dependencies
-│
-├── data/
-│   ├── boston.csv                   # Boston Housing dataset (regression)
-│   ├── 50_Startups.csv              # 50 Startups dataset (regression)
-│   ├── WA_Fn-UseC_-Telco-Customer-Churn.csv   # Telecom Churn (classification)
-│   └── mall.csv                     # Mall Customers (clustering)
-│
-└── Feature Engineering_Streamlit/
-    ├── FE_streamlit.py              # Streamlit app for feature selection
-    ├── eda.py                       # EDA helpers used by the app
-    ├── train.py                     # Training helpers used by the app
-    └── requirements.txt             # App-specific dependencies
+All Codes/
+    ML/
+    |
+    ├── main.py                          # Entry point — runs full ML pipeline on Boston dataset
+    ├── train.py                         # 13+ models, SMOTE, regularization, evaluation
+    ├── eda.py                           # EDA utilities — column detection, transformers, plots
+    ├── dataframe.py                     # Dataset loaders (Boston, Startups, Churn, Mall)
+    ├── visualize.py                     # Actual vs Predicted + Residuals plots
+    ├── requirements.txt                 # Dependencies
+    │
+    ├── data/
+    │   ├── boston.csv                   # Boston Housing dataset (regression)
+    │   ├── 50_Startups.csv              # 50 Startups dataset (regression)
+    │   ├── WA_Fn-UseC_-Telco-Customer-Churn.csv   # Telecom Churn (classification)
+    │   └── mall.csv                     # Mall Customers (clustering)
+    │
+    └── Feature Engineering_Streamlit/
+        ├── FE_streamlit.py              # Streamlit app for feature selection
+        ├── eda.py                       # EDA helpers used by the app
+        ├── train.py                     # Training helpers used by the app
+        └── requirements.txt             # App-specific dependencies
+
+    
 ```
 
 ---
@@ -244,5 +247,6 @@ pip install -r requirements.txt
 ---
 
 ## 📄 License
+
 
 MIT License — see [LICENSE](LICENSE) for details.
