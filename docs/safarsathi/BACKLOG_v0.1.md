@@ -20,7 +20,7 @@ the code is what makes an issue resumable mid-way by a fresh chat.
   url_launcher, file_picker, csv, excel, libphonenumber_plugin.
   Verify: `flutter run` shows a blank app on device.
 
-- [ ] **#2 Drift database wiring** — M
+- [x] **#2 Drift database wiring** — M — *16 tables, 27 foreign keys, 9 schema tests; device check owed*
   `app_database.dart` with all tables from the drafted schema files
   (Trips, Stops, Legs, Pois, ChecklistItems, WeatherSnapshots,
   TimelineEntries, Expenses, ExpenseSplits, Contacts, ImportBatches,
@@ -29,7 +29,7 @@ the code is what makes an issue resumable mid-way by a fresh chat.
   Verify: DB file created on device, tables present.
   *Depends on #1.*
 
-- [ ] **#3 Design tokens + theme** — M — *was S; grew with the v2 visual system*
+- [x] **#3 Design tokens + theme** — M — *done as part of #1; device check owed* — *was S; grew with the v2 visual system*
   `app_tokens.dart` v2 in place: `AppColors` as a `ThemeExtension` with the
   full day and night sets, type roles, geometry scale, and `AppTokens.theme()`
   wiring both. Bundle **Inter and Archivo Narrow** (both SIL OFL). Add the

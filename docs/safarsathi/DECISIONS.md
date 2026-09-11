@@ -5,6 +5,22 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-11 — [ARCH] drift and drift_dev pinned to ^2.35.0, drift_flutter to ^0.3.1, sqlite3_flutter_libs to ^0.6.0. (At drift_dev 2.31 under analyzer 10, code generation SILENTLY DROPPED EVERY FOREIGN KEY, unique key and table constraint from the generated schema, emitting only a vague "this parameter should be a simple class name" warning that build_runner reported as success. The upgrade pulls analyzer 13 and generates all 27 references correctly. The schema tests added at #2 assert against sqlite_master rather than against generated Dart, so this class of silent failure cannot recur unnoticed.)
+
+2026-09-11 — [DATA] `PRAGMA foreign_keys = ON` runs in `beforeOpen`. (SQLite defaults it OFF. Without it every ON DELETE CASCADE in the schema is inert and deleting a trip leaves orphaned stops, contacts and expenses behind silently. Pinned by a test.)
+
+2026-09-11 — [DATA] Money is stored as integer minor units — paise, cents — never as a double. (Floating point accumulates rounding error across a three-way split and this ledger has to balance exactly. A test splits ₹3,200.11 three ways and asserts not one paisa goes missing.)
+
+2026-09-11 — [DATA] `Travellers` table added; expense splits reference a person row rather than a free-text name. (Not in the original data model because the expense feature was described before it was designed. A name per split would make balances unjoinable. No accounts, no sync, no server — just named people on a trip.)
+
+2026-09-11 — [DATA] POI stop-XOR-leg exclusivity is a table CHECK constraint, not a convention. (A POI attached to neither answers no query; one attached to both answers two queries wrongly. DESIGN.md §2 called for the rule, so the database should be the thing that holds it.)
+
+2026-09-11 — [DATA] EmergencyHelplines carries a unique key on country + number + service type. (This is what makes the first-launch seeding at #4 idempotent rather than merely careful. Seeding runs again after a reinstall or a migration.)
+
+2026-09-11 — [DATA] `WeatherSnapshots.cachedAt` is non-nullable. (A snapshot without an age is a forecast pretending to be current, which is the exact failure the snapshot model exists to prevent.)
+
+2026-09-11 — [DATA] `CallLogs.action` takes `copy` as a first-class value alongside call, dialer, sms and whatsapp. (The dial now happens in the Android dialer after a paste, so without logging copies the recents ordering and the record of who was actually reached would rot the moment the workflow changed.)
+
 2026-09-11 — [UI] `muted` darkened from #6B7670 to #5F6963. (The original measured 4.41:1 on paper and 3.94:1 on the raised surface, both failing AA, on the token that carries every phone number, caption and provenance line. DESIGN_VISUAL_v2 claimed 4.9:1 — the arithmetic was done by hand and was wrong. Found by the first test run, not by eye.)
 
 2026-09-11 — [UI] Contrast is asserted by a test over both grounds, `paper` and `stone`, in both themes, rather than stated in a document. (Checking only against the base ground is how a failing value got written down as passing. Chips, the search field and category avatars all sit on `stone`, where every ratio is roughly 0.6 lower.)

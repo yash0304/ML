@@ -12,9 +12,9 @@ dependencies:
 
   # Persistence. SQLite is the only source of truth in this app; there is no
   # backend and no runtime network call.
-  drift: ^2.28.2
-  drift_flutter: ^0.2.4
-  sqlite3_flutter_libs: ^0.5.42
+  drift: ^2.35.0
+  drift_flutter: ^0.3.1
+  sqlite3_flutter_libs: ^0.6.0
   path_provider: ^2.1.5
 
   # Platform intents: tel:, sms:, wa.me. No dialer permission needed.
@@ -36,7 +36,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
   # Drift code generation lands at #2.
-  drift_dev: ^2.28.2
+  drift_dev: ^2.35.0
   build_runner: ^2.4.15
 
 flutter:
