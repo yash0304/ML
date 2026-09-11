@@ -75,24 +75,33 @@ gap.
 ### 2.1 Day — "Paper"
 
 ```
-paper          #FAF7F0   ground              was #FFFFFF
-stone          #EFEAE0   raised: chips, avatars, search, ticket body
-rule           #D8D1C2   hairlines, perforations, borders
-ink            #191E1A   primary text                  15.0:1 on paper
-muted          #6B7670   secondary text, numbers        4.9:1 on paper
+                                          on paper   on stone
+paper          #FAF7F0   ground                 —          —
+stone          #EFEAE0   raised surfaces        —          —
+rule           #D8D1C2   hairlines, perforations
+ink            #191E1A   primary text        15.80      14.10
+muted          #5F6963   secondary, numbers   5.32       4.75
 
-signal         #1F6B4A   official, confirmed, primary   6.6:1 on paper
+signal         #1F6B4A   official, confirmed  6.02       5.37
 signalSoft     #DCEBE3   selected chip, stamp ink bed
 
-caution        #A35F10   caution TEXT and icons         4.7:1 on paper
-cautionMark    #C77B1E   the 7px dot and hazard stripe  3.1:1 — graphics only
+caution        #A35F10   caution TEXT, icons  4.67          —
+cautionMark    #C77B1E   7px dot, hazard      3.13          —   graphics only
 cautionSoft    #F6EBD6   readiness banner bed
 
-emergency      #B32B23   emergency tab ONLY             6.2:1 on paper
+emergency      #B32B23   emergency tab ONLY   5.97          —
 emergencySoft  #F7DEDB
 ```
 
-Three deliberate changes from v1, each logged in DECISIONS.md:
+**These ratios are measured by a test, not estimated.** An earlier draft of
+this document put `muted` at `#6B7670` and claimed 4.9:1. It actually measures
+**4.41:1 on paper and 3.94:1 on stone** — a fail on the token that carries
+every phone number, caption and provenance line in the app. The arithmetic was
+done by hand and was wrong. `muted` is now `#5F6963`, and
+`test/scaffold_test.dart` asserts every pair on both grounds so the next wrong
+guess fails the build instead of shipping.
+
+Four deliberate changes from v1, each logged in DECISIONS.md:
 
 - **Ground moves off pure white.** This is the single highest-leverage retro
   move in the whole system and it costs nothing — ink on paper still reads
@@ -103,6 +112,7 @@ Three deliberate changes from v1, each logged in DECISIONS.md:
   they are graphics held to the 3:1 non-text floor and need to read amber at
   seven pixels.
 - **Soft tints warmed** so they sit on paper rather than floating on it.
+- **`muted` darkened** from `#6B7670` to `#5F6963` after measurement, see above.
 
 `signal`, `emergency` and the hue meanings are untouched. Green still means
 go and confirmed, amber still means unverified, **red still appears on the
@@ -341,9 +351,10 @@ drafted file in this project.
 
 ## 8. Accessibility and performance
 
-- Every colour pair above is measured. Text meets 4.5:1, graphics meet 3:1, in
-  both themes. `cautionMark` is graphics-only precisely because it does not
-  clear the text bar.
+- Every colour pair above is measured **by a test that runs on every build**,
+  not by hand. Text meets 4.5:1 on both `paper` and `stone`, graphics meet
+  3:1, in both themes. `cautionMark` is graphics-only precisely because it
+  does not clear the text bar.
 - The stamp carries a text label, not just a graphic, and is announced to
   screen readers as "Confirmed". The amber dot keeps its existing tooltip.
 - Grain never sits above text. Contrast is measured on the flat ground, and

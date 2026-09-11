@@ -65,14 +65,17 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.grainOpacity,
   });
 
-  /// Day — "Paper". Contrast on `paper`: ink 15.0:1, muted 4.9:1,
-  /// signal 6.6:1, caution 4.7:1, emergency 6.2:1, cautionMark 3.1:1.
+  /// Day — "Paper". Measured, not estimated — the numbers in the design doc
+  /// were arrived at by hand and `muted` was wrong, so a test now pins these.
+  /// On `paper`: ink 15.8, muted 5.3, signal 6.0, caution 4.7,
+  /// emergency 6.0, cautionMark 3.1 (graphics floor).
+  /// On `stone`, where chips and search text sit, muted is 4.8.
   static const day = AppColors(
     paper: Color(0xFFFAF7F0),
     stone: Color(0xFFEFEAE0),
     rule: Color(0xFFD8D1C2),
     ink: Color(0xFF191E1A),
-    muted: Color(0xFF6B7670),
+    muted: Color(0xFF5F6963),
     signal: Color(0xFF1F6B4A),
     signalSoft: Color(0xFFDCEBE3),
     caution: Color(0xFFA35F10),
@@ -94,7 +97,9 @@ class AppColors extends ThemeExtension<AppColors> {
     signal: Color(0xFF4FBF8B),
     signalSoft: Color(0xFF17301F),
     caution: Color(0xFFE0A040),
-    cautionMark: Color(0xFFE0A040), // the dark ground carries it; no split needed
+    cautionMark: Color(
+      0xFFE0A040,
+    ), // the dark ground carries it; no split needed
     cautionSoft: Color(0xFF33260F),
     emergency: Color(0xFFFF6B5E),
     emergencySoft: Color(0xFF3A1512),

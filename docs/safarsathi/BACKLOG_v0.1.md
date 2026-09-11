@@ -14,7 +14,7 @@ the code is what makes an issue resumable mid-way by a fresh chat.
 
 ## Milestone 1 — Foundation (make it run)
 
-- [ ] **#1 Flutter project scaffold** — S
+- [x] **#1 Flutter project scaffold** — S — *analyze clean, 11 tests green; device check still owed*
   Create project, folder structure (`core/`, `features/`), add
   dependencies: drift, drift_flutter, sqlite3_flutter_libs, path_provider,
   url_launcher, file_picker, csv, excel, libphonenumber_plugin.

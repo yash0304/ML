@@ -35,7 +35,11 @@ class StencilLabel extends StatelessWidget {
     final c = AppTokens.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppTokens.gutter, AppTokens.s24, AppTokens.gutter, AppTokens.s8),
+        AppTokens.gutter,
+        AppTokens.s24,
+        AppTokens.gutter,
+        AppTokens.s8,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -45,7 +49,9 @@ class StencilLabel extends StatelessWidget {
           ),
           if (ruled) ...[
             const SizedBox(width: AppTokens.s12),
-            Expanded(child: Container(height: AppTokens.hairline, color: c.rule)),
+            Expanded(
+              child: Container(height: AppTokens.hairline, color: c.rule),
+            ),
           ],
         ],
       ),
@@ -90,11 +96,7 @@ class TicketCard extends StatelessWidget {
         clipper: clipper,
         child: CustomPaint(
           foregroundPainter: _TicketBorderPainter(edge, c.rule),
-          child: Container(
-            color: c.stone,
-            padding: padding,
-            child: child,
-          ),
+          child: Container(color: c.stone, padding: padding, child: child),
         ),
       ),
     );
@@ -220,13 +222,20 @@ class MilestoneMarker extends StatelessWidget {
             width: double.infinity,
             color: cap,
             padding: const EdgeInsets.fromLTRB(
-                AppTokens.s8, AppTokens.s12, AppTokens.s8, AppTokens.s8),
+              AppTokens.s8,
+              AppTokens.s12,
+              AppTokens.s8,
+              AppTokens.s8,
+            ),
             child: Text(
               place.toUpperCase(),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppTokens.stencilStyle.copyWith(fontSize: 10, color: c.paper),
+              style: AppTokens.stencilStyle.copyWith(
+                fontSize: 10,
+                color: c.paper,
+              ),
             ),
           ),
           Padding(
@@ -234,11 +243,17 @@ class MilestoneMarker extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(numeral,
-                    style: AppTokens.milestoneStyle.copyWith(color: c.ink)),
-                Text(unit.toUpperCase(),
-                    style: AppTokens.stencilStyle
-                        .copyWith(fontSize: 9, color: c.muted)),
+                Text(
+                  numeral,
+                  style: AppTokens.milestoneStyle.copyWith(color: c.ink),
+                ),
+                Text(
+                  unit.toUpperCase(),
+                  style: AppTokens.stencilStyle.copyWith(
+                    fontSize: 9,
+                    color: c.muted,
+                  ),
+                ),
               ],
             ),
           ),
@@ -329,7 +344,9 @@ class _StampBadgeState extends State<StampBadge>
         },
         child: Container(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppTokens.s8, vertical: AppTokens.s4),
+            horizontal: AppTokens.s8,
+            vertical: AppTokens.s4,
+          ),
           decoration: BoxDecoration(
             border: Border.all(color: ink, width: 1.5),
             borderRadius: BorderRadius.circular(2),

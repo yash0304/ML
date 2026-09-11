@@ -5,6 +5,10 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-11 — [UI] `muted` darkened from #6B7670 to #5F6963. (The original measured 4.41:1 on paper and 3.94:1 on the raised surface, both failing AA, on the token that carries every phone number, caption and provenance line. DESIGN_VISUAL_v2 claimed 4.9:1 — the arithmetic was done by hand and was wrong. Found by the first test run, not by eye.)
+
+2026-09-11 — [UI] Contrast is asserted by a test over both grounds, `paper` and `stone`, in both themes, rather than stated in a document. (Checking only against the base ground is how a failing value got written down as passing. Chips, the search field and category avatars all sit on `stone`, where every ratio is roughly 0.6 lower.)
+
 2026-09-11 — [UI] Bottom navigation grows to five items: Diary, Trip, Money, SOS, More. Checklist, timeline, stop detail and leg detail hang off Trip rather than taking a sixth slot. (Five is the Material maximum. Money earns top level because expenses are entered daily; the checklist is used hard before departure and the timeline logs itself, so both are destinations rather than tabs.)
 
 2026-09-11 — [CHECKLIST] Unconfirmed numbers attached to an overnight stop are rendered as blocking checklist items, in the same list as the pack items. (This is where the trust system surfaces for the user. "Call the homestay" belongs beside "pack leech socks" because both are things that must be done before leaving signal, and it gives the readiness check a home instead of a banner.)

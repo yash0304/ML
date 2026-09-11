@@ -29,7 +29,7 @@ class _SmokeScreenState extends State<SmokeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Scaffold check', style: AppTokens.titleStyle),
+        title: const Text('Scaffold check', style: AppTokens.titleStyle),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: AppTokens.hairline, color: c.rule),
@@ -41,9 +41,7 @@ class _SmokeScreenState extends State<SmokeScreen> {
           children: [
             StencilLabel(isNight ? 'Lamp — night' : 'Paper — day'),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTokens.gutter,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
               child: Text(
                 'Switch the phone between light and dark to swap palettes.',
                 style: AppTokens.captionStyle.copyWith(color: c.muted),
@@ -54,14 +52,22 @@ class _SmokeScreenState extends State<SmokeScreen> {
             _Line('Title', AppTokens.titleStyle, 'Meghalaya · October', c.ink),
             _Line('Row', AppTokens.rowTitleStyle, 'Kongthong homestay', c.ink),
             _Line('Number', AppTokens.numberStyle, '+91 98560 41122', c.muted),
-            _Line('Caption', AppTokens.captionStyle, 'Source: 112.gov.in', c.muted),
-            _Line('Badge', AppTokens.badgeStyle, '112 · 108 · 1098', c.emergency),
+            _Line(
+              'Caption',
+              AppTokens.captionStyle,
+              'Source: 112.gov.in',
+              c.muted,
+            ),
+            _Line(
+              'Badge',
+              AppTokens.badgeStyle,
+              '112 · 108 · 1098',
+              c.emergency,
+            ),
 
             const StencilLabel('Milestone marker'),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTokens.gutter,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
               child: Row(
                 children: [
                   const MilestoneMarker(numeral: '54', place: 'Sohra'),
@@ -79,9 +85,7 @@ class _SmokeScreenState extends State<SmokeScreen> {
 
             const StencilLabel('Ticket card'),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTokens.gutter,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
               child: TicketCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,9 +106,7 @@ class _SmokeScreenState extends State<SmokeScreen> {
 
             const StencilLabel('Hazard stripe'),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTokens.gutter,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
               child: IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -128,9 +130,7 @@ class _SmokeScreenState extends State<SmokeScreen> {
 
             const StencilLabel('Stamp and haptics'),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTokens.gutter,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
               child: Row(
                 children: [
                   PressScale(
@@ -161,9 +161,7 @@ class _SmokeScreenState extends State<SmokeScreen> {
 
             const StencilLabel('Rolling digits'),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTokens.gutter,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
               child: RollingDigits(
                 value: _stamped ? '3' : '4',
                 style: AppTokens.milestoneStyle.copyWith(color: c.ink),
@@ -208,7 +206,9 @@ class _Line extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(child: Text(sample, style: style.copyWith(color: color))),
+          Expanded(
+            child: Text(sample, style: style.copyWith(color: color)),
+          ),
         ],
       ),
     );

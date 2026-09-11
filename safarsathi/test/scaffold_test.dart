@@ -2,8 +2,6 @@
 // break silently: the palettes, the type roles, and the no-shadow rule.
 
 import 'dart:math' as math;
-import 'dart:ui' show FontVariation;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -36,6 +34,31 @@ void main() {
     expect(find.text('Scaffold check'), findsOneWidget);
   });
 
+  testWidgets('smoke screen lays out without overflow at phone width', (
+    tester,
+  ) async {
+    // The default test surface is 800x600, which is wider than any phone this
+    // app will run on. 400x800 is the size the design actually targets.
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(const SafarSathiApp());
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('smoke screen lays out in the night palette too', (tester) async {
+    await tester.pumpWidget(
+      const MediaQuery(
+        data: MediaQueryData(platformBrightness: Brightness.dark),
+        child: SafarSathiApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   test('both palettes are distinct and complete', () {
     expect(AppColors.day.paper, isNot(AppColors.night.paper));
     expect(AppColors.day.ink, isNot(AppColors.night.ink));
@@ -60,6 +83,18 @@ void main() {
       expect(contrast(c.signal, c.paper), greaterThanOrEqualTo(4.5));
       expect(contrast(c.caution, c.paper), greaterThanOrEqualTo(4.5));
       expect(contrast(c.emergency, c.paper), greaterThanOrEqualTo(4.5));
+    }
+  });
+
+  test('secondary text also meets AA on the raised surface', () {
+    // muted carries phone numbers, captions and provenance, and it sits on
+    // `stone` in chips, the search field and category avatars. Checking it
+    // only against `paper` is how the first version of this palette shipped
+    // a value that failed.
+    for (final c in [AppColors.day, AppColors.night]) {
+      expect(contrast(c.muted, c.stone), greaterThanOrEqualTo(4.5));
+      expect(contrast(c.ink, c.stone), greaterThanOrEqualTo(4.5));
+      expect(contrast(c.signal, c.stone), greaterThanOrEqualTo(4.5));
     }
   });
 

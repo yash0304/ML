@@ -25,11 +25,7 @@ class Motion {
 
   static const standard = Curves.easeOutCubic;
 
-  static const spring = SpringDescription(
-    mass: 1,
-    stiffness: 380,
-    damping: 26,
-  );
+  static const spring = SpringDescription(mass: 1, stiffness: 380, damping: 26);
 
   static const pressScale = 0.97;
 

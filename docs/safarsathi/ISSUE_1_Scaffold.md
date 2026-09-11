@@ -150,16 +150,25 @@ flutter run
 
 ## Acceptance criteria
 
-- [ ] `flutter analyze` reports **no issues**.
-- [ ] `flutter test` passes.
+Verified in the build container on Flutter 3.47.3 / Dart 3.13.3:
+
+- [x] `flutter analyze` reports **no issues**.
+- [x] `flutter test` passes — 11 tests.
+- [x] The smoke screen lays out with no exceptions at 400×800 and in the
+      night palette. Overflow would have thrown.
+
+Still yours, because they need a real phone:
+
 - [ ] `flutter run` installs and opens on a real Android phone.
-- [ ] The smoke screen renders all seven elements without overflow.
 - [ ] **Both fonts are actually loading.** The stencil labels must look
       condensed. If they look like the body font, the family name in
       `pubspec.yaml` does not match `app_tokens.dart` and everything after this
-      will be built on a silent fallback.
+      will be built on a silent fallback. **Tests cannot check this** — the
+      widget test harness substitutes its own font, so no automated check will
+      ever catch it. Look at it.
 - [ ] Switching the phone to dark mode swaps the app to the Lamp palette, and
-      nothing becomes unreadable.
+      nothing becomes unreadable. Contrast is asserted by test; what a test
+      cannot judge is whether it is pleasant at 2am.
 - [ ] Pressing the smoke-screen button produces a scale response **and a
       haptic you can feel**.
 - [ ] The grain is visible as texture when you look for it and invisible when
@@ -167,9 +176,31 @@ flutter run
 
 ---
 
+## What the first build actually found
+
+Recorded because each of these would have cost a session later:
+
+1. **The repo root `.gitignore` is a Python one, and its `lib/` rule swallowed
+   the entire Dart source tree.** `git add` reported success and committed
+   nothing under `lib/`. Fixed with a `!lib/` negation at the top of
+   `safarsathi/.gitignore`, with a comment. Do not remove it.
+2. **Google Fonts no longer publishes static instances** of Inter or Archivo
+   Narrow. Both are bundled as variable fonts and every text style now pins
+   the `wght` axis through `FontVariation`. Without it the whole app renders
+   at one weight and nothing warns you.
+3. **`muted` failed WCAG AA.** `#6B7670` measures 4.41:1 on paper and 3.94:1
+   on the raised surface, against a documented claim of 4.9:1 — the design
+   doc's arithmetic was done by hand and was wrong. It is now `#5F6963`, and
+   a test asserts every pair on both grounds.
+4. **Three compile errors in the drafted widgets**, caught by reading before
+   the SDK arrived: two `clamp` calls returning `num` where `double` was
+   required, and a `CustomPaint` given an infinite size.
+5. The 8-bit grain tile compressed to 15 KB against a 4 KB budget. Two-bit
+   greyscale gets it to 3.2 KB.
+
 ## Gotchas
 
-- **A missing font fails silently.** Check it by eye before moving on.
+- **A missing font fails silently, and no test can catch it.** Check by eye.
 - `sqlite3_flutter_libs` adds several MB to the APK. That is the correct
   trade: it removes a class of OEM-specific SQLite differences that would
   otherwise appear only on somebody else's phone.
