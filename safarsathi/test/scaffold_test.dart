@@ -5,7 +5,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:drift/native.dart';
+
 import 'package:safarsathi/app.dart';
+import 'package:safarsathi/core/database/app_database.dart';
 import 'package:safarsathi/core/theme/app_tokens.dart';
 
 /// WCAG 2.1 relative luminance.
@@ -29,7 +32,9 @@ void main() {
   testWidgets('app boots and renders the scaffold check screen', (
     tester,
   ) async {
-    await tester.pumpWidget(const SafarSathiApp());
+    await tester.pumpWidget(
+      SafarSathiApp(db: AppDatabase(NativeDatabase.memory())),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Scaffold check'), findsOneWidget);
   });
@@ -43,16 +48,18 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const SafarSathiApp());
+    await tester.pumpWidget(
+      SafarSathiApp(db: AppDatabase(NativeDatabase.memory())),
+    );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('smoke screen lays out in the night palette too', (tester) async {
     await tester.pumpWidget(
-      const MediaQuery(
-        data: MediaQueryData(platformBrightness: Brightness.dark),
-        child: SafarSathiApp(),
+      MediaQuery(
+        data: const MediaQueryData(platformBrightness: Brightness.dark),
+        child: SafarSathiApp(db: AppDatabase(NativeDatabase.memory())),
       ),
     );
     await tester.pumpAndSettle();

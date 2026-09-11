@@ -1,15 +1,15 @@
-# HANDOFF — SafarSathi — 2026-09-11 (after issue #2)
+# HANDOFF — SafarSathi — 2026-09-11 (after issue #4)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1, #2 and #3 are done except for the device check.** The project
-  analyses clean and passes **20 tests** on Flutter 3.47.3 / Dart 3.13.3.
-  It has never run on a phone.
-- Backlog position: 3 / 52 done. Next is **#4, emergency helpline seeding**,
-  then **#5 ContactsDao** and **#6 the diary screen**.
+- **Issues #1, #2, #3 and #4 are done except for the device check.** The
+  project analyses clean and passes **29 tests** on Flutter 3.47.3 /
+  Dart 3.13.3. It has never run on a phone.
+- Backlog position: 4 / 52 done. Next is **#5 ContactsDao**, then **#6 the
+  diary screen**.
 - The database has 16 tables and 27 foreign keys, all asserted by tests that
   query `sqlite_master` rather than trusting generated code.
 - Design is complete and prototyped: eleven screens, both themes, full
@@ -39,6 +39,10 @@ real Tier-1 codes with their government sources.
 | Double-seeding a helpline is rejected | test — makes #4 idempotent |
 | POI is stop XOR leg | test — both-null and both-set rejected |
 | A 3-way split of ₹3,200.11 loses nothing | test |
+| Seeding twice changes nothing, ids intact | test |
+| 1930, 1078, 1033, 104 never reach the DB | test |
+| Every seeded number carries a source | test |
+| The state helpline list ships empty | test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -83,15 +87,14 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**Write `docs/ISSUE_4_Seeding.md`, then do backlog #4 — emergency helpline
-seeding.** Tier 1 national numbers only, on first launch, idempotent. The
-unique key on `EmergencyHelplines` already makes a second run fail rather
-than duplicate, so seeding should insert-or-ignore. **Do not seed 1930, 1078,
-1033 or 104** — they are flagged `needsVerification` and unconfirmed against
-a `.gov.in` source.
+**Write `docs/ISSUE_5_ContactsDao.md`, then do backlog #5.** Drop in
+`docs/safarsathi/code/contacts_dao.dart` unchanged — the schema at #2 was
+built to its column names, so it should compile as-is after fixing the import
+path and running `build_runner` for the DAO part file. Write unit tests for
+`watchContacts` ordering (pinned, then confirmed, then alphabetical), filter
+composition, and `watchUnconfirmedCount`.
 
-Then #5 (drop in `contacts_dao.dart` unchanged, add ordering tests) and #6
-(the diary screen).
+Then #6, the diary screen — the first thing worth looking at.
 
 Before any of it, run `flutter run` on the phone and settle the unverified
 items above. If the fonts are wrong, fix that first — everything after is

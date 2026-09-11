@@ -39,7 +39,7 @@ the code is what makes an issue resumable mid-way by a fresh chat.
   figures align on a number, and switching the system theme swaps cleanly.
   *Depends on #1. See DESIGN_VISUAL_v2.md §2–§4.*
 
-- [ ] **#4 Emergency helpline seeding** — S
+- [x] **#4 Emergency helpline seeding** — S — *14 rows, 4 flagged and skipped, 9 tests*
   Seed Tier 1 national numbers on first launch. **Must be idempotent** —
   re-running after reinstall or migration must not duplicate rows.
   **Do not seed the four `needsVerification` numbers** (1930, 1078, 1033,

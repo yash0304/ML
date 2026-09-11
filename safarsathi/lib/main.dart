@@ -6,8 +6,17 @@
 import 'package:flutter/material.dart';
 
 import 'app.dart';
+import 'core/database/app_database.dart';
+import 'core/database/seeding.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const SafarSathiApp());
+
+  final db = AppDatabase();
+
+  // Awaited before the first frame, so the emergency screen is never briefly
+  // empty on a fresh install. Idempotent — it runs on every launch.
+  await seedReferenceData(db);
+
+  runApp(SafarSathiApp(db: db));
 }

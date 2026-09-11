@@ -5,6 +5,16 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-11 — [CONTACTS] Helpline seeding upserts on the natural key (country + number + service) rather than insert-or-ignore. (Both are idempotent, but insert-or-ignore would strand anyone who already installed the app on an old label or sourceNote if a later version corrects one — and these are bundled reference data, not user rows. The seeder never touches `id`, so anything referencing a helpline survives a re-seed. Pinned by a test that corrupts a row and re-seeds.)
+
+2026-09-11 — [CONTACTS] The four flagged numbers stay in the seed file marked `needsVerification` and are skipped by the seeder, rather than being deleted from it. (So a future session can see they were considered and rejected rather than overlooked. #36 verifies them against a .gov.in source and flips the flag; nothing else should. A test asserts all four are absent from the database and present in the file.)
+
+2026-09-11 — [CONTACTS] 102 and 108 both seed with the plain label "Ambulance" because PROJECT_RUNDOWN §4.2 does not distinguish them. (They are run differently in different states, but inventing a distinction would be exactly the confident-sounding guess this whole feature exists to avoid. Resolve at #36, from state portals, not from memory.)
+
+2026-09-11 — [ARCH] The database is constructed in `main()` and passed down through the widget tree, not reached for through a global or a service locator. (Consistent with having no repository layer: DAO to widget, until a second consumer of the same data appears. It also makes every widget test able to substitute an in-memory database with no ceremony.)
+
+2026-09-11 — [CONTACTS] Seeding is awaited before `runApp`. (A fresh install must never render an empty emergency screen, not even for one frame. Seeding fourteen rows costs nothing.)
+
 2026-09-11 — [ARCH] drift and drift_dev pinned to ^2.35.0, drift_flutter to ^0.3.1, sqlite3_flutter_libs to ^0.6.0. (At drift_dev 2.31 under analyzer 10, code generation SILENTLY DROPPED EVERY FOREIGN KEY, unique key and table constraint from the generated schema, emitting only a vague "this parameter should be a simple class name" warning that build_runner reported as success. The upgrade pulls analyzer 13 and generates all 27 references correctly. The schema tests added at #2 assert against sqlite_master rather than against generated Dart, so this class of silent failure cannot recur unnoticed.)
 
 2026-09-11 — [DATA] `PRAGMA foreign_keys = ON` runs in `beforeOpen`. (SQLite defaults it OFF. Without it every ON DELETE CASCADE in the schema is inert and deleting a trip leaves orphaned stops, contacts and expenses behind silently. Pinned by a test.)
