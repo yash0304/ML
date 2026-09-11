@@ -1,0 +1,61 @@
+name: safarsathi
+description: Offline-first travel companion for multi-stop road trips.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Persistence. SQLite is the only source of truth in this app; there is no
+  # backend and no runtime network call.
+  drift: ^2.28.2
+  drift_flutter: ^0.2.4
+  sqlite3_flutter_libs: ^0.5.42
+  path_provider: ^2.1.5
+
+  # Platform intents: tel:, sms:, wa.me. No dialer permission needed.
+  url_launcher: ^6.3.2
+
+  # Sheet import — all pure Dart.
+  file_picker: ^8.3.7
+  csv: ^6.0.0
+  excel: ^4.0.6
+
+  # E.164 normalisation. Pure Dart, no platform channel, works offline.
+  # The backlog originally named libphonenumber_plugin, which wraps the
+  # native library over a channel — see DECISIONS.md.
+  phone_numbers_parser: ^9.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  # Drift code generation lands at #2.
+  drift_dev: ^2.28.2
+  build_runner: ^2.4.15
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/texture/
+
+  # Variable fonts, one file per family. Google Fonts no longer publishes
+  # static instances for either of these, so weights are selected through
+  # FontVariation on the 'wght' axis — see app_tokens.dart.
+  #
+  # The family names here MUST match the strings in app_tokens.dart. A
+  # mismatch falls back to the system font silently, which is the easiest
+  # way to build something that runs and looks wrong.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
+    - family: ArchivoNarrow
+      fonts:
+        - asset: assets/fonts/ArchivoNarrow.ttf

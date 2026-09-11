@@ -5,6 +5,18 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-11 — [ARCH] The Flutter project lives at `safarsathi/` in the repo root, beside `docs/safarsathi/`. (The app is not documentation and does not belong under `docs/`. Both folders move together when SafarSathi gets its own repo.)
+
+2026-09-11 — [ARCH] Platform folders limited to android and ios; web, Linux, macOS and Windows runners are not generated. (Dead weight for an app whose whole premise is a phone with no signal.)
+
+2026-09-11 — [UI] Inter and Archivo Narrow are bundled as variable fonts, with weights selected through `FontVariation` on the `wght` axis in every text style. (Google Fonts no longer publishes static instances for either family. `fontWeight` alone does not reliably move the axis, so the whole app would silently render at one weight. A test fails if any style stops pinning it.)
+
+2026-09-11 — [UI] Fonts are bundled as assets rather than pulled with the `google_fonts` package. (That package fetches at runtime, which is unacceptable in an app defined by having no network.)
+
+2026-09-11 — [UI] Grain tile is 128×128 two-bit greyscale, 3.2 KB. (Eight-bit noise compressed to 15 KB, nearly four times the budget in DESIGN_VISUAL_v2 §4 — random data barely compresses. Four grey levels are indistinguishable at 3% opacity.)
+
+2026-09-11 — [DATA] `phone_numbers_parser` replaces `libphonenumber_plugin` for E.164 normalisation. (Pure Dart, no platform channel, works offline. The plugin wraps a native library over a channel, adding a platform dependency for what is string work.)
+
 2026-09-11 — [UI] Tapping a diary entry copies the number to the clipboard; it no longer dials. Supersedes the same-day decision that the whole dialer row is the tap target and it dials. (Yash dials by pasting into the Android dialer, so copy is his actual workflow. Direct call stays as an explicit button and as a swipe-right, so nothing is lost.)
 
 2026-09-11 — [UI] The copy toast carries an OPEN DIALER action that launches the platform dialer with an empty field, making the workflow copy → open → paste in two taps. (Neither action needs a dialer permission. Verify on a real device that a `tel:` with no path opens the dialer rather than erroring; the fallback is ACTION_DIAL over a platform channel.)
