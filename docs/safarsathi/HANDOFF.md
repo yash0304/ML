@@ -7,19 +7,33 @@
 
 - Current issue: **#1 Flutter project scaffold — not started.** Nothing has
   been compiled or run.
-- Backlog position: 0 / 50 issues done.
+- Backlog position: 0 / 52 issues done.
 - Two design passes are complete. Screens are specified. The next thing that
   happens is code.
 
 ## Prototypes
 
-- Screens: https://claude.ai/code/artifact/548c02bc-d0ef-439d-abbc-7a5909a95d14
+- Screens (eleven, v2): https://claude.ai/code/artifact/548c02bc-d0ef-439d-abbc-7a5909a95d14
 - Visual system: https://claude.ai/code/artifact/0d81dd67-d217-4056-81b3-33e0bb889e95
 
 Both are interactive. Numbers shown in them are illustrative placeholders
 except the Tier-1 helplines, which are real.
 
-## What happened this session
+## Added after the screens pass
+
+Yash asked for the checklist and the money side, and for all five researched
+apps to be represented. Five more screens are specified and prototyped:
+checklist (PackPoint), money (Splitwise), timeline (Polarsteps), stop with the
+weather snapshot (Windy), leg with typed transport and the corridor
+(Rome2Rio, reduced). Bottom navigation grew to five items with Money at top
+level. Nine more decisions logged; #29 to #32 rewritten with real detail and
+#51, #52 added.
+
+The integration worth remembering: **unconfirmed numbers become blocking
+checklist items.** That is where the trust system finally surfaces for the
+user, and it is why the checklist is not just a pack list.
+
+## What happened earlier this session
 
 - **The dialling model changed.** Yash dials by pasting into the Android
   dialer, so tapping an entry now copies the number instead of dialling.

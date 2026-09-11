@@ -5,6 +5,24 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-11 — [UI] Bottom navigation grows to five items: Diary, Trip, Money, SOS, More. Checklist, timeline, stop detail and leg detail hang off Trip rather than taking a sixth slot. (Five is the Material maximum. Money earns top level because expenses are entered daily; the checklist is used hard before departure and the timeline logs itself, so both are destinations rather than tabs.)
+
+2026-09-11 — [CHECKLIST] Unconfirmed numbers attached to an overnight stop are rendered as blocking checklist items, in the same list as the pack items. (This is where the trust system surfaces for the user. "Call the homestay" belongs beside "pack leech socks" because both are things that must be done before leaving signal, and it gives the readiness check a home instead of a banner.)
+
+2026-09-11 — [CHECKLIST] Every generated item displays the activity tags that produced it. (A generated list nobody understands gets ignored. Showing that leech socks came from trek + rain + caves makes the list arguable, which is what makes it trusted.)
+
+2026-09-11 — [MONEY] Balances render positive in signal and negative in muted, never in red. (Owing money is not an emergency. Red stays rationed to the emergency surface.)
+
+2026-09-11 — [MONEY] Settle-up is shown above the ledger. (The question people actually have is who owes whom, not what was spent. The ledger is the audit trail, not the headline.)
+
+2026-09-11 — [MONEY] Settlement is recorded, never executed. The app has no payment integration and never will. (It would reintroduce a network dependency and a compliance surface for something people do with cash or UPI in thirty seconds.)
+
+2026-09-11 — [TIMELINE] The GPS logging toggle states its battery cost on the screen, roughly 4% a day. (It is the one feature in the app that genuinely drains the phone. Burying that in settings would be dishonest in a product whose premise is surviving days without a charger.)
+
+2026-09-11 — [WEATHER] The staleness stamp is muted under three days and turns caution past three, with a sentence spelling out what it means. (A five-day-old forecast presented as current is the exact failure this snapshot model exists to avoid — Windy's pattern is only honest if the age is louder than the data.)
+
+2026-09-11 — [TRANSPORT] Leg transport details are typed by the user and the screen says so in words. (There is no live schedule lookup and there never will be offline. Implying one through a blank field that looks fetchable would be worse than an empty form.)
+
 2026-09-11 — [ARCH] The Flutter project lives at `safarsathi/` in the repo root, beside `docs/safarsathi/`. (The app is not documentation and does not belong under `docs/`. Both folders move together when SafarSathi gets its own repo.)
 
 2026-09-11 — [ARCH] Platform folders limited to android and ios; web, Linux, macOS and Windows runners are not generated. (Dead weight for an app whose whole premise is a phone with no signal.)

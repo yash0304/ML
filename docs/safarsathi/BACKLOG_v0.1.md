@@ -298,10 +298,40 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
 
 ## Milestone 7 — Remaining feature set
 
-- [ ] **#29 Checklist generation** — M — activity-tagged, PackPoint-style
-- [ ] **#30 Timeline / GPS logging** — L — *split* — background service, Polarsteps-style
-- [ ] **#31 Expenses + splits** — M — local ledger, multi-currency with manual rate snapshot
-- [ ] **#32 Simplify-debts algorithm** — M — with unit tests
+- [ ] **#29 Checklist generation** — M — *see SCREENS.md §7*
+  Activity-tagged pack lists from stop tags + nights + cached forecast.
+  Generated items display the tags that produced them. **Manual edits must
+  survive a regeneration** — needs a "user touched this" flag per item.
+  Blocking items come from #20, rendered in the same list.
+  *Depends on #16, #20.*
+
+- [ ] **#30 Timeline / GPS logging** — L — *split before starting* — *see §9*
+  Background location service, Polarsteps-style. The rail is the road: stops
+  render as milestone caps, notes and photos as plain dots. **The logging
+  toggle states its battery cost on screen.**
+  *Depends on #16.*
+
+- [ ] **#31 Expenses + splits** — M — *see SCREENS.md §8*
+  Local ledger, named travellers with no accounts and no sync. Multi-currency
+  with a manual rate snapshot shown with its date. Balances positive in
+  signal, negative in muted, **never red**.
+  *Depends on #16.*
+
+- [ ] **#32 Simplify-debts algorithm** — M — with unit tests — *see §8*
+  Collapse the IOU graph to the fewest settlement payments. Pure local maths.
+  Settlement is **recorded, never executed** — no payment integration.
+  Test with the three-person Meghalaya ledger and with a cycle.
+  *Depends on #31.*
+
+- [ ] **#51 Stop detail screen** — M — *see SCREENS.md §10*
+  Weather snapshot with the staleness treatment, what-is-here counts,
+  editable activity tags, per-stop cache sizes.
+  *Depends on #16, #26.*
+
+- [ ] **#52 Leg detail screen** — M — *see SCREENS.md §11*
+  Typed transport details, and the corridor list ordered by distance along
+  the route with each place on its own milestone.
+  *Depends on #18, #23.*
 - [ ] **#33 Trusted contacts + check-in** — M — SMS intent, no server relay
 - [ ] **#34 Check-in escalation** — M — WorkManager timer, alert on ETA + buffer
 - [ ] **#35 Settings + cache management** — S — per-trip cache size, clear, retention

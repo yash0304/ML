@@ -1,8 +1,8 @@
-# SafarSathi — Screen specifications v0.1
+# SafarSathi — Screen specifications v0.2
 
 Prototype: https://claude.ai/code/artifact/548c02bc-d0ef-439d-abbc-7a5909a95d14
 
-Six screens, specified tightly enough to build from. Tokens and motion come
+Eleven screens, specified tightly enough to build from. Tokens and motion come
 from `DESIGN_VISUAL_v2.md`; the exemption rule in its §0 governs all of them.
 
 **The workflow this design serves:** Yash finds a number, taps it, it lands on
@@ -19,9 +19,14 @@ Four-item bottom bar on every screen, stencil labels, 9.5pt, icon above.
 | Item | Screen |
 |---|---|
 | Diary | The contact diary. The app's home. |
-| Trip | Active trip, next leg, stops. |
+| Trip | Active trip, next leg, stops. Checklist, timeline, stop and leg detail hang off it. |
+| Money | Ledger, balances and settle-up. Top level because it is entered daily. |
 | SOS | Emergency. Renders in `emergency` red **only while active**. |
 | More | Import, history, settings, cache. |
+
+Five items, which is the Material maximum. Checklist and timeline sit under
+Trip rather than taking a sixth slot: the checklist is used hard before
+departure and at each pack-up, the timeline logs itself and is mostly read.
 
 Red on the SOS item while active is the one place red leaves the emergency
 screen, and it is still pointing at it.
@@ -144,6 +149,92 @@ line, hairline under each field.
 - A `WHAT IMPORT DOES` block restates the invariant: every imported row lands
   unconfirmed, and the whole batch rolls back in one action.
 
+
+---
+
+## 7. Checklist — PackPoint
+
+Activity-tagged pack list, generated from each stop's tags plus the number of
+nights plus the cached forecast. No weather lookup at generation time.
+
+- Progress rule under the app bar: a 3px hairline filled in `signal`.
+- **`BEFORE YOU LEAVE SIGNAL`** — the blocking section. This is where the
+  trust system surfaces: every unconfirmed number attached to an overnight
+  stop becomes a blocking item, carrying the amber dot and a `BLOCKING`
+  stencil tag. **The trip does not read ready while any of these are open.**
+  "Call the homestay" therefore sits in the same list as "pack leech socks",
+  which is the correct place for it.
+- **`PACK`** — items with a quantity on the right and, underneath, the tags
+  that produced them. You can see why the list thinks you need leech socks.
+- The tick is a stencil mark in an 18px box, not a Material checkbox.
+  Checked items go muted and struck through.
+- A `WHY THESE` block explains the generation inputs and promises that manual
+  edits survive a regeneration.
+
+## 8. Money — Splitwise
+
+- Total spent as the headline, per-person share under it.
+- **`BALANCES` on a ticket stub** — one row per traveller, positive in
+  `signal`, negative in `muted`. Never red: owing money is not an emergency.
+- **`SETTLE UP` comes before the ledger**, because the question people
+  actually have is who owes whom, not what was spent. Shows the simplified
+  payments and states the saving: "two payments instead of five".
+- **`LEDGER`** — one row per expense: what, who paid, how it split, when, and
+  the amount right-aligned in stencil tabular.
+- Multi-currency uses a manual rate snapshot taken at setup and always shown
+  with its date. There is no live rate offline and the screen never implies
+  there is.
+
+## 9. Timeline — Polarsteps
+
+- A logging toggle that **states the battery cost on the screen** — about 4%
+  a day — rather than burying it in settings. It is the one feature here that
+  genuinely drains the phone.
+- **The vertical rail is the road.** Arrivals at stops are small milestone
+  caps on it; notes and photos are plain dots. Structure and annotation read
+  differently at a glance.
+- Each arrival carries distance from the previous stop and time taken.
+- GPS needs no signal, so this keeps building in a gorge with no bars. That is
+  why it survived the offline constraint intact.
+
+## 10. Stop — Windy's snapshot pattern
+
+- `WEATHER` opens with a staleness stamp. **Under three days it is muted;
+  past three days it turns `caution` and a sentence spells out what that
+  means.** A stale forecast that looks current is the failure mode this whole
+  screen is designed against.
+- Three day rows: date, condition, min–max, rainfall, all tabular.
+- `WHAT IS HERE` — diary entries, checklist, cached places, each with a count
+  and a chevron.
+- `ACTIVITY TAGS` are editable here **because they drive the checklist**. The
+  link between the two is made visible rather than left implied.
+- `CACHED HERE` — tile size and last sync date, which is also how you decide
+  what to delete when the phone fills up.
+
+## 11. Leg — Rome2Rio, reduced
+
+- `TRANSPORT` is a ruled form: mode, departs, arrives, booked, note. **Typed
+  by you, and the screen says so** instead of implying a lookup that cannot
+  happen offline.
+- **`ON THE ROAD`** — corridor places ordered by distance along the route,
+  each on its own small milestone marker. "Coming up in 12 km" is more useful
+  while moving than "0.2 km away" on a map.
+- Anything carrying a number from open map data keeps the amber dot. Nothing
+  community-contributed is ever presented as verified.
+- `CACHED FOR THIS LEG` — route line, corridor place count, tile size.
+
+---
+
+## What each researched app contributed
+
+| App | Screen | Borrowed |
+|---|---|---|
+| PackPoint | 07 | Activity-tagged pack lists. Extended: unconfirmed numbers become blocking items. |
+| Splitwise | 08 | Shared ledger and simplify-debts. Local maths, so it works whole. |
+| Polarsteps | 09 | Automatic GPS trail. Borrowed whole — GPS needs no signal. |
+| Windy | 10 | The offline snapshot pattern, not live weather. |
+| Rome2Rio | 11 | Mostly not borrowable. Reduced to typed transport legs plus the corridor. |
+
 ---
 
 ## Open questions
@@ -156,7 +247,13 @@ line, hairline under each field.
    and the screen sleeps before they reach the dialer. Worth checking whether
    the clipboard survives, and whether the `OPEN DIALER` button should fire
    automatically on a long press instead.
-3. **`tel:` with an empty path.** Confirm on a real device that it opens the
+3. **Checklist regeneration.** Editing a generated item then changing an
+   activity tag must not silently discard the edit. Needs a "user touched
+   this" flag per item, decided at #29.
+4. **Who is on the trip.** The ledger assumes named travellers with no
+   accounts and no sync. Splits are local rows; settling is something people
+   do with cash or UPI outside the app, and the app only records it.
+5. **`tel:` with an empty path.** Confirm on a real device that it opens the
    Android dialer rather than erroring. Fallback is `ACTION_DIAL` via a
    platform channel, which would be the first platform-specific code in the
    project.
