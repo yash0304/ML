@@ -58,17 +58,24 @@ the code is what makes an issue resumable mid-way by a fresh chat.
   Verify: tests green against an in-memory DB.
   *Depends on #2.*
 
-- [ ] **#6 Dialer screen** — M
-  Drop in the drafted widget. Wire routes. Seed a few fake contacts by hand
-  to see it render.
-  Verify: list renders, tabs switch, filters work, amber dot appears on
-  `userEntered` rows and not on `userVerified` ones.
+- [ ] **#6 Diary screen** — M — *was "Dialer screen"; see SCREENS.md §1*
+  The diary: ruled entries, numbered margin, readiness banner, search.
+  Wire routes. Seed a few fake contacts by hand to see it render.
+  The number renders larger than the meta line — it is the point of the row.
+  Verify: list renders, filters work, amber dot appears on `userEntered` rows
+  and not on `userVerified` ones.
   *Depends on #3, #5.*
 
-- [ ] **#7 Call / WhatsApp / SMS intents** — S
-  `url_launcher` for `tel:`, `sms:`, `wa.me`. Log every action to CallLogs.
-  Handle the no-app-available case gracefully.
-  Verify: on a real device, each action opens the right app.
+- [ ] **#7 Copy, dialer, call, chat** — M — *was S; copy-first changed this*
+  **Tap copies the E.164 number to the clipboard.** Toast above the nav bar
+  with the number and an `OPEN DIALER` button that launches the platform
+  dialer with an empty field. `url_launcher` for `tel:`, `sms:`, `wa.me` as
+  explicit secondary actions. Log every action to CallLogs, **including
+  `copy`**. Handle the no-app-available case gracefully.
+  Verify: on a real device, tap copies and the number pastes into the Android
+  dialer; `tel:` with no path opens the dialer rather than erroring. If it
+  does error, fall back to `ACTION_DIAL` over a platform channel and log a
+  decision about it.
   *Depends on #6.*
 
 - [ ] **#8 Add / edit contact screen** — M
@@ -83,6 +90,20 @@ the code is what makes an issue resumable mid-way by a fresh chat.
   Readiness banner updates live.
   Verify: confirm a contact, amber dot clears, banner count drops.
   *Depends on #8.*
+
+---
+
+- [ ] **#49 Category thumb index** — S
+  The vertical index down the right edge of the diary. Selected tab filled.
+  Needs a query returning only the categories the trip actually uses —
+  eleven do not fit an edge.
+  *Depends on #6. See SCREENS.md open question 1.*
+
+- [ ] **#50 Emergency screen** — M — *see SCREENS.md §3*
+  The exempt screen. Tap calls, heavy haptic, copy demoted to a secondary
+  icon. Bundled helplines and trip contacts in separate headed sections.
+  Provenance under every bundled line.
+  *Depends on #4, #7.*
 
 ---
 

@@ -5,6 +5,22 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-11 — [UI] Tapping a diary entry copies the number to the clipboard; it no longer dials. Supersedes the same-day decision that the whole dialer row is the tap target and it dials. (Yash dials by pasting into the Android dialer, so copy is his actual workflow. Direct call stays as an explicit button and as a swipe-right, so nothing is lost.)
+
+2026-09-11 — [UI] The copy toast carries an OPEN DIALER action that launches the platform dialer with an empty field, making the workflow copy → open → paste in two taps. (Neither action needs a dialer permission. Verify on a real device that a `tel:` with no path opens the dialer rather than erroring; the fallback is ACTION_DIAL over a platform channel.)
+
+2026-09-11 — [UI] The emergency screen keeps tap-to-call as its primary action with a heavy haptic; copy is demoted to a secondary icon there. (Copy-first is a planning workflow. A copy-and-paste dance at the wrong moment is a liability, and this is the screen where that matters.)
+
+2026-09-11 — [UI] Contacts are presented as a pocket diary: ruled lines, a numbered margin, a category thumb index down the right edge, and a page count at the foot. (Yash asked for a real contact-diary system. The index is the retro form doing actual work — flipping to "Stay" one-handed in a village — rather than decoration, and the margin numbers give you something to say out loud when reading a number to someone.)
+
+2026-09-11 — [UI] The number is set larger than the name in every diary row and is the headline on the entry screen, at 27pt tabular with `user-select: all`. (In a diary the number is the content. Now that the app's job is to hand the number to the system dialer, legibility and selectability of the digits outrank filing.)
+
+2026-09-11 — [UI] Four-item bottom navigation: Diary, Trip, SOS, More. The SOS item renders in emergency red only while active. (Red stays rationed — the one place it leaves the emergency screen, it is pointing at it.)
+
+2026-09-11 — [CONTACTS] Every copy action is written to CallLogs with action 'copy'. (Recents ordering and the record of who you actually reached must not degrade just because the dial now happens outside the app.)
+
+2026-09-11 — [UI] Import preview encodes row severity as a stripe as well as a colour, and uses muted rather than red for a skipped row. (State must read without depending on hue, and red belongs to emergency.)
+
 2026-09-11 — [UI] Visual system v2 adopted, codename "Milestone": a retro-modern Indian road-ephemera idiom across the app, with safety surfaces exempt. Supersedes DESIGN.md §5 only. (Yash asked for retro yet modern and highly interactive; confining ephemera to non-safety surfaces buys character without touching the trust signal that DESIGN.md §4 exists to protect.)
 
 2026-09-11 — [UI] Exemption rule: ephemera may carry category, provenance, place and delight, never trust. The emergency tab and the contact-row trust markers take no retro treatment at all. (A stamp or badge a user could mistake for a verification mark would defeat the entire tier system.)

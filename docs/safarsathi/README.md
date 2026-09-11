@@ -13,6 +13,7 @@ Nothing here relates to the ML toolkit at the repo root.
 | `PROJECT_RUNDOWN.md` | The full record of the design conversation. Read once. |
 | `DESIGN.md` | Architecture, data model, offline strategy, **trust tiers (§4)**. |
 | `DESIGN_VISUAL_v2.md` | The "Milestone" visual and interaction system. Supersedes DESIGN.md §5 only. |
+| `SCREENS.md` | Six screen specifications, tight enough to build from. Start here for what the app looks like. |
 | `DECISIONS.md` | Dated decision log, newest first. Never delete a superseded line. |
 | `BACKLOG_v0.1.md` | 48 issues with checkboxes. Checked = done. |
 | `HANDOFF.md` | Session-to-session baton. Read this first if you are resuming. |
@@ -22,8 +23,10 @@ Nothing here relates to the ML toolkit at the repo root.
 
 1. **Trust tiering.** An imported spreadsheet row is not a verified number.
    PROJECT_RUNDOWN §4.4 and DESIGN.md §4.
-2. **The exemption rule.** Ephemera never carries trust; the emergency tab
+2. **The exemption rule.** Ephemera never carries trust; the emergency screen
    takes no retro treatment at all. DESIGN_VISUAL_v2.md §0.
+3. **Copy is the primary action**, everywhere except the emergency screen,
+   where the tap calls. SCREENS.md §0 and §3.
 
 ## Code
 

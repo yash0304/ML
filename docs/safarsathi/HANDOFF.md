@@ -1,4 +1,4 @@
-# HANDOFF — SafarSathi — 2026-09-11
+# HANDOFF — SafarSathi — 2026-09-11 (second session block)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
@@ -6,70 +6,66 @@
 ## Where we are
 
 - Current issue: **#1 Flutter project scaffold — not started.** Nothing has
-  been compiled or run. The project still does not exist as a Flutter app.
-- Backlog position: 0 / 48 issues done. Milestone 2.5 (#41–#48) is new this
-  session and adds the visual system work.
-- This session produced **design only**, no application code that runs.
+  been compiled or run.
+- Backlog position: 0 / 50 issues done.
+- Two design passes are complete. Screens are specified. The next thing that
+  happens is code.
+
+## Prototypes
+
+- Screens: https://claude.ai/code/artifact/548c02bc-d0ef-439d-abbc-7a5909a95d14
+- Visual system: https://claude.ai/code/artifact/0d81dd67-d217-4056-81b3-33e0bb889e95
+
+Both are interactive. Numbers shown in them are illustrative placeholders
+except the Tier-1 helplines, which are real.
 
 ## What happened this session
 
-- Yash asked for an offline, highly interactive, retro-yet-modern design.
-  Four scoping calls were made: the retro idiom applies everywhere **except**
-  safety surfaces; the idiom is Indian road ephemera; interaction is tactile
-  and cheap rather than full-motion; docs live at `docs/safarsathi/` in the
-  `yash0304/ml` repo until SafarSathi gets its own.
-- Wrote `DESIGN_VISUAL_v2.md` — the "Milestone" visual and interaction system.
-  It supersedes DESIGN.md §5 only. Everything else in DESIGN.md, and all of
-  §4, still outranks it.
-- Wrote three drafted Dart files: `code/app_tokens.dart` (v2, two themes),
-  `code/motion.dart`, `code/retro.dart`.
-- Wrote `DIALER_RETRO_PATCH.md` — eleven exact edits to bring the drafted
-  dialer to v2, with an acceptance list.
-- Logged fourteen decisions in DECISIONS.md. Three of them supersede earlier
-  lines: the pure-white surface, the single-typeface rule, and the single
-  `caution` token.
-- Amended backlog #3 (S → M) and added Milestone 2.5, issues #41–#48.
+- **The dialling model changed.** Yash dials by pasting into the Android
+  dialer, so tapping an entry now copies the number instead of dialling.
+  The copy toast carries an `OPEN DIALER` button. This reverses an earlier
+  decision; both lines are in DECISIONS.md.
+- **Contacts became a diary.** Ruled lines, numbered margin, category thumb
+  index down the right edge, page count at the foot. The retro idiom now
+  does real work instead of decorating a list.
+- Wrote `SCREENS.md` — six specifications: Diary, Entry, Emergency, Trip,
+  New entry, Import preview.
+- Logged eight more decisions. One supersedes the tap-to-dial rule.
+- Renamed backlog #6 to the Diary screen, grew #7 from S to M for the copy
+  workflow, added #49 (thumb index) and #50 (emergency screen).
 
 ## In-flight state
 
-- Files touched: everything under `docs/safarsathi/`. All docs complete.
-  All three Dart files **drafted, never compiled** — same caveat as every
-  other drafted file in this project.
-- `code/dialer_screen.dart`, `code/contacts_dao.dart` and
-  `code/app_tokens_v1_superseded.dart` are carried over untouched.
+- Files touched: `SCREENS.md` (new), `DECISIONS.md`, `BACKLOG_v0.1.md`,
+  `README.md`, this file.
+- The three drafted Dart files are unchanged from the previous block and
+  **still reflect tap-to-dial**. `DIALER_RETRO_PATCH.md` edits 6 and 7 need
+  rewriting for copy-first before anyone follows them — do that as the first
+  step of #7, not now.
 - Last known good: all committed on
   `claude/offline-retro-modern-app-design-r2n4ju`.
 
 ## Next action (this line starts the next session)
 
 **Write `docs/ISSUE_1_Scaffold.md`, then do backlog #1 — create the Flutter
-project and get a blank app running on a device.** Nothing else can start
-until the project exists. Then #2 (Drift wiring) and #3 (tokens + both
-themes + two fonts + grain tile).
-
-Do not start Milestone 2.5 before #6. The visual system is deliberately
-sequenced after the dialer renders, so there is something real to apply it to.
+project and get a blank app running on a device.** Then #2 (Drift wiring),
+#3 (both themes, both fonts, grain tile), #5 (DAO + tests), #6 (the diary).
 
 ## Open questions / waiting on Yash
 
-Carried from the previous handoff, all still open:
-
 1. **Project name.** "SafarSathi" is still a placeholder.
-2. **Dedicated repo.** The docs are parked in `yash0304/ml` for now. Needs a
-   folder under `C:\Users\Yash\Desktop\Github\` and a real repo.
+2. **Dedicated repo.** Docs are parked in `yash0304/ml`.
 3. **Map tile provider.** MapTiler or Stadia. Needed before #24.
-4. **Trip target.** Meghalaya is 1–5 October. Milestones 1–4 plus 2.5 are
-   plausible by then at 5–10 hrs/week; Milestone 5 is not. Worth deciding
-   whether v0.1 for that trip is contacts-only.
-
-New this session:
-
-5. **Archivo Narrow.** Look at it on a real phone before #3 bundles it. It is
-   the one choice in v2 that is a matter of taste rather than measurement,
-   and swapping it later means touching every stencil style.
-6. **Grain tile.** Needs generating, 128×128, under 4 KB. Trivial, but it is
-   an asset nobody has made yet.
+4. **Trip target.** Meghalaya is 1–5 October. A contacts-only v0.1 for that
+   trip is plausible; the offline sync milestone is not.
+5. **Archivo Narrow.** Look at it on a real phone before #3 bundles it.
+6. **Grain tile.** 128×128, under 4 KB. Nobody has made it yet.
+7. **`tel:` with an empty path** — confirm on a real device that it opens the
+   Android dialer. Fallback is `ACTION_DIAL` over a platform channel, which
+   would be the first platform-specific code in the project.
+8. **Thumb index overflow.** Eleven categories do not fit a phone edge.
+   Preference is to show only the categories the trip actually uses.
 
 ## Decided in chat but check DECISIONS.md logged them
 
-Empty. All fourteen decisions are in DECISIONS.md.
+Empty. All twenty-two decisions across both blocks are in DECISIONS.md.
