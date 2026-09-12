@@ -1,28 +1,38 @@
-# HANDOFF — SafarSathi — 2026-09-12 (after issues #50, #53, #54, #55)
+# HANDOFF — SafarSathi — 2026-09-12 (after issues #11–#15, bulk import)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1–#9, #50, #53, #54, #55 are done except for the device check.**
-  The project analyses clean and passes **165 tests** in about nine seconds on
-  Flutter 3.47.3 / Dart 3.13.3. It has never run on a phone.
-- Backlog position: 13 / 55 done. **Four of the five tabs are live.** Diary,
-  Trip, Money and SOS all render real data off the demo trip; **More** is
-  still a `NotBuiltYet` placeholder (import, history, settings — #11–#15, #35).
-- **An APK exists.** GitHub Actions builds a release APK on every push to
-  `claude/offline-retro-modern-app-design-r2n4ju`; the workflow runs
-  `flutter analyze` and the full suite first, so any APK that exists passed
-  everything. Download it from the run's `safarsathi-apk` artifact.
-- **The contacts half of the app is whole.** Add an entry, edit it, copy its
-  number, open the dialer, and confirm it — which clears the amber dot and
-  drops the readiness count. That loop is the thing the whole project was
-  designed around.
+- **Issues #1–#9, #11–#15, #50, #53, #54, #55 are done except for the device
+  check.** The project analyses clean and passes **241 tests** in about twelve
+  seconds on Flutter 3.47.3 / Dart 3.13.3.
+- Backlog position: 18 / 55 done. **All five tabs are live.** Diary, Trip,
+  Money, SOS and More all render real data. Nothing in the app is a
+  placeholder any more.
+- Yash has installed the APK and says the app looks OK. The four
+  hardware-only questions below are therefore probably fine, but none has been
+  confirmed in words yet.
+- **Bulk import works end to end**: pick a CSV or XLSX, columns are
+  auto-matched against the headers a real sheet uses, every row is previewed
+  with its specific problem named, and the whole batch rolls back in one
+  action from history.
+- **An APK is built on every push** to `claude/offline-retro-modern-app-design-r2n4ju`
+  by GitHub Actions, which runs `flutter analyze` and the full suite first.
+  Download the run's `safarsathi-apk` artifact.
 - The app opens with no trip and a **"Create demo trip"** button, which seeds
-  three stops, two legs (the second deliberately unsynced, so the milestone
-  cap renders muted), seven contacts, three travellers and five split
-  expenses. Every seeded number is `+91 90000 000xx` and obviously fake.
+  three stops, two legs (the second deliberately unsynced), seven contacts,
+  three travellers and five split expenses. Every number is `+91 90000 000xx`.
+
+## The import flow, in one paragraph
+
+`More → Import from a sheet`. The file picker lives in `ImportFlow` and
+nowhere else; everything under it takes plain values, which is why parsing,
+matching and validation are all testable with no platform channel. Parse →
+choose a sheet if the workbook has several → map columns → preview → commit.
+Nothing touches the database until commit, and then it all lands or none of it
+does.
 
 ## Type
 
@@ -49,7 +59,7 @@ settle, and what to do when each fails.
 flutter test --update-goldens test/golden_test.dart
 ```
 
-Writes `test/goldens/*.png` — ten images now: the diary in both themes, empty
+Writes `test/goldens/*.png` — fourteen images now: the diary in both themes, empty
 and mid-copy; the entry form; an entry unconfirmed and confirmed; the
 emergency screen; the trip screen; the money screen. Rendered from the real
 widget tree with the bundled fonts and the SDK icon font loaded.
@@ -121,6 +131,24 @@ real Tier-1 codes with their government sources.
 | Five tabs switch and keep their state | widget test |
 | SOS is red only while active | widget test |
 | The emergency screen carries no grain or stamps | widget test |
+| CSV and XLSX parse to the same shape | test |
+| Row numbers survive blank-row removal | test |
+| **An Excel float phone number renders as digits** | test |
+| A short row pads; a long one truncates | test |
+| Header aliases match real-world spellings | test |
+| `no` inside `notes` does not steal `phone` | test |
+| No column is claimed by two fields | test |
+| The mixed file flags each problem, imports the rest | test |
+| In-file duplicates are caught | test |
+| A skipped row cannot be selected | test |
+| A blank cell never flags an emergency number | test |
+| Seven rows import as seven unconfirmed contacts | test on a real DB |
+| **Import still cannot produce a confirmed contact** | test, re-proven by removing the guard |
+| Rollback removes exactly that batch | test |
+| Rollback takes confirmed contacts with it | test |
+| History counts what survives, not what landed | test |
+| `Puri` does not match `Pune` | test |
+| An unmatched stop still imports, trip-wide | test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -196,27 +224,28 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**Install the APK and use it.** Thirteen issues are done and not one line has
-executed on hardware. Four things no test can check are stacked up:
+**#16, trip and stop CRUD.** It is the last thing standing between the demo
+trip and Yash's actual Meghalaya trip: right now every screen reads real data
+off a trip nobody can create or edit. Contacts can be typed in one at a time
+or imported in bulk, money splits between seeded travellers, the emergency
+screen works — but the trip itself is fixed.
 
-1. Do the three fonts actually load? If the signage is not geometric and the
-   numbers are not a typewriter, the family names in `pubspec.yaml` and
-   `app_tokens.dart` disagree and everything since #1 sits on a silent
-   fallback.
+After that the useful order is #29 (the packing checklist, which is the
+`BEFORE YOU LEAVE SIGNAL` blocking section and the place the trust system
+finally pays off) then #35 (call history and settings).
+
+Still owed on hardware, and none of it confirmed in words yet:
+
+1. Do the three fonts load, or is everything sitting on a silent fallback?
 2. Are the haptics felt, especially the heavy one on the emergency screen?
 3. Does `tel:` with an empty path open the Android dialer, or error? The whole
    copy-first workflow rests on this. If it errors, fall back to `ACTION_DIAL`
    over a platform channel and log a decision.
 4. Is the night palette pleasant at 2am, as opposed to merely compliant?
 
-Tap **Create demo trip** on first launch or every screen is empty.
-
-**Then the only stub left is More** — bulk import (#11–#15), call history
-(#35), settings. If October is close, #11–#15 is the highest-value block:
-Yash's real contacts live in a sheet, and typing them in one at a time is not
-a plan.
-
-After that, #16 (trip editing) is what turns the demo trip into his trip.
+One more that only a real file can settle: **import a sheet Yash actually
+has.** Every parser bug this project will hit is in a file that already
+exists on his phone, not in a file a test invented.
 
 ## Note on the environment
 

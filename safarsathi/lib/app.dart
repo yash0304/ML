@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 import 'core/database/app_database.dart';
 import 'core/theme/app_tokens.dart';
@@ -18,6 +19,10 @@ import 'features/contacts/presentation/diary_screen.dart';
 import 'features/contacts/presentation/entry_form_screen.dart';
 import 'features/contacts/presentation/entry_screen.dart';
 import 'features/dev/dev_seed.dart';
+import 'features/import/data/import_commit.dart';
+import 'features/import/presentation/import_flow.dart';
+import 'features/import/presentation/import_history_screen.dart';
+import 'features/import/presentation/more_screen.dart';
 
 class SafarSathiApp extends StatelessWidget {
   /// Passed down rather than reached for globally. There is no repository
@@ -127,6 +132,27 @@ class _HomeState extends State<_Home> {
     );
   }
 
+  /// Puts a header row on the clipboard rather than writing a file.
+  ///
+  /// A release build cannot write to shared storage without a permission this
+  /// app deliberately does not ask for, and pasting a line into a new sheet
+  /// solves the same problem with nothing to grant.
+  Future<void> _copyTemplate(BuildContext context) async {
+    final c = AppTokens.of(context);
+    await Clipboard.setData(const ClipboardData(text: importTemplateHeader));
+    if (!context.mounted) return;
+    Haptics.light();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: c.ink,
+        content: Text(
+          'Header row copied. Paste it into row 1 of a new sheet.',
+          style: AppTokens.captionStyle.copyWith(color: c.paper),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = AppTokens.of(context);
@@ -196,15 +222,22 @@ class _HomeState extends State<_Home> {
                 onCopy: actions.copyNumber,
               ),
             ),
-            const ShellDestination(
+            ShellDestination(
               label: 'More',
               icon: Icons.more_horiz,
-              screen: NotBuiltYet(
-                title: 'More',
-                what:
-                    'Sheet import, import history, cache management and '
-                    'settings.',
-                issue: 'Issues 11 to 15, 35',
+              screen: MoreScreen(
+                contactCount: dao.watchContactCount(trip.tripId),
+                onImport: () =>
+                    ImportFlow(db: db, tripId: trip.tripId).start(context),
+                onHistory: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ImportHistoryScreen(
+                      batches: watchImportBatches(db, trip.tripId),
+                      onRollback: dao.rollbackImport,
+                    ),
+                  ),
+                ),
+                onTemplate: () => _copyTemplate(context),
               ),
             ),
           ],

@@ -221,6 +221,14 @@ class ContactsDao extends DatabaseAccessor<AppDatabase>
     return q.map((row) => row.read(countExp) ?? 0).watchSingle();
   }
 
+  /// How many contacts this trip holds. Shown on the More tab.
+  Stream<int> watchContactCount(int tripId) {
+    final q = selectOnly(contacts)
+      ..addColumns([contacts.id.count()])
+      ..where(contacts.tripId.equals(tripId));
+    return q.map((r) => r.read(contacts.id.count()) ?? 0).watchSingle();
+  }
+
   Future<Contact?> findByE164(String e164, {int? tripId}) {
     final q = select(contacts)..where((c) => c.phoneE164.equals(e164));
     if (tripId != null) q.where((c) => c.tripId.equals(tripId));

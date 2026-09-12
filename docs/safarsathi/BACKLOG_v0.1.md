@@ -191,19 +191,19 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   Repeatable inline rows for adding 5–10 contacts without reopening a form.
   *Depends on #8.*
 
-- [ ] **#11 Sheet parser** — M
+- [x] **#11 Sheet parser** — M — *parses bytes, not paths; Excel float numbers rescued*
   `file_picker` → CSV via `csv`, XLSX via `excel`. Multi-sheet XLSX shows a
   sheet selector. Return a normalised row list with original row indices
   preserved for error reporting.
   Verify: parse the template CSV and a hand-made XLSX, both yield 7 rows.
   *Depends on #2.*
 
-- [ ] **#12 Column mapping screen** — M
+- [x] **#12 Column mapping screen** — M — *aliases match real headers; no column claimed twice*
   Auto-match headers against expected columns, let the user remap
   mismatches, remember the mapping for the session.
   *Depends on #11.*
 
-- [ ] **#13 Validation + preview** — M
+- [x] **#13 Validation + preview** — M — *three states, stripe as well as colour, in-file duplicates too*
   E.164 normalisation, duplicate detection against existing contacts,
   missing-name and invalid-number flagging. Preview list with green / amber
   / red row states and per-row deselect.
@@ -211,7 +211,7 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   each flags correctly and the rest still import.
   *Depends on #12.*
 
-- [ ] **#14 Import commit + rollback** — M
+- [x] **#14 Import commit + rollback** — M — *guard proven non-vacuous by removing it*
   Single transaction: create `ImportBatch`, insert contacts with
   `importBatchId`, all rows as `userEntered` / `callConfirmed = false`.
   Import history screen with wholesale rollback.
@@ -220,7 +220,7 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   Verify: import 7 rows, all show amber dots; roll back, all disappear.
   *Depends on #13.*
 
-- [ ] **#15 Stop-name fuzzy matching** — S
+- [x] **#15 Stop-name fuzzy matching** — S — *tolerance scales with length; Puri does not match Pune*
   Match the `stop_name` column against the trip's Stops; unmatched rows
   still import as trip-level contacts.
   *Depends on #14.*

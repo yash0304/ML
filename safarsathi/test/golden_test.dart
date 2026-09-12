@@ -26,6 +26,16 @@ import 'package:safarsathi/features/money/data/money_summary.dart';
 import 'package:safarsathi/features/money/data/settlement.dart';
 import 'package:safarsathi/features/money/presentation/money_screen.dart';
 import 'package:safarsathi/features/trips/presentation/trip_screen.dart';
+import 'package:safarsathi/features/import/data/column_mapping.dart';
+import 'package:safarsathi/features/import/data/import_commit.dart';
+import 'package:safarsathi/features/import/data/import_validation.dart';
+import 'package:safarsathi/features/import/data/sheet_parser.dart';
+import 'package:safarsathi/features/import/data/stop_matcher.dart';
+import 'package:safarsathi/features/import/presentation/column_mapping_screen.dart';
+import 'package:safarsathi/features/import/presentation/import_history_screen.dart';
+import 'package:safarsathi/features/import/presentation/import_preview_screen.dart';
+import 'package:safarsathi/features/import/presentation/more_screen.dart';
+import 'dart:convert';
 
 Future<void> loadRealFonts() async {
   const families = {
@@ -539,6 +549,109 @@ void main() {
             ],
           ),
         ),
+      ),
+    );
+  });
+
+  // ---------------------------------------------------------------------
+  // Import (#11–#15)
+  // ---------------------------------------------------------------------
+
+  // A sheet with everything wrong with it that a real sheet has: a homestay
+  // already in the diary, a number Excel mangled into a float, a stop that is
+  // not on the trip, a row with no name, and one with no number at all.
+  const messySheet = 'Guest Name,Mobile No.,Type,Place,Remarks\n'
+      'Rina Kharkongor,+91 90000 00001,Homestay,Shillong,Blue gate\n'
+      'Biren Lyngdoh,9000000002,Driver,Shillong,Innova\n'
+      'Dawki Boat,+91 90000 00003,Transport,Dawki,\n'
+      'Sohra Chemist,call the shop,Chemist,Cherrapunji,Ask at the market\n'
+      ',+91 90000 00005,Guide,Shillong,\n'
+      'Mawlynnong Stay,,Homestay,Mawlynnong,\n'
+      'Rina Kharkongor,+91 90000 00001,Homestay,Dawki,Same person\n';
+
+  SheetTable messyTable() => SheetParser.parse(
+    'meghalaya-contacts.csv',
+    Uint8List.fromList(utf8.encode(messySheet)),
+  ).sheets.single;
+
+  testWidgets('import — column mapping', (tester) async {
+    final table = messyTable();
+    await shootScreen(
+      tester,
+      'import_mapping',
+      ColumnMappingScreen(
+        table: table,
+        initial: autoMatchColumns(table.headers),
+        onContinue: (_) {},
+      ),
+    );
+  });
+
+  testWidgets('import — preview', (tester) async {
+    final table = messyTable();
+    final preview = validateRows(
+      table,
+      autoMatchColumns(table.headers),
+      stops: const [
+        StopCandidate(1, 'Shillong'),
+        StopCandidate(2, 'Dawki'),
+        StopCandidate(3, 'Cherrapunji'),
+      ],
+      existing: const ExistingContacts(
+        e164: {'+919000000001'},
+        squashedNames: {'rinakharkongor'},
+      ),
+    );
+
+    await shootScreen(
+      tester,
+      'import_preview',
+      ImportPreviewScreen(
+        preview: preview,
+        fileName: 'meghalaya-contacts.csv',
+        onCommit: (_) async => 0,
+      ),
+    );
+  });
+
+  testWidgets('import — history', (tester) async {
+    await shootScreen(
+      tester,
+      'import_history',
+      ImportHistoryScreen(
+        onRollback: (_) async {},
+        batches: Stream.value([
+          ImportBatchSummary(
+            id: 1,
+            fileName: 'meghalaya-contacts.csv',
+            rowsImported: 5,
+            rowsSkipped: 2,
+            importedAt: DateTime(2026, 9, 28),
+            stillPresent: 5,
+          ),
+          ImportBatchSummary(
+            id: 2,
+            fileName: 'trip-planning.xlsx',
+            sheetName: 'Drivers',
+            rowsImported: 9,
+            rowsSkipped: 0,
+            importedAt: DateTime(2026, 9, 21),
+            stillPresent: 7,
+          ),
+        ]),
+      ),
+    );
+  });
+
+  testWidgets('more', (tester) async {
+    await shootScreen(
+      tester,
+      'more',
+      MoreScreen(
+        contactCount: Stream.value(23),
+        onImport: () {},
+        onHistory: () {},
+        onTemplate: () {},
       ),
     );
   });

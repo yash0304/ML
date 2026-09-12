@@ -5,6 +5,36 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-12 — [IMPORT] The sheet parser takes BYTES, not a path. (No `file_picker` import, no `dart:io`, no platform channel, so the whole of #11 is testable in a plain Dart test with a string literal. It also survives the file picker being replaced, and it is the only thing that works on Android anyway: a picked file usually lives behind a `content://` URI with no readable filesystem path.)
+
+2026-09-12 — [IMPORT] Every row carries the 1-based line number it occupied in the original file, header included, and blank rows do not renumber what follows. (Every warning downstream says "row 14", and row 14 has to mean what the user sees in Excel. Dropping blank rows and reindexing turns each message into a scavenger hunt through a sixty-line sheet.)
+
+2026-09-12 — [IMPORT] A cell that arrives as a whole-number double renders as digits, not scientific notation. (Excel stores a phone number typed without a leading `+` as a float, so `9876543210` comes back as `9.87654321E9`, normalises to nothing, and looks like a corrupt file. This is the single most likely way a real sheet of Indian mobile numbers breaks, and it is invisible until someone imports one.)
+
+2026-09-12 — [IMPORT] Column auto-matching resolves exact alias hits across all fields BEFORE any containment guessing. (Otherwise `no` matches inside `notes` and steals the column `phone` wanted. Pinned by a test with headers `Name, Notes, Number`.)
+
+2026-09-12 — [IMPORT] A column is never claimed by two fields; the first match in enum order wins, and reassigning a column takes it away from whoever held it. (A sheet with both `Phone` and `WhatsApp Number` otherwise maps one column twice and the user gets a duplicate they never asked for.)
+
+2026-09-12 — [IMPORT] A row that fails E.164 normalisation still imports, carrying the raw text. (The diary already shows an amber dot on it, so nothing is claimed that is not true, and refusing it would lose the only record the user has of that number. Same reasoning as the entry form at #8: a bad number warns, it never blocks.)
+
+2026-09-12 — [IMPORT] Warning rows arrive SELECTED; only rows with nothing to save are deselected, and those cannot be turned on. (A warning is information, not a veto. Making the user re-tick fifty duplicate warnings would train them to stop reading warnings, which is the opposite of the point.)
+
+2026-09-12 — [IMPORT] Duplicates are detected against the diary AND against earlier rows of the same file. (A sheet listing the same homestay under two stops is the common case, not an edge case.)
+
+2026-09-12 — [IMPORT] A blank cell never marks a contact as an emergency number. Only an explicit yes does — `y`, `yes`, `true`, `1`, `haan`, `x`, `sos`. (An emergency flag set by accident puts a wrong number on the one screen that has to be right. Anything unrecognised reads as no.)
+
+2026-09-12 — [IMPORT] Preview severity reads as a 4px stripe as well as a colour, and RED IS NOT USED. (Colour alone fails in bright sun and for a colourblind reader. Red belongs to the emergency tab; a duplicate row is not an emergency, and spending the colour here devalues it where it counts.)
+
+2026-09-12 — [IMPORT] Rollback asks first and the question names how many contacts will go, including any since confirmed. (An undo that silently removes nine numbers is indistinguishable from a bug. The history screen also tracks how many of a batch survive, so it never offers to remove rows already deleted one by one.)
+
+2026-09-12 — [IMPORT] The template is a header row copied to the clipboard, not a downloaded file. (A release build cannot write to shared storage without a permission this app deliberately does not ask for. Pasting a line into row 1 of a new sheet solves the same problem with nothing to grant, and auto-matching means most people never need it.)
+
+2026-09-12 — [IMPORT] An unmatched stop name is not an error: the row imports as a trip-level contact and the preview says which stop it landed on, or that it landed on none. (Refusing a good phone number because a place was spelled differently would be the feature working against its own purpose. The number is what you need at 9pm outside a locked homestay; the stop association is a convenience.)
+
+2026-09-12 — [IMPORT] Fuzzy stop-matching tolerance scales with name length: nothing under five characters, then roughly a fifth of the name, capped at three edits. (A fixed threshold is wrong at both ends. Two edits makes `Puri` match `Pune`, 1,500 km apart; one edit makes `Cherrapunji` miss `Cherrapunjee`. Levenshtein is written out in fifteen lines rather than pulled from a package, because it runs against a handful of names and the app should carry no dependency it does not need.)
+
+2026-09-12 — [IMPORT] The import trust guard was re-proven by removing it. (Deleting the tier override in `insertBatch` makes the test report a confirmed contact arriving through import, so the test is doing work rather than passing vacuously. Worth repeating whenever that method is touched: a guard nobody has watched fail is a guard nobody knows is there.)
+
 2026-09-12 — [MONEY] `numberStyle` and `badgeStyle` carry `fontFamilyFallback: [Archivo]`. (Courier Prime is a 1950s typewriter design and has no rupee glyph — ₹ was only adopted in 2010 — so every amount on the money screen rendered as a tofu box. The fallback supplies the sign while the digits still come from Courier. Found by rendering the golden; no widget test can see a missing glyph, because the text is present in the tree either way.)
 
 2026-09-12 — [MONEY] A negative balance is never red. Negative renders muted, positive in signal green. (Red in this app means emergency and nothing else. Owing your brother-in-law ₹400 is not an emergency, and spending the emergency colour on a settled debt devalues it on the one screen where it has to carry weight.)
