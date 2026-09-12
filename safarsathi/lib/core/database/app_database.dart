@@ -9,7 +9,12 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import '../../features/contacts/data/contacts_dao.dart';
 import 'tables.dart';
+
+// Re-exported so a DAO can declare @DriftAccessor(tables: [...]) with a
+// single import of this file.
+export 'tables.dart';
 
 part 'app_database.g.dart';
 
@@ -32,6 +37,7 @@ part 'app_database.g.dart';
     TimelineEntries,
     TrustedContacts,
   ],
+  daos: [ContactsDao],
 )
 class AppDatabase extends _$AppDatabase {
   /// Pass an executor in tests; production opens the on-device file.

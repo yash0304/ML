@@ -9329,6 +9329,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TrustedContactsTable trustedContacts = $TrustedContactsTable(
     this,
   );
+  late final ContactsDao contactsDao = ContactsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();

@@ -5,6 +5,14 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-12 — [CONTACTS] `insertBatch` forces every imported row to `userEntered` / `callConfirmed = false` / `confirmedAt = null`, overriding whatever the caller passes. (The drafted DAO passed the caller's companion straight through, so a screen that built a confirmed row would have imported it confirmed — hollowing out the invariant the whole trust system rests on. Enforcing it at the DAO makes it structural: the DAO is the single write surface, so a future caller that forgets cannot get it wrong. A test proves the failure exists without the guard.)
+
+2026-09-12 — [CONTACTS] The diary feed is ordered pinned, then confirmed, then alphabetically, and deliberately NOT by recency. (The drafted DAO's comment claimed recency but its code never did it. Keeping it alphabetical for two reasons: a diary's page order has to be stable or the margin numbers shift under you; and `lastCalledAt` is null for anything never called, which SQLite sorts as smallest, so a DESC recency term would sink every never-called number to the bottom of its group — exactly the category the readiness system exists to surface. Recency belongs in the call log, not the page order.)
+
+2026-09-12 — [CONTACTS] `lastCalledAt` means "last outbound action of any kind", including `copy`. (Since the dial happens in the Android dialer after a paste, a copy is the closest thing the app observes to a call. The entry screen should label the field that way rather than "Last called".)
+
+2026-09-12 — [ARCH] `app_database.dart` re-exports `tables.dart`. (So a DAO can declare `@DriftAccessor(tables: [...])` with a single import, which is what let the drafted DAO drop in with no changes to its body beyond the invariant fix.)
+
 2026-09-11 — [CONTACTS] Helpline seeding upserts on the natural key (country + number + service) rather than insert-or-ignore. (Both are idempotent, but insert-or-ignore would strand anyone who already installed the app on an old label or sourceNote if a later version corrects one — and these are bundled reference data, not user rows. The seeder never touches `id`, so anything referencing a helpline survives a re-seed. Pinned by a test that corrupts a row and re-seeds.)
 
 2026-09-11 — [CONTACTS] The four flagged numbers stay in the seed file marked `needsVerification` and are skipped by the seeder, rather than being deleted from it. (So a future session can see they were considered and rejected rather than overlooked. #36 verifies them against a .gov.in source and flips the flag; nothing else should. A test asserts all four are absent from the database and present in the file.)

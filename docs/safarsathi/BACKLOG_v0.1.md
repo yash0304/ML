@@ -51,7 +51,7 @@ the code is what makes an issue resumable mid-way by a fresh chat.
 
 ## Milestone 2 — Contacts and dialer (the first usable thing)
 
-- [ ] **#5 ContactsDao** — M
+- [x] **#5 ContactsDao** — M — *19 tests; found and closed an import hole in the invariant*
   Drop in the drafted DAO. Write unit tests for `watchContacts` ordering
   (pinned → confirmed → alphabetical), filter composition, and
   `watchUnconfirmedCount`.

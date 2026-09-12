@@ -1,15 +1,15 @@
-# HANDOFF — SafarSathi — 2026-09-11 (after issue #4)
+# HANDOFF — SafarSathi — 2026-09-12 (after issue #5)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1, #2, #3 and #4 are done except for the device check.** The
-  project analyses clean and passes **29 tests** on Flutter 3.47.3 /
-  Dart 3.13.3. It has never run on a phone.
-- Backlog position: 4 / 52 done. Next is **#5 ContactsDao**, then **#6 the
-  diary screen**.
+- **Issues #1 to #5 are done except for the device check.** The project
+  analyses clean and passes **48 tests** on Flutter 3.47.3 / Dart 3.13.3.
+  It has never run on a phone.
+- Backlog position: 5 / 52 done. Next is **#6, the diary screen** — the
+  first thing worth looking at.
 - The database has 16 tables and 27 foreign keys, all asserted by tests that
   query `sqlite_master` rather than trusting generated code.
 - Design is complete and prototyped: eleven screens, both themes, full
@@ -43,6 +43,11 @@ real Tier-1 codes with their government sources.
 | 1930, 1078, 1033, 104 never reach the DB | test |
 | Every seeded number carries a source | test |
 | The state helpline list ships empty | test |
+| Diary ordering: pinned, confirmed, alphabetical | test |
+| Filters compose; stop scope keeps trip-wide | test |
+| **Import cannot produce a confirmed contact** | test |
+| A failed batch leaves nothing behind | test |
+| A copy is logged like any other action | test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -53,6 +58,18 @@ real Tier-1 codes with their government sources.
 - Whether the haptics fire.
 - Whether the night palette is pleasant at 2am, as opposed to merely passing.
 - Whether the grain reads as texture or as dirt.
+
+## What issue #5 found
+
+**The drafted `insertBatch` could import a confirmed contact.** It passed the
+caller's companion straight through, so a screen building a verified row would
+have landed it verified — and the readiness check, the amber dot and the
+blocking checklist items all read that flag. Now forced in the DAO, which is
+the single write surface. A test proves the hole exists without the guard.
+
+Also: the drafted ordering comment claimed recency the code never did, and
+should not — `lastCalledAt` is null for never-called contacts, so ordering by
+it would sink exactly the numbers the readiness system wants surfaced.
 
 ## What issue #2 found
 
@@ -87,14 +104,18 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**Write `docs/ISSUE_5_ContactsDao.md`, then do backlog #5.** Drop in
-`docs/safarsathi/code/contacts_dao.dart` unchanged — the schema at #2 was
-built to its column names, so it should compile as-is after fixing the import
-path and running `build_runner` for the DAO part file. Write unit tests for
-`watchContacts` ordering (pinned, then confirmed, then alphabetical), filter
-composition, and `watchUnconfirmedCount`.
+**Write `docs/ISSUE_6_Diary.md`, then do backlog #6 — the diary screen.**
+Build it from SCREENS.md §1 and the prototype: ruled entries, numbered
+margin, readiness banner, search, category thumb index. `StreamBuilder` over
+`ContactsDao.watchContacts`, no state management library — that arrives at
+#25, not before.
 
-Then #6, the diary screen — the first thing worth looking at.
+The drafted `code/dialer_screen.dart` is the OLD design: it dials on tap and
+has no diary treatment. `DIALER_RETRO_PATCH.md` is also stale, written before
+copy-first. Treat both as reference, not as something to drop in. The
+prototype at the artifact link above is the current design.
+
+Seed a few contacts by hand to see it render. #7 wires the real actions.
 
 Before any of it, run `flutter run` on the phone and settle the unverified
 items above. If the fonts are wrong, fix that first — everything after is
