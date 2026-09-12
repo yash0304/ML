@@ -122,6 +122,13 @@ the actual use case.
 "Charging" to "File transfer" on the phone. On Windows you may also need the
 OEM USB driver.
 
+**Gradle fails on an AAR metadata check.** A plugin is compiling against an
+older Android API than another plugin demands. Upgrade the named plugin; this
+happened with `file_picker` 8, which compiled against 34 while
+`flutter_plugin_android_lifecycle` required 36. Note that `flutter analyze`
+and the test suite both pass regardless, because neither touches Gradle —
+only a real build catches it.
+
 **Actions do nothing.** Check `android/app/src/main/AndroidManifest.xml` still
 has its `<queries>` block. On Android 11 and later an app cannot see which
 other apps handle `tel:`, `sms:` or `https:` unless it declares them there,

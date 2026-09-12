@@ -5,6 +5,8 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-12 — [BUILD] `file_picker` upgraded from ^8.3.7 to ^12.3.0. (The first CI build failed: file_picker 8 compiles against Android API 34, while `flutter_plugin_android_lifecycle` now requires everything depending on it to compile against 36 or later. Nothing in the app uses file_picker yet — it arrives at #11 for sheet import — so the jump carries no API risk today, and leaving it would have blocked every Android build. Found only by attempting a real build; `flutter analyze` and the whole test suite pass either way, because none of it touches Gradle.)
+
 2026-09-12 — [BUILD] APKs are built by a GitHub Actions workflow, not locally. (The development container cannot reach `dl.google.com`, so it has no Android SDK and cannot produce one. GitHub's runners already have it, and the workflow runs `flutter analyze` and the full suite before building, so any APK that exists is one that passed everything.)
 
 2026-09-12 — [DEV] The demo trip can be created on demand in any build, not only seeded automatically in debug. (A release APK has no trip and no way to make one until #16, so it would open to a blank screen. The app now offers a "Create demo trip" button instead, which is honest about what it is and keeps an installable build useful.)
