@@ -66,7 +66,7 @@ the code is what makes an issue resumable mid-way by a fresh chat.
   and not on `userVerified` ones.
   *Depends on #3, #5.*
 
-- [ ] **#7 Copy, dialer, call, chat** — M — *was S; copy-first changed this*
+- [x] **#7 Copy, dialer, call, chat** — M — *17 tests; golden harness added, found 2 layout bugs*
   **Tap copies the E.164 number to the clipboard.** Toast above the nav bar
   with the number and an `OPEN DIALER` button that launches the platform
   dialer with an empty field. `url_launcher` for `tel:`, `sms:`, `wa.me` as

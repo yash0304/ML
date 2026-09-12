@@ -95,6 +95,8 @@ void main() {
     List<Contact> rows, {
     String? currentStopName,
     int? currentStopId,
+    Future<String> Function(Contact)? onCopy,
+    Future<void> Function()? onOpenDialer,
   }) async {
     final fake = FakeDiary(rows);
     await tester.pumpWidget(
@@ -107,7 +109,8 @@ void main() {
           tripName: 'Meghalaya',
           currentStopId: currentStopId,
           currentStopName: currentStopName,
-          onCopy: (_) {},
+          onCopy: onCopy ?? (c) async => c.phoneRaw,
+          onOpenDialer: onOpenDialer,
         ),
       ),
     );
@@ -270,7 +273,7 @@ void main() {
           unconfirmedCount: Stream<int>.value(fake.unconfirmed),
           tripId: 1,
           tripName: 'Meghalaya',
-          onCopy: (_) {},
+          onCopy: (c) async => c.phoneRaw,
         ),
       ),
     );
@@ -278,5 +281,61 @@ void main() {
     await tester.pump();
     expect(tester.takeException(), isNull);
     expect(find.text('Diary'), findsOneWidget);
+  });
+
+  group('the copy toast', () {
+    testWidgets('shows the number that was copied', (tester) async {
+      await pumpDiary(tester, [entry('Homestay', '+91 90000 00001')]);
+
+      await tester.tap(find.text('Homestay'));
+      await settle(tester);
+
+      expect(find.text('Copied'), findsOneWidget);
+      // Once in the entry line, once in the toast.
+      expect(find.text('+91 90000 00001'), findsNWidgets(2));
+    });
+
+    testWidgets('offers the dialer, and dismisses when it is taken', (
+      tester,
+    ) async {
+      var opened = 0;
+      await pumpDiary(tester, [
+        entry('Homestay', '+91 90000 00001'),
+      ], onOpenDialer: () async => opened++);
+
+      await tester.tap(find.text('Homestay'));
+      await settle(tester);
+      expect(find.text('Open dialer'), findsOneWidget);
+
+      await tester.tap(find.text('Open dialer'));
+      await settle(tester);
+
+      expect(opened, 1);
+      expect(find.text('Copied'), findsNothing);
+    });
+
+    testWidgets('goes away on its own', (tester) async {
+      await pumpDiary(tester, [entry('Homestay', '+91 90000 00001')]);
+      await tester.tap(find.text('Homestay'));
+      await settle(tester);
+      expect(find.text('Copied'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 4));
+      expect(find.text('Copied'), findsNothing);
+    });
+
+    testWidgets('says what went wrong rather than nothing at all', (
+      tester,
+    ) async {
+      await pumpDiary(tester, [
+        entry('Homestay', '+91 90000 00001'),
+      ], onCopy: (_) async => throw Exception('No clipboard on this phone.'));
+
+      await tester.tap(find.text('Homestay'));
+      await settle(tester);
+
+      expect(find.text('Could not open that'), findsOneWidget);
+      expect(find.textContaining('No clipboard'), findsOneWidget);
+    });
   });
 }

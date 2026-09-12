@@ -142,6 +142,8 @@ class DiaryEntry extends StatelessWidget {
 }
 
 /// The ruled notebook margin: a number, and a doubled hairline down its edge.
+/// The ruled notebook margin: a line number, and a doubled hairline down its
+/// edge.
 class _Margin extends StatelessWidget {
   final int lineNumber;
   const _Margin({required this.lineNumber});
@@ -149,27 +151,30 @@ class _Margin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppTokens.of(context);
-    return Container(
-      width: 30,
-      padding: const EdgeInsets.only(top: AppTokens.s8),
-      alignment: Alignment.topCenter,
-      decoration: BoxDecoration(
-        border: Border(
-          right: BorderSide(color: c.rule, width: AppTokens.hairline),
-        ),
-        // The second rule of the pair, 2px inboard.
-        boxShadow: [
-          BoxShadow(
-            color: c.rule,
-            offset: const Offset(2, 0),
-            spreadRadius: -1,
+    // Two hairlines a couple of pixels apart, drawn as siblings. An earlier
+    // version used a border plus a boxShadow for the second rule, which
+    // spreads behind the whole box and paints a solid column instead.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          width: 26,
+          child: Padding(
+            padding: const EdgeInsets.only(top: AppTokens.s8),
+            child: Text(
+              lineNumber.toString().padLeft(2, '0'),
+              textAlign: TextAlign.center,
+              style: AppTokens.stencilStyle.copyWith(
+                fontSize: 9.5,
+                color: c.muted,
+              ),
+            ),
           ),
-        ],
-      ),
-      child: Text(
-        lineNumber.toString().padLeft(2, '0'),
-        style: AppTokens.stencilStyle.copyWith(fontSize: 9.5, color: c.muted),
-      ),
+        ),
+        Container(width: AppTokens.hairline, color: c.rule),
+        const SizedBox(width: 2),
+        Container(width: AppTokens.hairline, color: c.rule),
+      ],
     );
   }
 }
@@ -436,6 +441,83 @@ class DiaryEmptyState extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Confirms a copy and offers the dialer, so the whole workflow is two taps
+/// and a paste.
+///
+/// Not a SnackBar: the number has to be readable in tabular figures and the
+/// action has to be a stencil mark, and bending Material's snackbar to that
+/// costs more than drawing it.
+class CopyToast extends StatelessWidget {
+  /// The number that was copied, or null when [message] is an error.
+  final String? number;
+  final String? message;
+  final VoidCallback? onOpenDialer;
+
+  const CopyToast({super.key, this.number, this.message, this.onOpenDialer});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: c.ink,
+        borderRadius: BorderRadius.circular(AppTokens.radiusSoft),
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTokens.s12,
+        vertical: AppTokens.s8,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  number != null ? 'Copied' : 'Could not open that',
+                  style: AppTokens.captionStyle.copyWith(color: c.paper),
+                ),
+                Text(
+                  number ?? message ?? '',
+                  style: AppTokens.numberStyle.copyWith(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: c.paper,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (number != null && onOpenDialer != null) ...[
+            const SizedBox(width: AppTokens.s8),
+            PressScale(
+              onTap: onOpenDialer,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTokens.s8,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(color: c.paper),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Text(
+                  'Open dialer',
+                  style: AppTokens.stencilStyle.copyWith(
+                    fontSize: 9.5,
+                    color: c.paper,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

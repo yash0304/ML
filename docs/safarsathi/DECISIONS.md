@@ -5,6 +5,20 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-12 — [TEST] Golden images are generated from the real widget tree with the bundled fonts loaded, via `test/golden_test.dart`. (It is the only way to see the app without a phone, and it immediately found two bugs no other test could: the doubled margin rule was painting as a solid grey column, and the New entry button was sitting on top of the thumb index. Material's icon font ships with the SDK rather than the app, so the harness loads it too or every icon renders as a tofu box and the image lies about what the user sees.)
+
+2026-09-12 — [UI] The doubled margin rule is drawn as two sibling hairlines, not as a border plus a `boxShadow`. (A shadow spreads behind the whole box and fills it, which is what the first golden showed. Cosmetic, but it made the diary look like a table rather than a notebook.)
+
+2026-09-12 — [ARCH] `ContactActions` takes an injectable launcher and clipboard. (Platform intents cannot run in a test, and the alternative is leaving the most failure-prone code in the app untested. Injecting them means the digits, the schemes, the log rows and every failure path are covered without a device.)
+
+2026-09-12 — [CONTACTS] A launch that fails throws `ActionFailure` with a sentence, and the screen shows it in the toast. Some devices throw instead of returning false, so both are caught. (A silent no-op on a phone that cannot place a call is the worst possible outcome for this app. A failed action is also never logged as if it happened.)
+
+2026-09-12 — [CONTACTS] WhatsApp links strip every non-digit before building the `wa.me` URL. (A leading + or any spacing breaks the link silently.)
+
+2026-09-12 — [UI] The copy toast sits above the New entry button rather than beside it. (The first golden had the button covering the Open dialer action, which is the entire point of the toast.)
+
+2026-09-12 — [UI] The toast is hand-drawn, not a `SnackBar`. (The number has to read in tabular figures and the action has to be a stencil mark; bending Material's snackbar theming to that costs more than drawing it.)
+
 2026-09-12 — [ARCH] Screens take streams, not DAOs. `DiaryScreen` receives a `Stream<List<Contact>> Function(ContactFilter)` and a `Stream<int>`; `ReadinessBanner` receives a `Stream<int>`. The composition root wires the DAO in. (Forced by a real constraint and better structure anyway. A widget test CANNOT close a Drift database — `close()` awaits work the fake clock never advances, so the test hangs until the runner is killed — and cancelling a query stream leaves zero-duration cleanup timers the framework then reports as pending, after user teardowns have already run. Passing streams removes Drift from widget tests entirely. The DAO's real ordering, filtering and search stay covered against real SQLite in `contacts_dao_test.dart`, so nothing is lost: the screen's job is to render what arrives and say what it wants next.)
 
 2026-09-12 — [TEST] Never call `pumpAndSettle` on a screen whose loading state is a `CircularProgressIndicator`. (It animates forever, so the call can never settle and the test hangs for its full ten-minute timeout. Use bounded pumps. A filter change swaps in a new stream that delivers on a microtask, so an interaction needs two pumps, not one.)

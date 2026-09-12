@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'core/database/app_database.dart';
 import 'core/theme/app_tokens.dart';
+import 'features/contacts/data/contact_actions.dart';
 import 'features/contacts/presentation/diary_screen.dart';
 import 'features/dev/dev_seed.dart';
 
@@ -53,6 +54,7 @@ class _HomeState extends State<_Home> {
         }
         final trip = snap.data!;
         final dao = widget.db.contactsDao;
+        final actions = ContactActions(dao: dao, tripId: trip.tripId);
         return DiaryScreen(
           watchContacts: dao.watchContacts,
           unconfirmedCount: dao.watchUnconfirmedCount(trip.tripId),
@@ -60,7 +62,9 @@ class _HomeState extends State<_Home> {
           tripName: trip.name,
           currentStopId: trip.currentStopId,
           currentStopName: trip.currentStopName,
-          // Actions arrive at #7.
+          onCopy: actions.copy,
+          onOpenDialer: actions.openDialer,
+          // The entry screen is #8.
         );
       },
     );

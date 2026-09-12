@@ -9,6 +9,8 @@
 // What a tap DOES is #7. This screen exposes onCopy and onOpen and leaves
 // them to the caller.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/database/app_database.dart';
@@ -33,8 +35,13 @@ class DiaryScreen extends StatefulWidget {
   final int? currentStopId;
   final String? currentStopName;
 
-  /// Wired at #7 — copy to clipboard, toast, log the action.
-  final void Function(Contact)? onCopy;
+  /// Copies the number and returns what landed on the clipboard, which the
+  /// screen then shows in the toast. Throwing an [Object] whose `toString`
+  /// reads as a sentence surfaces as an error toast.
+  final Future<String> Function(Contact)? onCopy;
+
+  /// Opens the platform dialer with no number, for the paste.
+  final Future<void> Function()? onOpenDialer;
 
   /// Wired at #8 — the entry screen.
   final void Function(Contact)? onOpen;
@@ -49,6 +56,7 @@ class DiaryScreen extends StatefulWidget {
     this.currentStopId,
     this.currentStopName,
     this.onCopy,
+    this.onOpenDialer,
     this.onOpen,
     this.onAdd,
   });
@@ -62,10 +70,58 @@ class _DiaryScreenState extends State<DiaryScreen> {
   late ContactFilter _filter = ContactFilter(tripId: widget.tripId);
   bool _stopScoped = false;
 
+  String? _toastNumber;
+  String? _toastMessage;
+  Timer? _toastTimer;
+
   @override
   void dispose() {
+    _toastTimer?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _showToast({String? number, String? message}) {
+    _toastTimer?.cancel();
+    setState(() {
+      _toastNumber = number;
+      _toastMessage = message;
+    });
+    _toastTimer = Timer(const Duration(milliseconds: 3200), () {
+      if (mounted) {
+        setState(() {
+          _toastNumber = null;
+          _toastMessage = null;
+        });
+      }
+    });
+  }
+
+  Future<void> _copy(Contact contact) async {
+    final handler = widget.onCopy;
+    if (handler == null) return;
+    try {
+      _showToast(number: await handler(contact));
+    } on Object catch (e) {
+      _showToast(message: e.toString());
+    }
+  }
+
+  Future<void> _openDialer() async {
+    final handler = widget.onOpenDialer;
+    if (handler == null) return;
+    try {
+      await handler();
+      _toastTimer?.cancel();
+      if (mounted) {
+        setState(() {
+          _toastNumber = null;
+          _toastMessage = null;
+        });
+      }
+    } on Object catch (e) {
+      _showToast(message: e.toString());
+    }
   }
 
   void _setFilter(ContactFilter next) => setState(() => _filter = next);
@@ -85,21 +141,44 @@ class _DiaryScreenState extends State<DiaryScreen> {
 
     return Scaffold(
       backgroundColor: c.paper,
+      // Nudged clear of the thumb index, which owns the right edge.
       floatingActionButton: widget.onAdd == null
           ? null
-          : FloatingActionButton.extended(
-              onPressed: widget.onAdd,
-              icon: const Icon(Icons.add),
-              label: const Text('New entry', style: AppTokens.stencilStyle),
+          : Padding(
+              padding: const EdgeInsets.only(right: 34),
+              child: FloatingActionButton.extended(
+                onPressed: widget.onAdd,
+                icon: const Icon(Icons.add),
+                label: const Text('New entry', style: AppTokens.stencilStyle),
+              ),
             ),
       body: GrainOverlay(
         child: SafeArea(
-          child: Column(
+          child: Stack(
             children: [
-              _buildAppBar(c),
-              _buildSearch(c),
-              ReadinessBanner(unconfirmedCount: widget.unconfirmedCount),
-              Expanded(child: _buildPages(c)),
+              Column(
+                children: [
+                  _buildAppBar(c),
+                  _buildSearch(c),
+                  ReadinessBanner(unconfirmedCount: widget.unconfirmedCount),
+                  Expanded(child: _buildPages(c)),
+                ],
+              ),
+              if (_toastNumber != null || _toastMessage != null)
+                Positioned(
+                  left: AppTokens.s12,
+                  right: 42,
+                  // Above the New entry button, which would otherwise cover
+                  // the Open dialer action — the whole point of the toast.
+                  bottom: 76,
+                  child: CopyToast(
+                    number: _toastNumber,
+                    message: _toastMessage,
+                    onOpenDialer: widget.onOpenDialer == null
+                        ? null
+                        : _openDialer,
+                  ),
+                ),
             ],
           ),
         ),
@@ -245,7 +324,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     lineNumber: i + 1,
                     onCopy: widget.onCopy == null
                         ? null
-                        : () => widget.onCopy!(items[i]),
+                        : () => _copy(items[i]),
                     onOpen: widget.onOpen == null
                         ? null
                         : () => widget.onOpen!(items[i]),

@@ -1,17 +1,27 @@
-# HANDOFF — SafarSathi — 2026-09-12 (after issue #6)
+# HANDOFF — SafarSathi — 2026-09-12 (after issue #7)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1 to #6 are done except for the device check.** The project
-  analyses clean and passes **74 tests** in about three seconds on
+- **Issues #1 to #7 are done except for the device check.** The project
+  analyses clean and passes **95 tests** in about five seconds on
   Flutter 3.47.3 / Dart 3.13.3. It has never run on a phone.
-- Backlog position: 6 / 52 done. Next is **#7, copy / dialer / call / chat** —
-  the actions the diary already has a seam for.
-- **The diary screen exists and renders.** A debug-only demo trip is seeded
-  when the database has no trip, so `flutter run` shows something.
+- Backlog position: 7 / 52 done. Next is **#8, add / edit entry**.
+- **The diary works.** Tap an entry, it copies and the toast offers the
+  dialer. A debug-only demo trip is seeded when the database has no trip.
+
+## Look at the app without a phone
+
+```
+flutter test --update-goldens test/golden_test.dart
+```
+
+Writes `test/goldens/*.png` — the diary in both themes, empty, and mid-copy —
+rendered from the real widget tree with the bundled fonts and the SDK icon
+font loaded. **This is the fastest way to see a change.** It has already
+caught two layout bugs that no widget test would have failed on.
 - The database has 16 tables and 27 foreign keys, all asserted by tests that
   query `sqlite_master` rather than trusting generated code.
 - Design is complete and prototyped: eleven screens, both themes, full
@@ -54,6 +64,11 @@ real Tier-1 codes with their government sources.
 | Diary margin numbers, page footer, empty states | widget test |
 | Search, thumb index, stop-scope toggle | widget test |
 | The screen fits 400×800 in both themes | widget test |
+| Copy prefers E.164, falls back to raw | test |
+| Every action logs; a failed one does not | test |
+| WhatsApp strips non-digits | test |
+| A failed launch says so instead of nothing | test |
+| The toast shows, offers the dialer, expires | widget test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -129,23 +144,21 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**Write `docs/ISSUE_7_Actions.md`, then do backlog #7.** The diary already
-exposes `onCopy` and `onOpen` and passes them nowhere — wire them in
-`app.dart`:
+**Write `docs/ISSUE_8_Entry.md`, then do backlog #8 — add / edit entry.**
+Build it from SCREENS.md §5: a ruled diary page as a form, with name, number,
+category chips, attach-to stop, note and reachable-on. E.164 normalisation on
+save via `phone_numbers_parser`, storing both raw and normalised. A duplicate
+warning that tells you and gets out of the way rather than blocking.
 
-- Tap copies `phoneE164 ?? phoneRaw` to the clipboard (`flutter/services`,
-  no package needed), fires a light haptic, and logs `copy` to CallLogs.
-- A toast above the nav area holds the number and an `OPEN DIALER` button
-  that launches the platform dialer with an empty field.
-- `tel:`, `sms:` and `wa.me` as explicit secondary actions via
-  `url_launcher`, each logged.
-- Handle the no-app-available case gracefully.
+The screen must state plainly what tier it will save at. `DiaryScreen`
+already has an `onOpen` and an `onAdd` seam waiting.
 
-**Verify on a real device that `tel:` with no path opens the Android dialer
-rather than erroring.** If it does error, fall back to `ACTION_DIAL` over a
-platform channel and log a decision about it.
+Then #9, the confirm stamp — the app's one signature animation.
 
-Then #8 (add/edit entry) and #9 (the confirm stamp).
+**Still unverified on hardware:** whether `tel:` with an empty path opens the
+Android dialer or errors. The code treats a failure as "no dialer app" and
+says so; if it does error on a real phone, fall back to `ACTION_DIAL` over a
+platform channel and log a decision.
 
 Before any of it, run `flutter run` on the phone and settle the unverified
 items above. If the fonts are wrong, fix that first — everything after is
