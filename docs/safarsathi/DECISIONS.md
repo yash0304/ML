@@ -5,6 +5,10 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-12 — [BUILD] APKs are built by a GitHub Actions workflow, not locally. (The development container cannot reach `dl.google.com`, so it has no Android SDK and cannot produce one. GitHub's runners already have it, and the workflow runs `flutter analyze` and the full suite before building, so any APK that exists is one that passed everything.)
+
+2026-09-12 — [DEV] The demo trip can be created on demand in any build, not only seeded automatically in debug. (A release APK has no trip and no way to make one until #16, so it would open to a blank screen. The app now offers a "Create demo trip" button instead, which is honest about what it is and keeps an installable build useful.)
+
 2026-09-12 — [ARCH] Package visibility declared in the Android manifest for `tel:`, `sms:` and `https:`. (On Android 11 and later an app cannot see which other apps handle an intent unless it declares them, so `url_launcher` returns false and every action fails silently. Flutter's template ships only a PROCESS_TEXT query, so this was missing — and the first device test would have blamed the empty-path `tel:` theory for a package-visibility problem. Found by reading the manifest before writing the run instructions, not by any test: nothing in a widget test touches the manifest.)
 
 2026-09-12 — [ARCH] The release manifest declares NO permissions at all, INTERNET included. Only the debug manifest has it, for hot reload. (The app makes no network call at runtime, so it should not ask for the ability to. It is also the clearest possible proof of the offline claim: the release build cannot reach the network even if a future line of code tried.)

@@ -1,0 +1,66 @@
+# Builds an installable SafarSathi APK.
+#
+# The build container this project is developed in cannot reach
+# dl.google.com, so it has no Android SDK and cannot produce an APK. GitHub's
+# runners already have one, which makes this the shortest path from a commit
+# to something you can put on a phone.
+#
+# The APK is signed with Android's debug keys — the Flutter template's default
+# — so it installs on any phone that allows unknown sources. It is a test
+# build, not a release.
+
+name: SafarSathi APK
+
+on:
+  push:
+    branches:
+      - claude/offline-retro-modern-app-design-r2n4ju
+    paths:
+      - 'safarsathi/**'
+      - '.github/workflows/safarsathi-apk.yml'
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: safarsathi
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # AGP 9 and Gradle 9 want a recent JDK.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.3'
+          channel: stable
+          cache: true
+
+      - name: Toolchain
+        run: flutter doctor -v
+
+      - run: flutter pub get
+
+      # The same gates the project holds itself to. A build that ships a
+      # broken diary is worse than no build.
+      - run: flutter analyze
+      - run: flutter test
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Size
+        run: ls -lh build/app/outputs/flutter-apk/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: safarsathi-apk
+          path: safarsathi/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30

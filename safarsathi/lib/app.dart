@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'core/database/app_database.dart';
 import 'core/theme/app_tokens.dart';
+import 'core/theme/motion.dart';
 import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:phone_numbers_parser/phone_numbers_parser.dart' show IsoCode;
 
@@ -47,7 +48,13 @@ class _Home extends StatefulWidget {
 }
 
 class _HomeState extends State<_Home> {
-  late final Future<DemoTrip?> _trip = ensureDemoTrip(widget.db);
+  late Future<DemoTrip?> _trip = ensureDemoTrip(widget.db);
+
+  Future<void> _makeDemoTrip() async {
+    final created = createDemoTrip(widget.db);
+    setState(() => _trip = created.then<DemoTrip?>((t) => t));
+    await created;
+  }
 
   /// The read-only entry screen. Long-press in the diary opens it.
   Future<void> _openEntry(
@@ -120,10 +127,14 @@ class _HomeState extends State<_Home> {
     return FutureBuilder<DemoTrip?>(
       future: _trip,
       builder: (context, snap) {
-        if (!snap.hasData) {
+        if (snap.connectionState != ConnectionState.done) {
           return Scaffold(backgroundColor: c.paper, body: const SizedBox());
         }
-        final trip = snap.data!;
+        final trip = snap.data;
+        if (trip == null) {
+          // A release build has no trip and no way to make one until #16.
+          return _NoTrip(onCreate: _makeDemoTrip);
+        }
         final dao = widget.db.contactsDao;
         final actions = ContactActions(dao: dao, tripId: trip.tripId);
         return DiaryScreen(
@@ -139,6 +150,65 @@ class _HomeState extends State<_Home> {
           onOpen: (contact) => _openEntry(context, trip, contact, actions),
         );
       },
+    );
+  }
+}
+
+/// Shown when the database holds no trip at all. Real trip creation is #16;
+/// until then this offers the demo so an installed build has something in it.
+class _NoTrip extends StatelessWidget {
+  final Future<void> Function() onCreate;
+  const _NoTrip({required this.onCreate});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    return Scaffold(
+      backgroundColor: c.paper,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppTokens.s32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'No trip yet',
+                style: AppTokens.titleStyle.copyWith(color: c.ink),
+              ),
+              const SizedBox(height: AppTokens.s8),
+              Text(
+                'Building a trip properly comes later. For now this fills the '
+                'diary with a few placeholder entries so there is something '
+                'to look at. Their numbers are deliberately fake.',
+                textAlign: TextAlign.center,
+                style: AppTokens.captionStyle.copyWith(color: c.muted),
+              ),
+              const SizedBox(height: AppTokens.s24),
+              PressScale(
+                onTap: onCreate,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTokens.s24,
+                    vertical: AppTokens.s12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: c.signal,
+                    border: Border.all(color: c.ink),
+                    borderRadius: BorderRadius.circular(AppTokens.radiusSoft),
+                  ),
+                  child: Text(
+                    'Create demo trip',
+                    style: AppTokens.stencilStyle.copyWith(
+                      fontSize: 11.5,
+                      color: c.paper,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -30,7 +30,11 @@ class DemoTrip {
 }
 
 /// Returns the trip the diary should open on, creating a demo one in debug
-/// builds if the database is empty. Returns null in release with no trips.
+/// builds if the database is empty.
+///
+/// Returns null in a release build with no trips, so the caller can offer
+/// [createDemoTrip] rather than opening a diary with nothing in it. Real trip
+/// creation is #16.
 Future<DemoTrip?> ensureDemoTrip(AppDatabase db) async {
   final existing = await db.select(db.trips).get();
   if (existing.isNotEmpty) {
@@ -49,7 +53,14 @@ Future<DemoTrip?> ensureDemoTrip(AppDatabase db) async {
   }
 
   if (!kDebugMode) return null;
+  return createDemoTrip(db);
+}
 
+/// Creates the demo trip on demand, in any build.
+///
+/// A release build has no way to make a trip until #16, so without this an
+/// installable APK opens to an empty screen and there is nothing to look at.
+Future<DemoTrip> createDemoTrip(AppDatabase db) async {
   final tripId = await db
       .into(db.trips)
       .insert(

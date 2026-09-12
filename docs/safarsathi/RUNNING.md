@@ -132,16 +132,44 @@ the database has no trip at all. Uninstall and reinstall to reseed.
 
 ---
 
-## Building an APK instead
+## Getting an APK without installing anything
 
-If you want to hand the app to someone without a cable:
+**This is the shortest path from a commit to something on your phone.**
+
+`.github/workflows/safarsathi-apk.yml` builds a release APK on every push to
+the working branch. GitHub's runners already have the Android SDK, which the
+container this project is developed in does not — `dl.google.com` is blocked
+by its egress policy, so no APK can be built there.
+
+To get the file:
+
+1. Open the repo's **Actions** tab on GitHub.
+2. Click the newest **SafarSathi APK** run.
+3. Download the **safarsathi-apk** artifact at the bottom. It is a zip with
+   `app-release.apk` inside.
+4. Copy the APK to the phone and open it. Android will ask you to allow
+   installing from that source; that permission is per-app and you can revoke
+   it afterwards.
+
+The workflow runs `flutter analyze` and the full test suite before it builds,
+so a run that produces an APK is one that passed everything.
+
+**It is signed with Android's debug keys**, which is the Flutter template's
+default. That is fine for a test build and not fine for anything you would
+publish.
+
+### On first open
+
+A release build has no trip, because trip creation is #16. The app opens on a
+**Create demo trip** button that fills the diary with six placeholder entries.
+Their numbers are deliberately fake.
+
+### Building one locally instead
+
+If you do have the toolchain:
 
 ```
-flutter build apk --debug
+flutter build apk --release
 ```
 
-The file lands at `build/app/outputs/flutter-apk/app-debug.apk`. Copy it to
-the phone and open it; Android will ask to allow installing from that source.
-
-Debug APKs are large and slow. That is fine for checking the four things
-above. Do not use one as a real build.
+The file lands at `build/app/outputs/flutter-apk/app-release.apk`.
