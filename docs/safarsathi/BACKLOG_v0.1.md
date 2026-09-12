@@ -58,7 +58,7 @@ the code is what makes an issue resumable mid-way by a fresh chat.
   Verify: tests green against an in-memory DB.
   *Depends on #2.*
 
-- [ ] **#6 Diary screen** — M — *was "Dialer screen"; see SCREENS.md §1*
+- [x] **#6 Diary screen** — M — *28 widget tests; screens now take streams, not DAOs*
   The diary: ruled entries, numbered margin, readiness banner, search.
   Wire routes. Seed a few fake contacts by hand to see it render.
   The number renders larger than the meta line — it is the point of the row.

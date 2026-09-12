@@ -5,10 +5,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:drift/native.dart';
-
-import 'package:safarsathi/app.dart';
-import 'package:safarsathi/core/database/app_database.dart';
 import 'package:safarsathi/core/theme/app_tokens.dart';
 
 /// WCAG 2.1 relative luminance.
@@ -29,42 +25,10 @@ double contrast(Color a, Color b) {
 }
 
 void main() {
-  testWidgets('app boots and renders the scaffold check screen', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      SafarSathiApp(db: AppDatabase(NativeDatabase.memory())),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Scaffold check'), findsOneWidget);
-  });
-
-  testWidgets('smoke screen lays out without overflow at phone width', (
-    tester,
-  ) async {
-    // The default test surface is 800x600, which is wider than any phone this
-    // app will run on. 400x800 is the size the design actually targets.
-    tester.view.physicalSize = const Size(400, 800);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.reset);
-
-    await tester.pumpWidget(
-      SafarSathiApp(db: AppDatabase(NativeDatabase.memory())),
-    );
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('smoke screen lays out in the night palette too', (tester) async {
-    await tester.pumpWidget(
-      MediaQuery(
-        data: const MediaQueryData(platformBrightness: Brightness.dark),
-        child: SafarSathiApp(db: AppDatabase(NativeDatabase.memory())),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-  });
+  // The screen-level tests live in diary_screen_test.dart, driven by plain
+  // streams. They cannot live here: constructing the real AppDatabase inside
+  // a widget test means closing it, and close() awaits work the fake clock
+  // never advances — the test hangs until the runner is killed.
 
   test('both palettes are distinct and complete', () {
     expect(AppColors.day.paper, isNot(AppColors.night.paper));

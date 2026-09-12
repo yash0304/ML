@@ -1,15 +1,17 @@
-# HANDOFF — SafarSathi — 2026-09-12 (after issue #5)
+# HANDOFF — SafarSathi — 2026-09-12 (after issue #6)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1 to #5 are done except for the device check.** The project
-  analyses clean and passes **48 tests** on Flutter 3.47.3 / Dart 3.13.3.
-  It has never run on a phone.
-- Backlog position: 5 / 52 done. Next is **#6, the diary screen** — the
-  first thing worth looking at.
+- **Issues #1 to #6 are done except for the device check.** The project
+  analyses clean and passes **74 tests** in about three seconds on
+  Flutter 3.47.3 / Dart 3.13.3. It has never run on a phone.
+- Backlog position: 6 / 52 done. Next is **#7, copy / dialer / call / chat** —
+  the actions the diary already has a seam for.
+- **The diary screen exists and renders.** A debug-only demo trip is seeded
+  when the database has no trip, so `flutter run` shows something.
 - The database has 16 tables and 27 foreign keys, all asserted by tests that
   query `sqlite_master` rather than trusting generated code.
 - Design is complete and prototyped: eleven screens, both themes, full
@@ -48,6 +50,10 @@ real Tier-1 codes with their government sources.
 | **Import cannot produce a confirmed contact** | test |
 | A failed batch leaves nothing behind | test |
 | A copy is logged like any other action | test |
+| The trust dot renders on untrusted tiers only | widget test, both themes |
+| Diary margin numbers, page footer, empty states | widget test |
+| Search, thumb index, stop-scope toggle | widget test |
+| The screen fits 400×800 in both themes | widget test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -58,6 +64,25 @@ real Tier-1 codes with their government sources.
 - Whether the haptics fire.
 - Whether the night palette is pleasant at 2am, as opposed to merely passing.
 - Whether the grain reads as texture or as dirt.
+
+## Testing rules learned at #6 — do not relearn these
+
+1. **A widget test cannot close a Drift database.** `close()` awaits work the
+   fake clock never advances; the test hangs until the runner is killed, with
+   no error and no timeout.
+2. **Cancelling a Drift query stream schedules zero-duration cleanup timers**
+   during disposal, and the pending-timer check runs after user teardowns, so
+   pumping in `addTearDown` cannot clear them.
+3. **`pumpAndSettle` never settles** on a screen whose loading state is a
+   `CircularProgressIndicator`.
+4. A filter change swaps in a new stream that delivers on a microtask, so an
+   interaction needs **two** pumps.
+
+The answer to all of it: **screens take streams, not DAOs.** Widget tests use
+in-memory fakes with no database. Keep it that way.
+
+Also: `pkill -f "flutter test"` matches the shell running the command and
+kills it, which looks exactly like a crash.
 
 ## What issue #5 found
 
@@ -104,18 +129,23 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**Write `docs/ISSUE_6_Diary.md`, then do backlog #6 — the diary screen.**
-Build it from SCREENS.md §1 and the prototype: ruled entries, numbered
-margin, readiness banner, search, category thumb index. `StreamBuilder` over
-`ContactsDao.watchContacts`, no state management library — that arrives at
-#25, not before.
+**Write `docs/ISSUE_7_Actions.md`, then do backlog #7.** The diary already
+exposes `onCopy` and `onOpen` and passes them nowhere — wire them in
+`app.dart`:
 
-The drafted `code/dialer_screen.dart` is the OLD design: it dials on tap and
-has no diary treatment. `DIALER_RETRO_PATCH.md` is also stale, written before
-copy-first. Treat both as reference, not as something to drop in. The
-prototype at the artifact link above is the current design.
+- Tap copies `phoneE164 ?? phoneRaw` to the clipboard (`flutter/services`,
+  no package needed), fires a light haptic, and logs `copy` to CallLogs.
+- A toast above the nav area holds the number and an `OPEN DIALER` button
+  that launches the platform dialer with an empty field.
+- `tel:`, `sms:` and `wa.me` as explicit secondary actions via
+  `url_launcher`, each logged.
+- Handle the no-app-available case gracefully.
 
-Seed a few contacts by hand to see it render. #7 wires the real actions.
+**Verify on a real device that `tel:` with no path opens the Android dialer
+rather than erroring.** If it does error, fall back to `ACTION_DIAL` over a
+platform channel and log a decision about it.
+
+Then #8 (add/edit entry) and #9 (the confirm stamp).
 
 Before any of it, run `flutter run` on the phone and settle the unverified
 items above. If the fonts are wrong, fix that first — everything after is
