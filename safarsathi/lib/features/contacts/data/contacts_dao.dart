@@ -75,6 +75,21 @@ class ContactCategory {
     other,
   ];
 
+  /// Short forms for the diary's thumb index, where a phone edge has room
+  /// for about six characters set vertically. Full labels elsewhere.
+  static const shortLabels = <String, String>{
+    accommodation: 'Stay',
+    transport: 'Move',
+    restaurant: 'Food',
+    hospital: 'Med',
+    pharmacy: 'Chemist',
+    fuel: 'Fuel',
+    guide: 'Guide',
+    localContact: 'Local',
+    embassy: 'Embassy',
+    other: 'Other',
+  };
+
   static const labels = <String, String>{
     emergency: 'Emergency',
     hospital: 'Hospital',

@@ -89,17 +89,17 @@ void main() {
     }
   });
 
-  test('every text style pins a variable font weight axis', () {
-    // Both families are bundled as variable fonts. Without an explicit wght
-    // axis the whole app silently renders at one weight.
+  test('every variable-font style pins its weight axis', () {
+    // Jost and Archivo are variable. Without an explicit wght axis the whole
+    // app silently renders at one weight. Courier Prime is static and ships
+    // two real weight files, so it is exempt — and must stay exempt, or a
+    // variation would be set on a face that has no axis to move.
     for (final style in [
       AppTokens.stencilStyle,
       AppTokens.milestoneStyle,
       AppTokens.stampStyle,
-      AppTokens.badgeStyle,
       AppTokens.titleStyle,
       AppTokens.rowTitleStyle,
-      AppTokens.numberStyle,
       AppTokens.captionStyle,
     ]) {
       final axes = style.fontVariations ?? const <FontVariation>[];
@@ -109,6 +109,23 @@ void main() {
         reason: 'variable fonts need an explicit wght axis',
       );
     }
+  });
+
+  test('the number styles are the typewriter, and carry no axis', () {
+    for (final style in [AppTokens.numberStyle, AppTokens.badgeStyle]) {
+      expect(style.fontFamily, 'CourierPrime');
+      expect(style.fontVariations ?? const [], isEmpty);
+      expect(style.fontWeight, isNotNull);
+    }
+  });
+
+  test('words and signage use their own faces', () {
+    expect(AppTokens.titleStyle.fontFamily, 'Archivo');
+    expect(AppTokens.rowTitleStyle.fontFamily, 'Archivo');
+    expect(AppTokens.captionStyle.fontFamily, 'Archivo');
+    expect(AppTokens.stencilStyle.fontFamily, 'Jost');
+    expect(AppTokens.milestoneStyle.fontFamily, 'Jost');
+    expect(AppTokens.stampStyle.fontFamily, 'Jost');
   });
 
   test('no theme paints a drop shadow', () {

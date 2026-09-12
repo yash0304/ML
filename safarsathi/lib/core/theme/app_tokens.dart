@@ -173,32 +173,48 @@ class AppTokens {
       Theme.of(context).extension<AppColors>() ?? AppColors.day;
 
   // --- Families ---
-  // ARCHIVO NARROW SPEAKS. INTER READS.
-  // Anything read as a sentence is Inter. Anything stencilled onto an object
-  // — a label, a marker numeral, a stamp — is Archivo Narrow. See §3.1.
-  static const _body = 'Inter';
-  static const _stencil = 'ArchivoNarrow';
+  //
+  // THREE FACES, THREE JOBS:
+  //
+  //   SIGNAGE is Jost — a Futura revival. Futura is the geometric sans that
+  //   was painted onto enamel road signs, milestone caps and film posters
+  //   from the sixties through the eighties. Anything stencilled onto an
+  //   object is set in it.
+  //
+  //   WORDS are Archivo — a revival of the mid-century grotesques cut for
+  //   newspapers. Anything read as a sentence is set in it.
+  //
+  //   NUMBERS are Courier Prime — a typewriter. In a diary of numbers the
+  //   digits are the record, and a typewriter is what typed them into one.
+  //   It is also monospaced, so the columns align by construction rather
+  //   than by asking for a font feature.
+  //
+  // The rule that resolves the overlap: a number you might dial, count or
+  // compare is typed, so it is Courier. A number painted onto an object — the
+  // km on a milestone cap — is signage, so it is Jost.
+  static const _sign = 'Jost';
+  static const _body = 'Archivo';
+  static const _number = 'CourierPrime';
 
-  // Both families are bundled as VARIABLE fonts — Google Fonts no longer
-  // publishes static instances for either. `fontWeight` alone does not
-  // reliably move the 'wght' axis, so every style below sets the axis
-  // explicitly as well. Drop the fontVariations and the type silently
-  // renders at a single weight.
+  // Kept on the Courier styles even though a monospace is tabular by nature,
+  // so the intent survives a change of face.
+  static const _tabular = <FontFeature>[FontFeature.tabularFigures()];
+
+  // Jost and Archivo are VARIABLE fonts and `fontWeight` alone does not
+  // reliably move the 'wght' axis, so every style using them sets it
+  // explicitly. Courier Prime is static and ships two real weights, so it
+  // takes fontWeight and no variation.
   static const _w400 = <FontVariation>[FontVariation('wght', 400)];
   static const _w500 = <FontVariation>[FontVariation('wght', 500)];
   static const _w600 = <FontVariation>[FontVariation('wght', 600)];
   static const _w700 = <FontVariation>[FontVariation('wght', 700)];
 
-  // Phone numbers, distances and amounts get tabular figures so digits align
-  // down the column and can be read at a glance rather than parsed. It is
-  // also what lets RollingDigits animate without the row width jittering.
-  static const _tabular = <FontFeature>[FontFeature.tabularFigures()];
-
+  // --- Signage roles (Jost) ---
   // --- Stencil roles (Archivo Narrow) ---
 
   /// Section headers, field labels, tab labels.
   static const stencilStyle = TextStyle(
-    fontFamily: _stencil,
+    fontFamily: _sign,
     fontSize: 13,
     fontWeight: FontWeight.w700,
     fontVariations: _w700,
@@ -208,7 +224,7 @@ class AppTokens {
 
   /// The km numeral on a milestone marker.
   static const milestoneStyle = TextStyle(
-    fontFamily: _stencil,
+    fontFamily: _sign,
     fontSize: 28,
     fontWeight: FontWeight.w700,
     fontVariations: _w700,
@@ -218,7 +234,7 @@ class AppTokens {
 
   /// Stamp marks: CONFIRMED, CACHED, IMPORTED, ROLLED BACK.
   static const stampStyle = TextStyle(
-    fontFamily: _stencil,
+    fontFamily: _sign,
     fontSize: 11,
     fontWeight: FontWeight.w700,
     fontVariations: _w700,
@@ -226,17 +242,18 @@ class AppTokens {
     height: 1.0,
   );
 
-  /// Emergency number badges.
+  // --- Number role (Courier Prime) ---
+
+  /// Emergency number badges. A number to dial, so it is typed, not painted.
   static const badgeStyle = TextStyle(
-    fontFamily: _stencil,
-    fontSize: 14,
+    fontFamily: _number,
+    fontSize: 13,
     fontWeight: FontWeight.w700,
-    fontVariations: _w700,
     height: 1.0,
     fontFeatures: _tabular,
   );
 
-  // --- Body roles (Inter) ---
+  // --- Word roles (Archivo) ---
 
   static const titleStyle = TextStyle(
     fontFamily: _body,
@@ -254,11 +271,11 @@ class AppTokens {
     height: 1.3,
   );
 
+  /// Every phone number, and any figure the user compares down a column.
   static const numberStyle = TextStyle(
-    fontFamily: _body,
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-    fontVariations: _w400,
+    fontFamily: _number,
+    fontSize: 13.5,
+    fontWeight: FontWeight.w700,
     fontFeatures: _tabular,
   );
 

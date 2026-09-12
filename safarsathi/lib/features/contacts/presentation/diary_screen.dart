@@ -258,10 +258,10 @@ class _DiaryScreenState extends State<DiaryScreen> {
       child: TextField(
         controller: _searchController,
         onChanged: (v) => _setFilter(_filter.copyWith(searchTerm: v)),
-        style: AppTokens.numberStyle.copyWith(color: c.ink),
+        style: AppTokens.rowTitleStyle.copyWith(color: c.ink),
         decoration: InputDecoration(
           hintText: 'Search name, number or note',
-          hintStyle: AppTokens.numberStyle.copyWith(color: c.muted),
+          hintStyle: AppTokens.rowTitleStyle.copyWith(color: c.muted),
           prefixIcon: Icon(Icons.search, size: 18, color: c.muted),
           prefixIconConstraints: const BoxConstraints(minWidth: 38),
           contentPadding: const EdgeInsets.symmetric(

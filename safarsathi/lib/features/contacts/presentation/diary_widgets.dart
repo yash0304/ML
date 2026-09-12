@@ -271,7 +271,7 @@ class CategoryIndex extends StatelessWidget {
           ),
           for (final category in ContactCategory.pickerOrder)
             _Tab(
-              label: ContactCategory.labels[category] ?? category,
+              label: ContactCategory.shortLabels[category] ?? category,
               active: selected == category,
               onTap: () => onSelect(category),
             ),

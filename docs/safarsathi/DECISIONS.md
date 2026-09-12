@@ -5,6 +5,14 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-12 — [UI] Typefaces replaced: **Jost** for signage, **Archivo** for words, **Courier Prime** for numbers. Supersedes the Inter + Archivo Narrow pairing chosen on 2026-09-11. (Yash's call: the app looked AI-generated, and he is right — Inter is the house face of every dashboard shipped since 2018 and reads as a default rather than a choice. The replacements are period-rooted rather than merely different: Jost is a Futura revival, and Futura is the geometric sans painted onto enamel road signs and milestone caps from the sixties through the eighties; Archivo revives the mid-century newspaper grotesques; Courier Prime is a typewriter, which is what typed numbers into a diary. All three are SIL OFL and together are 924 KB, slightly less than the two they replaced.)
+
+2026-09-12 — [UI] Numbers are set in the typewriter face, not the body face. The rule: a number you might dial, count or compare is TYPED — Courier Prime; a number painted onto an object is SIGNAGE — Jost. (So the emergency badge reads as typed while a milestone's km reads as painted, though both are digits. Courier is monospaced, so phone numbers align down the column by construction rather than by asking for a font feature — the alignment the whole diary depends on is now structural.)
+
+2026-09-12 — [UI] The diary's thumb index uses `ContactCategory.shortLabels`, separate from the full labels used everywhere else. (Jost is wider than the condensed face it replaced, and TRANSPORT and PHARMACY clipped when set vertically on a phone edge. A phone edge has room for about six characters.)
+
+2026-09-12 — [UI] The search field is set in the word face, not the number face. (It takes a name as often as a number, and a typewriter face made every hint look like a serial number.)
+
 2026-09-12 — [CONTACTS] Changing the digits of a confirmed entry clears its confirmation: back to `userEntered`, `callConfirmed` false, `confirmedAt` null. Changing the name, note, category or stop does not. (A confirmation means "I called THIS number and it worked". Change the digits and that is no longer true. Silently keeping a green tick against a number nobody has dialled is exactly the failure the trust system exists to prevent. The form warns before saving, and a test pins it.)
 
 2026-09-12 — [CONTACTS] An unreadable or incomplete number is a warning, never a block. `phoneE164` stays null and the raw value is stored alone. (The user may be halfway through typing, holding a number with an extension, or copying something off a signboard. The amber dot already says the number is unverified; refusing the save would lose their only record of it. Storing a guessed E.164 for a number that did not validate would be worse — a confident-looking wrong value in the column used for dialling and dedupe.)

@@ -45,17 +45,31 @@ flutter:
   assets:
     - assets/texture/
 
-  # Variable fonts, one file per family. Google Fonts no longer publishes
-  # static instances for either of these, so weights are selected through
-  # FontVariation on the 'wght' axis — see app_tokens.dart.
+  # THREE FACES, THREE JOBS. See DESIGN_VISUAL_v2.md §3.
+  #
+  #   Jost          signage — a Futura revival, the geometric sans painted on
+  #                 enamel road signs and posters through the 60s to 80s
+  #   Archivo       words — a revival of mid-century newspaper grotesques
+  #   Courier Prime numbers — a typewriter, because in a diary of numbers the
+  #                 digits are the record, and a typewriter is what typed them
+  #
+  # Jost and Archivo are variable, so weights are selected through
+  # FontVariation on the 'wght' axis. Courier Prime is static and ships two
+  # weights, so plain fontWeight picks between them.
   #
   # The family names here MUST match the strings in app_tokens.dart. A
-  # mismatch falls back to the system font silently, which is the easiest
-  # way to build something that runs and looks wrong.
+  # mismatch falls back to the system font silently, which is the easiest way
+  # to build something that runs and looks wrong.
   fonts:
-    - family: Inter
+    - family: Jost
       fonts:
-        - asset: assets/fonts/Inter.ttf
-    - family: ArchivoNarrow
+        - asset: assets/fonts/Jost.ttf
+    - family: Archivo
       fonts:
-        - asset: assets/fonts/ArchivoNarrow.ttf
+        - asset: assets/fonts/Archivo.ttf
+    - family: CourierPrime
+      fonts:
+        - asset: assets/fonts/CourierPrime-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/CourierPrime-Bold.ttf
+          weight: 700

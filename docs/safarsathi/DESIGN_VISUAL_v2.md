@@ -160,39 +160,54 @@ the correct metaphor, and it survives both themes without a shadow colour.
 
 ## 3. Typography
 
-### 3.1 Two families, sharply divided
+### 3.1 Three faces, three jobs
 
-DESIGN.md §5 said one family and called a second one decoration. That was
-right for a pure-utility brief and is wrong for this one — a retro direction
-without a voice is just a beige repaint. The rule that keeps it honest:
+An earlier draft used Inter for words and Archivo Narrow for labels. Inter is
+the house face of every dashboard shipped since 2018, and it made the app look
+like it had been generated rather than designed. Replaced.
 
-> **Archivo Narrow speaks. Inter reads.**
-> Anything a user has to read as a sentence is Inter. Anything stencilled
-> onto an object — a label, a number on a marker, a stamp — is Archivo Narrow.
+> **Signage is painted. Words are set. Numbers are typed.**
 
-| Role | Family | Spec | Where |
+| Face | Job | Why this one |
+|---|---|---|
+| **Jost** | Signage | A Futura revival. Futura is the geometric sans that was painted onto enamel road signs, milestone caps and film posters from the sixties through the eighties. |
+| **Archivo** | Words | A revival of the mid-century grotesques cut for newspapers — period-rooted, and built for small sizes on a screen. |
+| **Courier Prime** | Numbers | A typewriter. In a diary of numbers the digits *are* the record, and a typewriter is what typed one. It is monospaced, so columns align by construction rather than by asking for a font feature. |
+
+All three are SIL OFL and bundle offline. Together they are 924 KB, slightly
+less than the two they replaced.
+
+### 3.2 The roles
+
+| Role | Face | Spec | Where |
 |---|---|---|---|
-| `stencilStyle` | Archivo Narrow 700 | 13 / 1.0, +1.2 tracking, UPPERCASE | Section headers, field labels, tab labels |
-| `milestoneStyle` | Archivo Narrow 700 | 28 / 1.0, tabular | The km numeral on a milestone marker |
-| `stampStyle` | Archivo Narrow 700 | 11 / 1.0, +1.6 tracking, UPPERCASE | Stamp marks: CONFIRMED, CACHED, IMPORTED |
-| `badgeStyle` | Archivo Narrow 700 | 14 / 1.0, tabular | Emergency number badges |
-| `titleStyle` | Inter 600 | 16 / 1.3 | Screen and row titles |
-| `rowTitleStyle` | Inter 500 | 15 / 1.3 | Contact names |
-| `numberStyle` | Inter 400 | 14, **tabular figures** | Every phone number. Unchanged from v1. |
-| `captionStyle` | Inter 400 | 12.5 / 1.35 | Notes, provenance, staleness |
+| `stencilStyle` | Jost 700 | 13 / 1.0, +1.2 tracking, UPPERCASE | Section headers, field labels, index tabs |
+| `milestoneStyle` | Jost 700 | 28 / 1.0 | The km numeral on a milestone marker |
+| `stampStyle` | Jost 700 | 11 / 1.0, +1.6 tracking, UPPERCASE | CONFIRMED, CACHED, IMPORTED |
+| `titleStyle` | Archivo 600 | 16 / 1.3 | Screen and row titles |
+| `rowTitleStyle` | Archivo 500 | 15 / 1.3 | Entry names, search text |
+| `captionStyle` | Archivo 400 | 12.5 / 1.35 | Notes, provenance, staleness |
+| `numberStyle` | Courier Prime 700 | 13.5 | **Every phone number**, and any figure compared down a column |
+| `badgeStyle` | Courier Prime 700 | 13 | Emergency number badges |
 
-Both faces are SIL OFL and bundle offline. Archivo Narrow is a grotesque like
-Inter, so the pair reads as one voice at two volumes rather than as a collision
-— which is exactly what a poster face like Bebas would have caused.
+### 3.3 The rule that resolves the overlap
 
-### 3.2 Tabular figures stay the point
+A number is set in two different faces depending on what it *is*:
 
-v1's best type decision, kept and extended: every digit the user might compare
-down a column gets `FontFeature.tabularFigures()`. Phone numbers, emergency
-badges, milestone distances, expense amounts, km readings. This is also what
-makes the digit-roll animation in §5.3 possible without the row width jittering.
+- **A number you might dial, count or compare is typed** — Courier Prime.
+  Phone numbers, emergency badges, the readiness count, expense amounts.
+- **A number painted onto an object is signage** — Jost. The km on a
+  milestone cap, the distance on a corridor marker.
 
----
+Which is why the emergency badge reads as typed while the milestone numeral
+reads as painted, even though both are digits.
+
+### 3.4 Tabular figures stay the point
+
+Courier Prime is monospaced, so phone numbers align down the column by
+construction. The `tabularFigures` feature is still set on those styles so the
+intent survives a change of face. It is also what lets the digit-roll
+animation run without the row width jittering.
 
 ## 4. Geometry, texture, spacing
 

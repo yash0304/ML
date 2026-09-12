@@ -22,11 +22,18 @@ import 'package:safarsathi/features/contacts/presentation/entry_form_screen.dart
 
 Future<void> loadRealFonts() async {
   const families = {
-    'Inter': 'assets/fonts/Inter.ttf',
-    'ArchivoNarrow': 'assets/fonts/ArchivoNarrow.ttf',
+    'Jost': ['assets/fonts/Jost.ttf'],
+    'Archivo': ['assets/fonts/Archivo.ttf'],
+    'CourierPrime': [
+      'assets/fonts/CourierPrime-Regular.ttf',
+      'assets/fonts/CourierPrime-Bold.ttf',
+    ],
   };
   for (final entry in families.entries) {
-    final loader = FontLoader(entry.key)..addFont(rootBundle.load(entry.value));
+    final loader = FontLoader(entry.key);
+    for (final asset in entry.value) {
+      loader.addFont(rootBundle.load(asset));
+    }
     await loader.load();
   }
 
