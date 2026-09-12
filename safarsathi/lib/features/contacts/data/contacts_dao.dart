@@ -56,6 +56,25 @@ class ContactCategory {
     other,
   ];
 
+  /// The order categories are offered in, everywhere the user picks one.
+  ///
+  /// Not `all`, which is declaration order and leads with hospital. On a road
+  /// trip you reach for stay, transport and food far more often, and the
+  /// thumb index and the form must agree or the muscle memory breaks.
+  /// `emergency` is absent: those live on their own screen.
+  static const pickerOrder = [
+    accommodation,
+    transport,
+    restaurant,
+    hospital,
+    pharmacy,
+    fuel,
+    guide,
+    localContact,
+    embassy,
+    other,
+  ];
+
   static const labels = <String, String>{
     emergency: 'Emergency',
     hospital: 'Hospital',

@@ -1,16 +1,18 @@
-# HANDOFF — SafarSathi — 2026-09-12 (after issue #7)
+# HANDOFF — SafarSathi — 2026-09-12 (after issue #8)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1 to #7 are done except for the device check.** The project
-  analyses clean and passes **95 tests** in about five seconds on
+- **Issues #1 to #8 are done except for the device check.** The project
+  analyses clean and passes **118 tests** in about seven seconds on
   Flutter 3.47.3 / Dart 3.13.3. It has never run on a phone.
-- Backlog position: 7 / 52 done. Next is **#8, add / edit entry**.
-- **The diary works.** Tap an entry, it copies and the toast offers the
-  dialer. A debug-only demo trip is seeded when the database has no trip.
+- Backlog position: 8 / 52 done. Next is **#9, mark as confirmed** — the
+  app's one signature animation.
+- **The diary works end to end.** Tap an entry and it copies, with the toast
+  offering the dialer. The FAB adds an entry, a long-press edits one, and
+  numbers normalise to E.164 on save.
 
 ## Look at the app without a phone
 
@@ -69,6 +71,11 @@ real Tier-1 codes with their government sources.
 | WhatsApp strips non-digits | test |
 | A failed launch says so instead of nothing | test |
 | The toast shows, offers the dialer, expires | widget test |
+| E.164 normalisation, India and Germany | test |
+| A bad number warns but still saves | test |
+| A duplicate warns but never blocks | test |
+| **Editing digits clears a confirmation** | test |
+| A new entry always lands unconfirmed | test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -144,16 +151,23 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**Write `docs/ISSUE_8_Entry.md`, then do backlog #8 — add / edit entry.**
-Build it from SCREENS.md §5: a ruled diary page as a form, with name, number,
-category chips, attach-to stop, note and reachable-on. E.164 normalisation on
-save via `phone_numbers_parser`, storing both raw and normalised. A duplicate
-warning that tells you and gets out of the way rather than blocking.
+**Write `docs/ISSUE_9_Confirm.md`, then do backlog #9 — mark as confirmed.**
 
-The screen must state plainly what tier it will save at. `DiaryScreen`
-already has an `onOpen` and an `onAdd` seam waiting.
+Two parts:
 
-Then #9, the confirm stamp — the app's one signature animation.
+1. **Build the read-only entry screen** from SCREENS.md §2, which does not
+   exist yet. The number as a 27pt headline, provenance under it, `COPY
+   NUMBER` as the primary button, then Dialer / Call / Chat, the record
+   fields, and the confirm section. Move the diary's long-press to it, with
+   Edit as an action that opens the form built at #8.
+2. **The confirmation stamp.** `StampBadge` already exists in
+   `core/widgets/retro.dart` and animates only on the false → true
+   transition, with the haptic at contact rather than at animation start.
+   Wire it to `ContactsDao.markConfirmed`, clear the amber dot, and roll the
+   readiness count down.
+
+This is the app's one signature animation — DESIGN_VISUAL_v2.md §5.3 has the
+full beat sheet. Add a golden of the stamp landed.
 
 **Still unverified on hardware:** whether `tel:` with an empty path opens the
 Android dialer or errors. The code treats a failure as "no dialer app" and

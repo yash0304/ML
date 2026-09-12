@@ -5,6 +5,16 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-12 — [CONTACTS] Changing the digits of a confirmed entry clears its confirmation: back to `userEntered`, `callConfirmed` false, `confirmedAt` null. Changing the name, note, category or stop does not. (A confirmation means "I called THIS number and it worked". Change the digits and that is no longer true. Silently keeping a green tick against a number nobody has dialled is exactly the failure the trust system exists to prevent. The form warns before saving, and a test pins it.)
+
+2026-09-12 — [CONTACTS] An unreadable or incomplete number is a warning, never a block. `phoneE164` stays null and the raw value is stored alone. (The user may be halfway through typing, holding a number with an extension, or copying something off a signboard. The amber dot already says the number is unverified; refusing the save would lose their only record of it. Storing a guessed E.164 for a number that did not validate would be worse — a confident-looking wrong value in the column used for dialling and dedupe.)
+
+2026-09-12 — [CONTACTS] A duplicate number warns and names the entry that already holds it, but never blocks. (Two entries for one number is legitimate: a homestay's landline and its owner's mobile can be the same line on different days. Editing an entry is not treated as a duplicate of itself.)
+
+2026-09-12 — [DATA] The country to normalise against is passed in by the caller rather than fixed to India. (A European trip crosses borders mid-itinerary and `countryCode` already lives on Stop for exactly this reason. The app passes IsoCode.IN today; wiring it to the current stop is one line once trip structure exists at #16.)
+
+2026-09-12 — [UI] `ContactCategory.pickerOrder` is the single order categories are offered in, shared by the diary's thumb index and the entry form. (Declaration order leads with hospital; on a road trip you reach for stay, transport and food far more often. More importantly the two places a user picks a category must agree, or the muscle memory breaks.)
+
 2026-09-12 — [TEST] Golden images are generated from the real widget tree with the bundled fonts loaded, via `test/golden_test.dart`. (It is the only way to see the app without a phone, and it immediately found two bugs no other test could: the doubled margin rule was painting as a solid grey column, and the New entry button was sitting on top of the thumb index. Material's icon font ships with the SDK rather than the app, so the harness loads it too or every icon renders as a tofu box and the image lies about what the user sees.)
 
 2026-09-12 — [UI] The doubled margin rule is drawn as two sibling hairlines, not as a border plus a `boxShadow`. (A shadow spreads behind the whole box and fills it, which is what the first golden showed. Cosmetic, but it made the diary look like a table rather than a notebook.)

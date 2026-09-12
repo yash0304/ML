@@ -78,7 +78,7 @@ the code is what makes an issue resumable mid-way by a fresh chat.
   decision about it.
   *Depends on #6.*
 
-- [ ] **#8 Add / edit contact screen** — M
+- [x] **#8 Add / edit contact screen** — M — *22 tests; editing digits now clears a confirmation*
   Single contact form. Category picker from the fixed vocabulary. E.164
   normalisation on save, storing both raw and normalised. Duplicate warning
   (not a block) when the E.164 already exists in the trip.

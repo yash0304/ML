@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'core/database/app_database.dart';
 import 'core/theme/app_tokens.dart';
+import 'package:drift/drift.dart' show OrderingTerm;
+import 'package:phone_numbers_parser/phone_numbers_parser.dart' show IsoCode;
+
 import 'features/contacts/data/contact_actions.dart';
+import 'features/contacts/data/entry_draft.dart';
 import 'features/contacts/presentation/diary_screen.dart';
+import 'features/contacts/presentation/entry_form_screen.dart';
 import 'features/dev/dev_seed.dart';
 
 class SafarSathiApp extends StatelessWidget {
@@ -43,6 +48,40 @@ class _Home extends StatefulWidget {
 class _HomeState extends State<_Home> {
   late final Future<DemoTrip?> _trip = ensureDemoTrip(widget.db);
 
+  /// The entry form, for a new entry or an existing one.
+  ///
+  /// Long-press opens it in edit mode. A dedicated read-only entry screen
+  /// arrives with the confirm stamp at #9.
+  Future<void> _openForm(
+    BuildContext context,
+    DemoTrip trip, {
+    Contact? existing,
+  }) async {
+    final db = widget.db;
+    final stops =
+        await (db.select(db.stops)
+              ..where((s) => s.tripId.equals(trip.tripId))
+              ..orderBy([(s) => OrderingTerm(expression: s.sequenceOrder)]))
+            .get();
+    if (!context.mounted) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => EntryFormScreen(
+          existing: existing,
+          stops: [for (final s in stops) StopOption(s.id, s.name)],
+          // A European trip crosses borders mid-itinerary, so the country to
+          // normalise against comes from the stop, not the trip.
+          country: IsoCode.IN,
+          findDuplicate: (e164) =>
+              db.contactsDao.findByE164(e164, tripId: trip.tripId),
+          onSave: (draft) =>
+              saveEntry(db.contactsDao, draft, tripId: trip.tripId),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = AppTokens.of(context);
@@ -64,7 +103,8 @@ class _HomeState extends State<_Home> {
           currentStopName: trip.currentStopName,
           onCopy: actions.copy,
           onOpenDialer: actions.openDialer,
-          // The entry screen is #8.
+          onAdd: () => _openForm(context, trip),
+          onOpen: (contact) => _openForm(context, trip, existing: contact),
         );
       },
     );

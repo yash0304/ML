@@ -251,19 +251,6 @@ class CategoryIndex extends StatelessWidget {
     required this.onSelect,
   });
 
-  static const _order = [
-    ContactCategory.accommodation,
-    ContactCategory.transport,
-    ContactCategory.restaurant,
-    ContactCategory.hospital,
-    ContactCategory.pharmacy,
-    ContactCategory.fuel,
-    ContactCategory.guide,
-    ContactCategory.localContact,
-    ContactCategory.embassy,
-    ContactCategory.other,
-  ];
-
   @override
   Widget build(BuildContext context) {
     final c = AppTokens.of(context);
@@ -282,7 +269,7 @@ class CategoryIndex extends StatelessWidget {
             active: selected == null,
             onTap: () => onSelect(null),
           ),
-          for (final category in _order)
+          for (final category in ContactCategory.pickerOrder)
             _Tab(
               label: ContactCategory.labels[category] ?? category,
               active: selected == category,

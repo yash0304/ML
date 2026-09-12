@@ -16,7 +16,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:safarsathi/core/database/app_database.dart';
 import 'package:safarsathi/core/theme/app_tokens.dart';
 import 'package:safarsathi/features/contacts/data/contacts_dao.dart';
+import 'package:safarsathi/features/contacts/data/entry_draft.dart';
 import 'package:safarsathi/features/contacts/presentation/diary_screen.dart';
+import 'package:safarsathi/features/contacts/presentation/entry_form_screen.dart';
 
 Future<void> loadRealFonts() async {
   const families = {
@@ -231,6 +233,51 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/diary_copied.png'),
+    );
+  });
+
+  testWidgets('new entry form', (tester) async {
+    tester.view.physicalSize = const Size(840, 1780);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: AppTokens.light,
+        home: EntryFormScreen(
+          stops: const [
+            StopOption(1, 'Shillong'),
+            StopOption(2, 'Cherrapunji'),
+            StopOption(3, 'Kongthong'),
+          ],
+          findDuplicate: (_) async => demo[2],
+          onSave: (EntryDraft d) async {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.enterText(
+      find.descendant(
+        of: find.byKey(const Key('field-name')),
+        matching: find.byType(TextField),
+      ),
+      'Sohra tea stall · Kong Bina',
+    );
+    await tester.enterText(
+      find.descendant(
+        of: find.byKey(const Key('field-number')),
+        matching: find.byType(TextField),
+      ),
+      '+91 90000 00003',
+    );
+    await tester.pump();
+    await tester.pump();
+
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/entry_form.png'),
     );
   });
 }
