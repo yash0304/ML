@@ -14,6 +14,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/database/app_database.dart';
 import '../contacts/data/contacts_dao.dart';
+import '../money/data/settlement.dart';
 
 class DemoTrip {
   final int tripId;
@@ -70,7 +71,7 @@ Future<DemoTrip> createDemoTrip(AppDatabase db) async {
         ),
       );
 
-  Future<int> stop(String name, int order, int nights) => db
+  Future<int> stop(String name, int order, int nights, int day) => db
       .into(db.stops)
       .insert(
         StopsCompanion.insert(
@@ -79,12 +80,52 @@ Future<DemoTrip> createDemoTrip(AppDatabase db) async {
           sequenceOrder: order,
           countryCode: 'IN',
           nights: Value(nights),
+          arrivalDate: Value(DateTime(2026, 10, day)),
         ),
       );
 
-  final shillong = await stop('Shillong', 1, 1);
-  await stop('Cherrapunji', 2, 1);
-  final kongthong = await stop('Kongthong', 3, 2);
+  final shillong = await stop('Shillong', 1, 1, 1);
+  final cherrapunji = await stop('Cherrapunji', 2, 1, 2);
+  final kongthong = await stop('Kongthong', 3, 2, 3);
+
+  Future<void> leg(
+    int from,
+    int to,
+    int order,
+    String mode,
+    double km,
+    int hour,
+    String note, {
+    bool cached = true,
+  }) => db
+      .into(db.legs)
+      .insert(
+        LegsCompanion.insert(
+          tripId: tripId,
+          fromStopId: from,
+          toStopId: to,
+          sequenceOrder: order,
+          mode: Value(mode),
+          distanceKm: Value(km),
+          plannedDeparture: Value(DateTime(2026, 10, order + 1, hour, 30)),
+          note: Value(note),
+          lastSyncedAt: Value(cached ? DateTime(2026, 9, 11) : null),
+        ),
+      );
+
+  await leg(shillong, cherrapunji, 1, 'Shared taxi', 54, 9, 'Leaves when full');
+  // Deliberately left unsynced, so the milestone cap renders muted and an
+  // unprepared leg is visible without reading anything.
+  await leg(
+    cherrapunji,
+    kongthong,
+    2,
+    'Shared taxi',
+    56,
+    9,
+    'Wanshai has the pickup point',
+    cached: false,
+  );
 
   Future<void> entry(
     String name,
@@ -94,6 +135,7 @@ Future<DemoTrip> createDemoTrip(AppDatabase db) async {
     String? note,
     bool confirmed = false,
     bool pinned = false,
+    bool emergency = false,
   }) => db
       .into(db.contacts)
       .insert(
@@ -105,6 +147,7 @@ Future<DemoTrip> createDemoTrip(AppDatabase db) async {
           category: Value(category),
           note: Value(note),
           isPinned: Value(pinned),
+          isEmergency: Value(emergency),
           callConfirmed: Value(confirmed),
           tier: Value(
             confirmed
@@ -156,6 +199,66 @@ Future<DemoTrip> createDemoTrip(AppDatabase db) async {
     category: ContactCategory.fuel,
     note: 'Placeholder data',
   );
+  // Emergency-relevant, so it appears on the emergency screen in its own
+  // headed section rather than mixed in with the bundled helplines.
+  await entry(
+    'Bah Rothell · homestay owner',
+    '+91 90000 00007',
+    stopId: kongthong,
+    category: ContactCategory.localContact,
+    note: 'Can reach a local ambulance faster than 108 finds the village',
+    confirmed: true,
+    emergency: true,
+  );
+
+  // --- Money -------------------------------------------------------------
+  final people = <int>[];
+  for (final entry in {'You': true, 'Ankit': false, 'Priya': false}.entries) {
+    people.add(
+      await db
+          .into(db.travellers)
+          .insert(
+            TravellersCompanion.insert(
+              tripId: tripId,
+              name: entry.key,
+              isSelf: Value(entry.value),
+            ),
+          ),
+    );
+  }
+
+  Future<void> spend(String what, int amountMinor, int paidBy, int day) async {
+    final id = await db
+        .into(db.expenses)
+        .insert(
+          ExpensesCompanion.insert(
+            tripId: tripId,
+            description: what,
+            amountMinor: amountMinor,
+            paidById: people[paidBy],
+            spentAt: Value(DateTime(2026, 10, day)),
+          ),
+        );
+    // Shares are handed out one paisa at a time so they sum back exactly.
+    final shares = evenShares(amountMinor, people.length);
+    for (var i = 0; i < people.length; i++) {
+      await db
+          .into(db.expenseSplits)
+          .insert(
+            ExpenseSplitsCompanion.insert(
+              expenseId: id,
+              travellerId: people[i],
+              shareMinor: shares[i],
+            ),
+          );
+    }
+  }
+
+  await spend('Taxi · Shillong to Cherrapunji', 320011, 0, 2);
+  await spend('Homestay · 2 nights', 440000, 0, 3);
+  await spend('Cave guide', 150000, 2, 3);
+  await spend('Dinner at Sohra', 86000, 1, 2);
+  await spend('Fuel', 210000, 0, 2);
 
   return DemoTrip(
     tripId: tripId,

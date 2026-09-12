@@ -5,6 +5,26 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-12 — [MONEY] `numberStyle` and `badgeStyle` carry `fontFamilyFallback: [Archivo]`. (Courier Prime is a 1950s typewriter design and has no rupee glyph — ₹ was only adopted in 2010 — so every amount on the money screen rendered as a tofu box. The fallback supplies the sign while the digits still come from Courier. Found by rendering the golden; no widget test can see a missing glyph, because the text is present in the tree either way.)
+
+2026-09-12 — [MONEY] A negative balance is never red. Negative renders muted, positive in signal green. (Red in this app means emergency and nothing else. Owing your brother-in-law ₹400 is not an emergency, and spending the emergency colour on a settled debt devalues it on the one screen where it has to carry weight.)
+
+2026-09-12 — [MONEY] The app records a settlement, it never executes one. No payment integration, now or later. (It would reintroduce a network dependency and a compliance surface for something people already do with cash or UPI in thirty seconds. The value here is knowing the number, not moving it.)
+
+2026-09-12 — [MONEY] Settle-up sits ABOVE the ledger, not behind a tab. (It is the only part of a shared ledger anyone acts on. Most apps bury it; putting it first is the whole reason to have this screen rather than a spreadsheet.)
+
+2026-09-12 — [MONEY] Debts are simplified greedily — largest debt to largest credit. (The general minimum-payments problem is NP-hard, and the greedy result is not provably minimal for every graph. It is optimal for the shapes a five-person trip produces, never emits more payments than there are people, and is exact: the payments always sum back to the balances. Exactness is the property that matters; minimality is a nicety.)
+
+2026-09-12 — [MONEY] Even splits hand out the remainder one minor unit at a time rather than rounding each share. (A three-way split of ₹100 has to still be ₹100 when you add it back up. Rounding each share independently loses or invents a paisa, and a ledger that does not balance is worse than no ledger.)
+
+2026-09-12 — [TRIP] The milestone cap is muted when the leg has never been synced. (A distance painted in full ink claims the number was surveyed. A leg with a null `lastSyncedAt` has a distance the user typed or the app guessed. This is the trust tiering invariant applied to geometry instead of phone numbers — same rule, different table.)
+
+2026-09-12 — [TRIP] The trip screen is read-only. Creating and editing a trip stays at #16. (The question the app has to answer at a dhaba at 3pm is "where am I and what is the next leg", not "let me restructure my itinerary". Shipping the read path first makes four of five tabs live without waiting on the editor.)
+
+2026-09-12 — [NAV] Five tabs — Diary, Trip, Money, SOS, More — over an `IndexedStack`, so each tab keeps its scroll position and filter state. (A rebuild-on-switch would drop the diary's category filter every time someone checked a balance. The cost is that all five trees stay alive; at this size that is cheaper than the state plumbing needed to restore them.)
+
+2026-09-12 — [NAV] SOS renders in emergency red only while it is the active tab. (A permanently red item in the bar becomes wallpaper within a day, and then the colour means nothing at the moment it has to mean something.)
+
 2026-09-12 — [BUILD] `file_picker` upgraded from ^8.3.7 to ^12.3.0. (The first CI build failed: file_picker 8 compiles against Android API 34, while `flutter_plugin_android_lifecycle` now requires everything depending on it to compile against 36 or later. Nothing in the app uses file_picker yet — it arrives at #11 for sheet import — so the jump carries no API risk today, and leaving it would have blocked every Android build. Found only by attempting a real build; `flutter analyze` and the whole test suite pass either way, because none of it touches Gradle.)
 
 2026-09-12 — [BUILD] APKs are built by a GitHub Actions workflow, not locally. (The development container cannot reach `dl.google.com`, so it has no Android SDK and cannot produce one. GitHub's runners already have it, and the workflow runs `flutter analyze` and the full suite before building, so any APK that exists is one that passed everything.)

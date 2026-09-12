@@ -20,6 +20,12 @@ import 'package:safarsathi/features/contacts/data/entry_draft.dart';
 import 'package:safarsathi/features/contacts/presentation/diary_screen.dart';
 import 'package:safarsathi/features/contacts/presentation/entry_form_screen.dart';
 import 'package:safarsathi/features/contacts/presentation/entry_screen.dart';
+import 'package:safarsathi/features/emergency/presentation/emergency_screen.dart';
+import 'package:safarsathi/features/trips/data/trip_summary.dart';
+import 'package:safarsathi/features/money/data/money_summary.dart';
+import 'package:safarsathi/features/money/data/settlement.dart';
+import 'package:safarsathi/features/money/presentation/money_screen.dart';
+import 'package:safarsathi/features/trips/presentation/trip_screen.dart';
 
 Future<void> loadRealFonts() async {
   const families = {
@@ -340,6 +346,200 @@ void main() {
       'entry_confirmed',
       contact: demo[2],
       confirmAfterPump: true,
+    );
+  });
+
+  Future<void> shootScreen(
+    WidgetTester tester,
+    String name,
+    Widget screen,
+  ) async {
+    tester.view.physicalSize = const Size(840, 1780);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: AppTokens.light,
+        home: screen,
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/$name.png'),
+    );
+  }
+
+  testWidgets('emergency', (tester) async {
+    EmergencyHelpline h(String n, String l, String s, int id) =>
+        EmergencyHelpline(
+          id: id,
+          countryCode: 'IN',
+          serviceType: 'all',
+          label: l,
+          number: n,
+          sourceNote: s,
+          needsVerification: false,
+          tier: 'verifiedNational',
+        );
+
+    await shootScreen(
+      tester,
+      'emergency',
+      EmergencyScreen(
+        placeLabel: 'India · Kongthong',
+        helplines: Stream.value([
+          h(
+            '112',
+            'All emergencies',
+            '112.gov.in, Ministry of Home Affairs',
+            1,
+          ),
+          h('108', 'Ambulance', 'Legacy line, active alongside 112', 2),
+          h('101', 'Fire', 'Legacy line, active alongside 112', 3),
+          h('181', 'Women helpline', 'india.gov.in helpline directory', 4),
+          h('1098', 'Child helpline', 'india.gov.in helpline directory', 5),
+        ]),
+        localContacts: Stream.value([
+          Contact(
+            id: 9,
+            name: 'Bah Rothell · homestay owner',
+            phoneRaw: '+91 90000 00007',
+            category: ContactCategory.localContact,
+            tier: ContactTier.userVerified.name,
+            callConfirmed: true,
+            isPinned: false,
+            isEmergency: true,
+            hasWhatsapp: false,
+            callCount: 0,
+            createdAt: DateTime(2026, 9, 12),
+          ),
+        ]),
+        onCall: (_) async {},
+        onCopy: (_) async {},
+      ),
+    );
+  });
+
+  testWidgets('trip', (tester) async {
+    await shootScreen(
+      tester,
+      'trip',
+      TripScreen(
+        unconfirmedCount: Stream.value(4),
+        trip: Stream.value(
+          TripSummary(
+            name: 'Meghalaya · demo',
+            startDate: DateTime(2026, 10, 1),
+            endDate: DateTime(2026, 10, 5),
+            nextLeg: LegSummary(
+              fromName: 'Cherrapunji',
+              toName: 'Kongthong',
+              mode: 'Shared taxi',
+              distanceKm: 56,
+              plannedDeparture: DateTime(2026, 10, 3, 9, 30),
+              note: 'Wanshai has the pickup point',
+            ),
+            stops: [
+              StopSummary(
+                id: 1,
+                name: 'Shillong',
+                sequenceOrder: 1,
+                nights: 1,
+                diaryCount: 4,
+                isCurrent: false,
+                arrivalDate: DateTime(2026, 10, 1),
+              ),
+              StopSummary(
+                id: 2,
+                name: 'Cherrapunji',
+                sequenceOrder: 2,
+                nights: 1,
+                diaryCount: 3,
+                isCurrent: false,
+                arrivalDate: DateTime(2026, 10, 2),
+              ),
+              StopSummary(
+                id: 3,
+                name: 'Kongthong',
+                sequenceOrder: 3,
+                nights: 2,
+                diaryCount: 5,
+                isCurrent: true,
+                arrivalDate: DateTime(2026, 10, 3),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('money', (tester) async {
+    const you = Balance(travellerId: 1, name: 'You', netMinor: 481341);
+    const ankit = Balance(travellerId: 2, name: 'Ankit', netMinor: -155337);
+    const priya = Balance(travellerId: 3, name: 'Priya', netMinor: -326004);
+    const balances = [you, ankit, priya];
+
+    await shootScreen(
+      tester,
+      'money',
+      MoneyScreen(
+        summary: Stream.value(
+          MoneySummary(
+            totalMinor: 1206011,
+            travellerCount: 3,
+            balances: balances,
+            settlements: simplifyDebts(balances),
+            ledger: [
+              LedgerEntry(
+                id: 1,
+                description: 'Homestay · 2 nights',
+                amountMinor: 440000,
+                paidByName: 'You',
+                splitCount: 3,
+                spentAt: DateTime(2026, 10, 3),
+              ),
+              LedgerEntry(
+                id: 2,
+                description: 'Cave guide',
+                amountMinor: 150000,
+                paidByName: 'Priya',
+                splitCount: 3,
+                spentAt: DateTime(2026, 10, 3),
+              ),
+              LedgerEntry(
+                id: 3,
+                description: 'Taxi · Shillong to Cherrapunji',
+                amountMinor: 320011,
+                paidByName: 'You',
+                splitCount: 3,
+                spentAt: DateTime(2026, 10, 2),
+              ),
+              LedgerEntry(
+                id: 4,
+                description: 'Fuel',
+                amountMinor: 210000,
+                paidByName: 'You',
+                splitCount: 3,
+                spentAt: DateTime(2026, 10, 2),
+              ),
+              LedgerEntry(
+                id: 5,
+                description: 'Dinner at Sohra',
+                amountMinor: 86000,
+                paidByName: 'Ankit',
+                splitCount: 3,
+                spentAt: DateTime(2026, 10, 2),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   });
 }

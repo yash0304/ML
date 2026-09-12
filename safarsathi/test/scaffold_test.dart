@@ -119,6 +119,15 @@ void main() {
     }
   });
 
+  test('the number styles fall back for glyphs the typewriter lacks', () {
+    // Courier Prime is a 1950s design and has no rupee sign; the glyph was
+    // only adopted in 2010. Without this every amount in the ledger renders
+    // as a tofu box, which no test but a rendered image would catch.
+    for (final style in [AppTokens.numberStyle, AppTokens.badgeStyle]) {
+      expect(style.fontFamilyFallback, contains('Archivo'));
+    }
+  });
+
   test('words and signage use their own faces', () {
     expect(AppTokens.titleStyle.fontFamily, 'Archivo');
     expect(AppTokens.rowTitleStyle.fontFamily, 'Archivo');

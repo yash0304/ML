@@ -99,11 +99,29 @@ the code is what makes an issue resumable mid-way by a fresh chat.
   eleven do not fit an edge.
   *Depends on #6. See SCREENS.md open question 1.*
 
-- [ ] **#50 Emergency screen** — M — *see SCREENS.md §3*
+- [x] **#50 Emergency screen** — M — *see SCREENS.md §3* — *built; the tap-to-call path is still owed a device check*
   The exempt screen. Tap calls, heavy haptic, copy demoted to a secondary
   icon. Bundled helplines and trip contacts in separate headed sections.
   Provenance under every bundled line.
   *Depends on #4, #7.*
+
+---
+
+- [x] **#53 Navigation shell** — S — *five tabs, IndexedStack keeps per-tab state*
+  The five-item bottom bar from SCREENS.md §0: Diary, Trip, Money, SOS, More.
+  Deferred at #6 because there was only one screen to navigate between.
+  SOS renders in emergency red only while active.
+  *Depends on #6.*
+
+- [x] **#54 Trip screen** — M — *see SCREENS.md §4* — *read-only; editing is still #16*
+  Read-only over the current trip: milestone marker for the next leg, ticket
+  card per stop, readiness banner. Trip editing is still #16.
+  *Depends on #53.*
+
+- [x] **#55 Money screen** — M — *see SCREENS.md §8* — *settle-up + ledger; expense entry is still #31*
+  Balances, settle-up above the ledger, simplify-debts. Covers the useful
+  half of #31 and #32 against demo data; real expense entry stays there.
+  *Depends on #53.*
 
 ---
 

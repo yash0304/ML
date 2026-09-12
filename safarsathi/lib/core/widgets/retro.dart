@@ -205,7 +205,9 @@ class MilestoneMarker extends StatelessWidget {
     final cap = capColor ?? c.signal;
 
     return Container(
-      width: 92,
+      // Wide enough for a long place name set in Jost, which is a Futura
+      // revival and not a condensed face — CHERRAPUNJI truncated at 92.
+      width: 106,
       decoration: BoxDecoration(
         color: c.stone,
         border: Border.all(color: c.rule, width: AppTokens.hairline),

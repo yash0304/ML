@@ -247,6 +247,7 @@ class AppTokens {
   /// Emergency number badges. A number to dial, so it is typed, not painted.
   static const badgeStyle = TextStyle(
     fontFamily: _number,
+    fontFamilyFallback: [_body],
     fontSize: 13,
     fontWeight: FontWeight.w700,
     height: 1.0,
@@ -272,8 +273,14 @@ class AppTokens {
   );
 
   /// Every phone number, and any figure the user compares down a column.
+  ///
+  /// Courier Prime is a 1950s typewriter design and has no rupee sign — the
+  /// glyph was only adopted in 2010. Without a fallback every amount in the
+  /// ledger renders as a tofu box. Archivo carries it, and the digits still
+  /// come from Courier.
   static const numberStyle = TextStyle(
     fontFamily: _number,
+    fontFamilyFallback: [_body],
     fontSize: 13.5,
     fontWeight: FontWeight.w700,
     fontFeatures: _tabular,

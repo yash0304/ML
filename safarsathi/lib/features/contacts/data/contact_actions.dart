@@ -94,6 +94,25 @@ class ContactActions {
     }
   }
 
+  /// Places a call to a number that is not a contact — a bundled helpline.
+  ///
+  /// Heavy haptic, because this is the emergency path. Nothing is written to
+  /// CallLogs: those rows reference a contact, and a helpline is not one.
+  Future<void> callNumber(String number) async {
+    Haptics.grave();
+    await _launchOrThrow(
+      Uri(scheme: 'tel', path: number),
+      'No app on this phone can place a call.',
+    );
+  }
+
+  /// Copies a number that is not a contact.
+  Future<String> copyNumber(String number) async {
+    await copyToClipboard(number);
+    Haptics.light();
+    return number;
+  }
+
   Future<void> call(Contact c) async {
     Haptics.light();
     await _launchOrThrow(

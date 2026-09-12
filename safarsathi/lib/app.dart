@@ -3,6 +3,12 @@ import 'package:flutter/material.dart';
 import 'core/database/app_database.dart';
 import 'core/theme/app_tokens.dart';
 import 'core/theme/motion.dart';
+import 'core/widgets/app_shell.dart';
+import 'features/emergency/presentation/emergency_screen.dart';
+import 'features/money/data/money_summary.dart';
+import 'features/money/presentation/money_screen.dart';
+import 'features/trips/data/trip_summary.dart';
+import 'features/trips/presentation/trip_screen.dart';
 import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:phone_numbers_parser/phone_numbers_parser.dart' show IsoCode;
 
@@ -135,19 +141,73 @@ class _HomeState extends State<_Home> {
           // A release build has no trip and no way to make one until #16.
           return _NoTrip(onCreate: _makeDemoTrip);
         }
-        final dao = widget.db.contactsDao;
+        final db = widget.db;
+        final dao = db.contactsDao;
         final actions = ContactActions(dao: dao, tripId: trip.tripId);
-        return DiaryScreen(
-          watchContacts: dao.watchContacts,
-          unconfirmedCount: dao.watchUnconfirmedCount(trip.tripId),
-          tripId: trip.tripId,
-          tripName: trip.name,
-          currentStopId: trip.currentStopId,
-          currentStopName: trip.currentStopName,
-          onCopy: actions.copy,
-          onOpenDialer: actions.openDialer,
-          onAdd: () => _openForm(context, trip),
-          onOpen: (contact) => _openEntry(context, trip, contact, actions),
+        final unconfirmed = dao.watchUnconfirmedCount(trip.tripId);
+
+        return AppShell(
+          destinations: [
+            ShellDestination(
+              label: 'Diary',
+              icon: Icons.menu_book_outlined,
+              screen: DiaryScreen(
+                watchContacts: dao.watchContacts,
+                unconfirmedCount: unconfirmed,
+                tripId: trip.tripId,
+                tripName: trip.name,
+                currentStopId: trip.currentStopId,
+                currentStopName: trip.currentStopName,
+                onCopy: actions.copy,
+                onOpenDialer: actions.openDialer,
+                onAdd: () => _openForm(context, trip),
+                onOpen: (contact) =>
+                    _openEntry(context, trip, contact, actions),
+              ),
+            ),
+            ShellDestination(
+              label: 'Trip',
+              icon: Icons.route_outlined,
+              screen: TripScreen(
+                trip: watchTripSummary(
+                  db,
+                  trip.tripId,
+                  currentStopId: trip.currentStopId,
+                ),
+                unconfirmedCount: unconfirmed,
+              ),
+            ),
+            ShellDestination(
+              label: 'Money',
+              icon: Icons.currency_rupee,
+              screen: MoneyScreen(summary: watchMoneySummary(db, trip.tripId)),
+            ),
+            ShellDestination(
+              label: 'SOS',
+              icon: Icons.emergency_outlined,
+              emergency: true,
+              screen: EmergencyScreen(
+                helplines: dao.watchEmergencyHelplines(const ['IN']),
+                localContacts: dao.watchTripEmergencyContacts(trip.tripId),
+                placeLabel: trip.currentStopName == null
+                    ? 'India'
+                    : 'India · ${trip.currentStopName}',
+                onCall: actions.callNumber,
+                onCopy: actions.copyNumber,
+              ),
+            ),
+            const ShellDestination(
+              label: 'More',
+              icon: Icons.more_horiz,
+              screen: NotBuiltYet(
+                title: 'More',
+                what:
+                    'Sheet import, import history, cache management and '
+                    'settings.',
+                issue: 'Issues 11 to 15, 35',
+              ),
+            ),
+          ],
         );
       },
     );

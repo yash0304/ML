@@ -1,20 +1,28 @@
-# HANDOFF — SafarSathi — 2026-09-12 (after issue #9)
+# HANDOFF — SafarSathi — 2026-09-12 (after issues #50, #53, #54, #55)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1 to #9 are done except for the device check.** The project
-  analyses clean and passes **140 tests** in about nine seconds on
+- **Issues #1–#9, #50, #53, #54, #55 are done except for the device check.**
+  The project analyses clean and passes **165 tests** in about nine seconds on
   Flutter 3.47.3 / Dart 3.13.3. It has never run on a phone.
-- Backlog position: 9 / 52 done. **Milestone 2 is complete.** Next is
-  **#49, the category thumb index**, then **#50, the emergency screen** —
-  or jump to Milestone 3 (bulk import) if that is more useful for October.
+- Backlog position: 13 / 55 done. **Four of the five tabs are live.** Diary,
+  Trip, Money and SOS all render real data off the demo trip; **More** is
+  still a `NotBuiltYet` placeholder (import, history, settings — #11–#15, #35).
+- **An APK exists.** GitHub Actions builds a release APK on every push to
+  `claude/offline-retro-modern-app-design-r2n4ju`; the workflow runs
+  `flutter analyze` and the full suite first, so any APK that exists passed
+  everything. Download it from the run's `safarsathi-apk` artifact.
 - **The contacts half of the app is whole.** Add an entry, edit it, copy its
   number, open the dialer, and confirm it — which clears the amber dot and
   drops the readiness count. That loop is the thing the whole project was
   designed around.
+- The app opens with no trip and a **"Create demo trip"** button, which seeds
+  three stops, two legs (the second deliberately unsynced, so the milestone
+  cap renders muted), seven contacts, three travellers and five split
+  expenses. Every seeded number is `+91 90000 000xx` and obviously fake.
 
 ## Type
 
@@ -41,14 +49,17 @@ settle, and what to do when each fails.
 flutter test --update-goldens test/golden_test.dart
 ```
 
-Writes `test/goldens/*.png` — the diary in both themes, empty, and mid-copy —
-rendered from the real widget tree with the bundled fonts and the SDK icon
-font loaded. **This is the fastest way to see a change.** It has already
-caught two layout bugs that no widget test would have failed on.
-- The database has 16 tables and 27 foreign keys, all asserted by tests that
-  query `sqlite_master` rather than trusting generated code.
-- Design is complete and prototyped: eleven screens, both themes, full
-  decision log.
+Writes `test/goldens/*.png` — ten images now: the diary in both themes, empty
+and mid-copy; the entry form; an entry unconfirmed and confirmed; the
+emergency screen; the trip screen; the money screen. Rendered from the real
+widget tree with the bundled fonts and the SDK icon font loaded.
+
+**This is the fastest way to see a change, and the highest-value tool in the
+project.** It has caught six bugs no widget test could see: a shadow painting
+the margin rule as a grey column, the FAB sitting over the thumb index, the
+toast hidden under the FAB, record rows centring instead of stretching, and
+the missing rupee glyph. A widget test asserts the text is in the tree; only
+an image shows you it rendered as a box.
 
 ## Prototypes
 
@@ -101,6 +112,15 @@ real Tier-1 codes with their government sources.
 | Confirming lands the stamp, clears the dot | widget test |
 | Un-confirming restores the unconfirmed line | widget test |
 | Government tiers get no confirm section | widget test |
+| Even splits sum back to the total, n = 1..12 | test |
+| Simplified payments sum back to the balances | test |
+| Rupee amounts use Indian grouping | test |
+| **The rupee sign renders, not a tofu box** | test on the glyph |
+| Settle-up sits above the ledger | widget test |
+| The milestone cap mutes on an unsynced leg | widget test |
+| Five tabs switch and keep their state | widget test |
+| SOS is red only while active | widget test |
+| The emergency screen carries no grain or stamps | widget test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -176,37 +196,27 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**Run it on a phone before building anything else.** Nine issues are done
-and not one line has executed on hardware. Four things no test can check are
-now stacked up:
+**Install the APK and use it.** Thirteen issues are done and not one line has
+executed on hardware. Four things no test can check are stacked up:
 
-1. Do the three fonts actually load? If the stencil labels are not geometric
-   and the numbers are not a typewriter, the family names in `pubspec.yaml`
-   and `app_tokens.dart` disagree and everything since #1 sits on a silent
+1. Do the three fonts actually load? If the signage is not geometric and the
+   numbers are not a typewriter, the family names in `pubspec.yaml` and
+   `app_tokens.dart` disagree and everything since #1 sits on a silent
    fallback.
-2. Are the haptics felt, especially the medium one at the stamp's contact?
-3. Does `tel:` with an empty path open the Android dialer, or error? The
-   whole copy-first workflow rests on this. If it errors, fall back to
-   `ACTION_DIAL` over a platform channel and log a decision.
+2. Are the haptics felt, especially the heavy one on the emergency screen?
+3. Does `tel:` with an empty path open the Android dialer, or error? The whole
+   copy-first workflow rests on this. If it errors, fall back to `ACTION_DIAL`
+   over a platform channel and log a decision.
 4. Is the night palette pleasant at 2am, as opposed to merely compliant?
 
-**Then pick up #49 (the thumb index narrowed to categories in use) or #50
-(the emergency screen).** #50 is the more valuable of the two: it is the
-screen the whole trust system exists to protect, and SCREENS.md §3 specifies
-it fully. Remember it is the exempt screen — no grain, no ruled paper, no
-stamps, and there the tap CALLS rather than copies, with `heavyImpact`.
+Tap **Create demo trip** on first launch or every screen is empty.
 
-If October is close, Milestone 3 (bulk import, #11–#15) matters more than
-either.
+**Then the only stub left is More** — bulk import (#11–#15), call history
+(#35), settings. If October is close, #11–#15 is the highest-value block:
+Yash's real contacts live in a sheet, and typing them in one at a time is not
+a plan.
 
-**Still unverified on hardware:** whether `tel:` with an empty path opens the
-Android dialer or errors. The code treats a failure as "no dialer app" and
-says so; if it does error on a real phone, fall back to `ACTION_DIAL` over a
-platform channel and log a decision.
-
-Before any of it, run `flutter run` on the phone and settle the unverified
-items above. If the fonts are wrong, fix that first — everything after is
-built on it.
+After that, #16 (trip editing) is what turns the demo trip into his trip.
 
 ## Note on the environment
 
