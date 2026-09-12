@@ -85,7 +85,7 @@ the code is what makes an issue resumable mid-way by a fresh chat.
   Verify: add a contact, it appears in the dialer with an amber dot.
   *Depends on #6.*
 
-- [ ] **#9 Mark-as-confirmed flow** — S
+- [x] **#9 Mark-as-confirmed flow** — M — *was S; includes the entry screen. 18 tests*
   The long-press sheet action that promotes `userEntered → userVerified`.
   Readiness banner updates live.
   Verify: confirm a contact, amber dot clears, banner count drops.

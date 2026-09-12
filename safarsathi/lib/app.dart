@@ -9,6 +9,7 @@ import 'features/contacts/data/contact_actions.dart';
 import 'features/contacts/data/entry_draft.dart';
 import 'features/contacts/presentation/diary_screen.dart';
 import 'features/contacts/presentation/entry_form_screen.dart';
+import 'features/contacts/presentation/entry_screen.dart';
 import 'features/dev/dev_seed.dart';
 
 class SafarSathiApp extends StatelessWidget {
@@ -48,10 +49,41 @@ class _Home extends StatefulWidget {
 class _HomeState extends State<_Home> {
   late final Future<DemoTrip?> _trip = ensureDemoTrip(widget.db);
 
+  /// The read-only entry screen. Long-press in the diary opens it.
+  Future<void> _openEntry(
+    BuildContext context,
+    DemoTrip trip,
+    Contact contact,
+    ContactActions actions,
+  ) async {
+    final db = widget.db;
+    String? stopName;
+    if (contact.stopId != null) {
+      final stop = await (db.select(
+        db.stops,
+      )..where((s) => s.id.equals(contact.stopId!))).getSingleOrNull();
+      stopName = stop?.name;
+    }
+    if (!context.mounted) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => EntryScreen(
+          contact: contact,
+          stopName: stopName,
+          onCopy: actions.copy,
+          onOpenDialer: actions.openDialer,
+          onCall: actions.call,
+          onChat: actions.whatsapp,
+          onConfirm: (c, {required confirmed}) =>
+              db.contactsDao.markConfirmed(c.id, confirmed: confirmed),
+          onEdit: (c) => _openForm(context, trip, existing: c),
+        ),
+      ),
+    );
+  }
+
   /// The entry form, for a new entry or an existing one.
-  ///
-  /// Long-press opens it in edit mode. A dedicated read-only entry screen
-  /// arrives with the confirm stamp at #9.
   Future<void> _openForm(
     BuildContext context,
     DemoTrip trip, {
@@ -104,7 +136,7 @@ class _HomeState extends State<_Home> {
           onCopy: actions.copy,
           onOpenDialer: actions.openDialer,
           onAdd: () => _openForm(context, trip),
-          onOpen: (contact) => _openForm(context, trip, existing: contact),
+          onOpen: (contact) => _openEntry(context, trip, contact, actions),
         );
       },
     );

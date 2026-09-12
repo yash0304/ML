@@ -5,6 +5,16 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-12 — [CONTACTS] Confirming lives on a labelled button on the entry screen, never on a swipe or a long-press. (It is the single action the whole trust system depends on, and the app cannot check it — it has no way to know whether a call connected. So it asks the user to assert it and makes the assertion deliberate. A gesture that could fire by accident would silently promote an unverified number.)
+
+2026-09-12 — [CONTACTS] Clearing a confirmation drops the tier back to `userEntered`, in the UI as well as in the DAO. (The entry screen computed its tier from the stored value, so after clearing it still read "Confirmed by you". Found by a test. The screen now mirrors `markConfirmed` exactly.)
+
+2026-09-12 — [CONTACTS] Confirmation is offered only on tiers a user can vouch for. `verifiedNational` and `verifiedState` get no confirm section at all. (Those are authoritative by provenance, not because anyone dialled them. Asking the user to confirm 112 would imply their assertion is what makes it true.)
+
+2026-09-12 — [CONTACTS] Un-confirming is supported and says why: a number that worked in October may not work in November. (A one-way promotion would leave stale confirmations with no way back, which is the same failure as a fabricated number wearing a slower disguise.)
+
+2026-09-12 — [UI] The entry screen labels its usage row "Last action", not "Last called". (A copy counts, since the dial happens in the Android dialer after a paste. Calling it "last called" would overstate what the app actually observed.)
+
 2026-09-12 — [UI] Typefaces replaced: **Jost** for signage, **Archivo** for words, **Courier Prime** for numbers. Supersedes the Inter + Archivo Narrow pairing chosen on 2026-09-11. (Yash's call: the app looked AI-generated, and he is right — Inter is the house face of every dashboard shipped since 2018 and reads as a default rather than a choice. The replacements are period-rooted rather than merely different: Jost is a Futura revival, and Futura is the geometric sans painted onto enamel road signs and milestone caps from the sixties through the eighties; Archivo revives the mid-century newspaper grotesques; Courier Prime is a typewriter, which is what typed numbers into a diary. All three are SIL OFL and together are 924 KB, slightly less than the two they replaced.)
 
 2026-09-12 — [UI] Numbers are set in the typewriter face, not the body face. The rule: a number you might dial, count or compare is TYPED — Courier Prime; a number painted onto an object is SIGNAGE — Jost. (So the emergency badge reads as typed while a milestone's km reads as painted, though both are digits. Courier is monospaced, so phone numbers align down the column by construction rather than by asking for a font feature — the alignment the whole diary depends on is now structural.)

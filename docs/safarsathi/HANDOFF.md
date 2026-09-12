@@ -1,18 +1,34 @@
-# HANDOFF — SafarSathi — 2026-09-12 (after issue #8)
+# HANDOFF — SafarSathi — 2026-09-12 (after issue #9)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1 to #8 are done except for the device check.** The project
-  analyses clean and passes **118 tests** in about seven seconds on
+- **Issues #1 to #9 are done except for the device check.** The project
+  analyses clean and passes **140 tests** in about nine seconds on
   Flutter 3.47.3 / Dart 3.13.3. It has never run on a phone.
-- Backlog position: 8 / 52 done. Next is **#9, mark as confirmed** — the
-  app's one signature animation.
-- **The diary works end to end.** Tap an entry and it copies, with the toast
-  offering the dialer. The FAB adds an entry, a long-press edits one, and
-  numbers normalise to E.164 on save.
+- Backlog position: 9 / 52 done. **Milestone 2 is complete.** Next is
+  **#49, the category thumb index**, then **#50, the emergency screen** —
+  or jump to Milestone 3 (bulk import) if that is more useful for October.
+- **The contacts half of the app is whole.** Add an entry, edit it, copy its
+  number, open the dialer, and confirm it — which clears the amber dot and
+  drops the readiness count. That loop is the thing the whole project was
+  designed around.
+
+## Type
+
+Three faces, three jobs, changed at Yash's request on 2026-09-12 because
+Inter made the app look generated:
+
+- **Jost** — signage. A Futura revival; Futura is what was painted on enamel
+  road signs and milestone caps from the sixties to the eighties.
+- **Archivo** — words.
+- **Courier Prime** — numbers. A typewriter, and monospaced, so the column
+  alignment the diary depends on is structural rather than a font feature.
+
+The rule when a number could go either way: a number you might dial, count or
+compare is typed; a number painted onto an object is signage.
 
 ## Look at the app without a phone
 
@@ -76,6 +92,10 @@ real Tier-1 codes with their government sources.
 | A duplicate warns but never blocks | test |
 | **Editing digits clears a confirmation** | test |
 | A new entry always lands unconfirmed | test |
+| Provenance reads right on all five tiers | widget test |
+| Confirming lands the stamp, clears the dot | widget test |
+| Un-confirming restores the unconfirmed line | widget test |
+| Government tiers get no confirm section | widget test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -151,23 +171,28 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**Write `docs/ISSUE_9_Confirm.md`, then do backlog #9 — mark as confirmed.**
+**Run it on a phone before building anything else.** Nine issues are done
+and not one line has executed on hardware. Four things no test can check are
+now stacked up:
 
-Two parts:
+1. Do the three fonts actually load? If the stencil labels are not geometric
+   and the numbers are not a typewriter, the family names in `pubspec.yaml`
+   and `app_tokens.dart` disagree and everything since #1 sits on a silent
+   fallback.
+2. Are the haptics felt, especially the medium one at the stamp's contact?
+3. Does `tel:` with an empty path open the Android dialer, or error? The
+   whole copy-first workflow rests on this. If it errors, fall back to
+   `ACTION_DIAL` over a platform channel and log a decision.
+4. Is the night palette pleasant at 2am, as opposed to merely compliant?
 
-1. **Build the read-only entry screen** from SCREENS.md §2, which does not
-   exist yet. The number as a 27pt headline, provenance under it, `COPY
-   NUMBER` as the primary button, then Dialer / Call / Chat, the record
-   fields, and the confirm section. Move the diary's long-press to it, with
-   Edit as an action that opens the form built at #8.
-2. **The confirmation stamp.** `StampBadge` already exists in
-   `core/widgets/retro.dart` and animates only on the false → true
-   transition, with the haptic at contact rather than at animation start.
-   Wire it to `ContactsDao.markConfirmed`, clear the amber dot, and roll the
-   readiness count down.
+**Then pick up #49 (the thumb index narrowed to categories in use) or #50
+(the emergency screen).** #50 is the more valuable of the two: it is the
+screen the whole trust system exists to protect, and SCREENS.md §3 specifies
+it fully. Remember it is the exempt screen — no grain, no ruled paper, no
+stamps, and there the tap CALLS rather than copies, with `heavyImpact`.
 
-This is the app's one signature animation — DESIGN_VISUAL_v2.md §5.3 has the
-full beat sheet. Add a golden of the stamp landed.
+If October is close, Milestone 3 (bulk import, #11–#15) matters more than
+either.
 
 **Still unverified on hardware:** whether `tel:` with an empty path opens the
 Android dialer or errors. The code treats a failure as "no dialer app" and

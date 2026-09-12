@@ -19,6 +19,7 @@ import 'package:safarsathi/features/contacts/data/contacts_dao.dart';
 import 'package:safarsathi/features/contacts/data/entry_draft.dart';
 import 'package:safarsathi/features/contacts/presentation/diary_screen.dart';
 import 'package:safarsathi/features/contacts/presentation/entry_form_screen.dart';
+import 'package:safarsathi/features/contacts/presentation/entry_screen.dart';
 
 Future<void> loadRealFonts() async {
   const families = {
@@ -285,6 +286,60 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/entry_form.png'),
+    );
+  });
+
+  Future<void> shootEntry(
+    WidgetTester tester,
+    String name, {
+    required Contact contact,
+    bool confirmAfterPump = false,
+  }) async {
+    tester.view.physicalSize = const Size(840, 1780);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: AppTokens.light,
+        home: EntryScreen(
+          contact: contact,
+          stopName: 'Shillong · nights 1 and 4',
+          onCopy: (c) async => c.phoneRaw,
+          onOpenDialer: () async {},
+          onCall: (_) async {},
+          onChat: (_) async {},
+          onConfirm: (_, {required confirmed}) async {},
+          onEdit: (_) {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    if (confirmAfterPump) {
+      await tester.tap(find.text('Mark confirmed'));
+      await tester.pump();
+      // Past the 380ms stamp, so the image shows it settled.
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/$name.png'),
+    );
+  }
+
+  testWidgets('entry — unconfirmed', (tester) async {
+    await shootEntry(tester, 'entry_unconfirmed', contact: demo[2]);
+  });
+
+  testWidgets('entry — stamp landed', (tester) async {
+    await shootEntry(
+      tester,
+      'entry_confirmed',
+      contact: demo[2],
+      confirmAfterPump: true,
     );
   });
 }
