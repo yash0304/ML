@@ -17,6 +17,7 @@ Nothing here relates to the ML toolkit at the repo root.
 | `DECISIONS.md` | Dated decision log, newest first. Never delete a superseded line. |
 | `BACKLOG_v0.1.md` | 48 issues with checkboxes. Checked = done. |
 | `HANDOFF.md` | Session-to-session baton. Read this first if you are resuming. |
+| `RUNNING.md` | How to run it on a phone, and the four things only hardware can settle. |
 | `DIALER_RETRO_PATCH.md` | Eleven exact edits taking the drafted dialer to v2. |
 
 ## The two things a new session must not break

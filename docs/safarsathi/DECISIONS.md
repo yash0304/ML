@@ -5,6 +5,10 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-12 — [ARCH] Package visibility declared in the Android manifest for `tel:`, `sms:` and `https:`. (On Android 11 and later an app cannot see which other apps handle an intent unless it declares them, so `url_launcher` returns false and every action fails silently. Flutter's template ships only a PROCESS_TEXT query, so this was missing — and the first device test would have blamed the empty-path `tel:` theory for a package-visibility problem. Found by reading the manifest before writing the run instructions, not by any test: nothing in a widget test touches the manifest.)
+
+2026-09-12 — [ARCH] The release manifest declares NO permissions at all, INTERNET included. Only the debug manifest has it, for hot reload. (The app makes no network call at runtime, so it should not ask for the ability to. It is also the clearest possible proof of the offline claim: the release build cannot reach the network even if a future line of code tried.)
+
 2026-09-12 — [CONTACTS] Confirming lives on a labelled button on the entry screen, never on a swipe or a long-press. (It is the single action the whole trust system depends on, and the app cannot check it — it has no way to know whether a call connected. So it asks the user to assert it and makes the assertion deliberate. A gesture that could fire by accident would silently promote an unverified number.)
 
 2026-09-12 — [CONTACTS] Clearing a confirmation drops the tier back to `userEntered`, in the UI as well as in the DAO. (The entry screen computed its tier from the stored value, so after clearing it still read "Confirmed by you". Found by a test. The screen now mirrors `markConfirmed` exactly.)

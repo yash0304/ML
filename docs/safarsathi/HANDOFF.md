@@ -30,6 +30,11 @@ Inter made the app look generated:
 The rule when a number could go either way: a number you might dial, count or
 compare is typed; a number painted onto an object is signage.
 
+## Running it on a phone
+
+`RUNNING.md` has the full procedure, the four things only hardware can
+settle, and what to do when each fails.
+
 ## Look at the app without a phone
 
 ```
