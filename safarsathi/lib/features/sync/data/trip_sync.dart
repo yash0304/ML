@@ -16,9 +16,9 @@ import 'package:drift/drift.dart';
 import '../../../core/database/app_database.dart';
 import '../../discovery/data/corridor_sync.dart';
 import '../../map/data/map_download.dart';
-import '../../map/data/tile_downloader.dart';
 import '../../map/data/tile_math.dart';
 import '../../weather/data/weather_sync.dart';
+import 'sync_error.dart';
 
 /// What kind of work a task is. Ordered as they run.
 ///
@@ -60,8 +60,11 @@ class SyncTask {
 
 class SyncFailure {
   final SyncTask task;
-  final String reason;
-  const SyncFailure(this.task, this.reason);
+  final SyncError error;
+  const SyncFailure(this.task, this.error);
+
+  /// The sentence to show. Never the raw exception — see sync_error.dart.
+  String get reason => error.message;
 }
 
 class SyncProgress {
@@ -238,7 +241,7 @@ class TripSync {
             }
         }
       } on Object catch (e) {
-        failures.add(SyncFailure(task, _readable(e)));
+        failures.add(SyncFailure(task, describeSyncError(e)));
       }
 
       done++;
@@ -251,14 +254,6 @@ class TripSync {
     }
   }
 
-  /// Turns an exception into something a person can act on.
-  static String _readable(Object error) {
-    final text = '$error';
-    if (error is TileDownloadException) return text;
-    // Drift and http throw types whose toString is a stack-shaped mess.
-    if (text.length > 160) return '${text.substring(0, 157)}…';
-    return text;
-  }
 }
 
 /// Rough total size of a run, for the button.

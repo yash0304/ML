@@ -64,9 +64,8 @@
       action on the entry screen fails silently — on the exact phones this app
       is meant for.
 
-      Note what is NOT here: no permissions at all. This app makes no network
-      call at runtime, so the release build ships without INTERNET. The debug
-      manifest adds it for hot reload only.
+      These are queries, not permissions. The one permission this app holds is
+      declared at the top of this file, and the paragraph there says why.
     -->
     <queries>
         <intent>

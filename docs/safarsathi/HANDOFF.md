@@ -1,4 +1,4 @@
-# HANDOFF — SafarSathi — 2026-09-13 (after #10, the last feature)
+# HANDOFF — SafarSathi — 2026-09-13 (after the first real-device sync)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
@@ -6,7 +6,7 @@
 ## Where we are
 
 - **Issues #1–#9, #11–#29, #31, #32, #35, #41–#46, #48–#55 are done except
-  for the device check.** Analyses clean, **726 tests** in about a minute.
+  for the device check.** Analyses clean, **743 tests** in about a minute.
 - Backlog position: 47 / 56 done.
 - **Every feature this trip needs is now built.** What remains is one audit
   that needs a real phone, two curation jobs that need a browser, three
@@ -42,6 +42,34 @@ The project rule is absolute — no emergency number ships without a
 government-domain source recorded in `sourceNote`. A search-engine summary is
 not that. **Those four numbers remain unseeded and must stay unseeded until
 someone reads a `.gov.in` page directly.**
+
+## THE FIRST RUN ON A REAL PHONE, AND WHAT IT FOUND
+
+Yash ran a sync on his handset on 13 Sep. Every task failed — three route
+downloads and four forecasts — with DNS errors (`Failed host lookup`,
+errno 7) plus one dropped connection to Overpass. **His network was the
+proximate cause and that part is not diagnosed**; the phone showed WiFi and
+LTE, and a WiFi that is associated but not forwarding is the commonest
+explanation. Ask him before assuming otherwise.
+
+**Three bugs in the app were real, and all three are fixed.**
+
+1. The screen printed raw Dart exceptions, truncated mid-URL, seven times
+   over. `TripSync._readable` had a comment claiming it made errors
+   actionable and did nothing of the kind. Replaced by
+   `features/sync/data/sync_error.dart`, which classifies and speaks English.
+   The exact strings from his phone are pinned by name in
+   `test/sync_error_test.dart`.
+2. Under those seven failures out of seven, the screen said **"Everything
+   else went through."** Nothing had. `summariseSyncFailures` now leads with
+   one honest sentence.
+3. **No request had a client-side timeout** — not one of the four clients. On
+   a WiFi that stops forwarding, `http.get` waits forever and the sequential
+   sync stalls behind it with the button still saying "Downloading…". See
+   `core/util/network.dart`.
+
+Also fixed: the manifest's `<queries>` comment claimed the release build ships
+without INTERNET, directly below the line that grants it.
 
 ## What #10 added
 

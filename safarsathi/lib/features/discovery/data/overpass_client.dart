@@ -17,6 +17,7 @@ import 'package:http/http.dart' as http;
 
 import 'geo.dart';
 import 'poi_category.dart';
+import '../../../core/util/network.dart';
 
 /// Identifies the app to the Overpass volunteers, as their usage policy asks.
 /// An anonymous flood is how a free service gets an IP blocked.
@@ -81,7 +82,7 @@ class OverpassClient {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: {'data': query},
-    );
+    ).timeout(NetTimeouts.places);
 
     if (response.statusCode == 429 || response.statusCode == 504) {
       // Overpass says these plainly: too many requests, or the query timed

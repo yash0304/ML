@@ -49,6 +49,7 @@ import 'package:safarsathi/features/map/data/map_download.dart';
 import 'package:safarsathi/features/map/data/tile_downloader.dart';
 import 'package:safarsathi/features/map/data/tile_provider.dart';
 import 'package:safarsathi/features/map/presentation/map_download_screen.dart';
+import 'package:safarsathi/features/sync/data/sync_error.dart';
 import 'package:safarsathi/features/sync/data/trip_sync.dart';
 import 'package:safarsathi/features/sync/presentation/sync_screen.dart';
 import 'package:safarsathi/features/discovery/data/discovery.dart';
@@ -1267,14 +1268,16 @@ void main() {
               SyncTask(kind: SyncKind.tiles, subject: 'whole trip'),
             ],
           ),
-          run: () => Stream.fromIterable(const [
+          run: () => Stream.fromIterable([
             SyncProgress(
               done: 3,
               total: 3,
               failures: [
                 SyncFailure(
                   failed,
-                  'OpenStreetMap is busy right now. Try again in a minute.',
+                  describeSyncError(
+                    'OpenStreetMap is busy right now. Try again in a minute.',
+                  ),
                 ),
               ],
             ),

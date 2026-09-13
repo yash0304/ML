@@ -13,6 +13,7 @@ import '../../discovery/data/geo.dart';
 import 'tile_math.dart';
 import 'tile_provider.dart';
 import 'tile_store.dart';
+import '../../../core/util/network.dart';
 
 /// The band this app actually downloads.
 ///
@@ -88,7 +89,9 @@ class TileDownloader {
        sleep = sleep ?? Future.delayed;
 
   static Future<Uint8List?> _fetchOverHttp(String url) async {
-    final response = await http.get(Uri.parse(url));
+    final response = await http.get(
+      Uri.parse(url),
+    ).timeout(NetTimeouts.tile);
     if (response.statusCode == 200) return response.bodyBytes;
     if (response.statusCode == 401 || response.statusCode == 403) {
       throw const TileDownloadException(

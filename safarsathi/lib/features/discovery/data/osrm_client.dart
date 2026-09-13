@@ -16,6 +16,7 @@ import 'package:http/http.dart' as http;
 
 import 'geo.dart';
 import 'polyline.dart';
+import '../../../core/util/network.dart';
 
 /// The public demo server. It has no SLA and asks for light use, which is
 /// exactly what one call per leg at setup is.
@@ -56,7 +57,7 @@ class OsrmClient {
     final response = await http.get(
       url,
       headers: const {'User-Agent': osrmUserAgent},
-    );
+    ).timeout(NetTimeouts.route);
     if (response.statusCode != 200) {
       throw OsrmException('The routing service returned ${response.statusCode}.');
     }

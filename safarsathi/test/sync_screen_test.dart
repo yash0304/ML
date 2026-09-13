@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:safarsathi/core/theme/app_tokens.dart';
+import 'package:safarsathi/features/sync/data/sync_error.dart';
 import 'package:safarsathi/features/sync/data/trip_sync.dart';
 import 'package:safarsathi/features/sync/presentation/sync_screen.dart';
 
@@ -122,14 +123,16 @@ void main() {
     useTallSurface(tester);
     await tester.pumpWidget(
       screen(
-        run: () => Stream.fromIterable(const [
+        run: () => Stream.fromIterable([
           SyncProgress(
             done: 8,
             total: 8,
             failures: [
               SyncFailure(
                 _shillongToSohra,
-                'OpenStreetMap is busy right now. Try again in a minute.',
+                describeSyncError(
+                  'OpenStreetMap is busy right now. Try again in a minute.',
+                ),
               ),
             ],
           ),
@@ -146,15 +149,64 @@ void main() {
     expect(find.textContaining('retries only these'), findsOneWidget);
   });
 
+  testWidgets('EVERY TASK FAILING OFFLINE IS SAID ONCE, AND HONESTLY', (
+    tester,
+  ) async {
+    // Yash's phone, 13 Sep: seven tasks, seven identical DNS failures, each
+    // rendered as a raw truncated exception under a line claiming
+    // "Everything else went through". Nothing else went through.
+    const dns =
+        "ClientException with SocketException: Failed host lookup: "
+        "'api.open-meteo.com' (OS Error: No address associated with "
+        "hostname, errno = 7), uri=https://api.open-meteo.com/v1/forecast";
+
+    await tester.pumpWidget(
+      screen(
+        run: () => Stream.fromIterable([
+          SyncProgress(
+            done: 3,
+            total: 3,
+            failures: [
+              for (var i = 0; i < 3; i++)
+                SyncFailure(
+                  SyncTask(
+                    kind: SyncKind.weather,
+                    subject: 'Stop $i',
+                    stopId: i,
+                  ),
+                  describeSyncError(dns),
+                ),
+            ],
+          ),
+        ]),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('Download everything'));
+    await tester.pumpAndSettle();
+
+    // The lie is gone.
+    expect(find.textContaining('Everything else went through'), findsNothing);
+    // One sentence, and it names the actual problem and the actual fix.
+    expect(find.textContaining('no working internet'), findsOneWidget);
+    expect(find.textContaining('Connect to WiFi'), findsOneWidget);
+    // And not one word of the exception reaches the screen.
+    expect(find.textContaining('SocketException'), findsNothing);
+    expect(find.textContaining('errno'), findsNothing);
+    expect(find.textContaining('uri='), findsNothing);
+  });
+
   testWidgets('a failure never renders in emergency red', (tester) async {
     // A leg that did not download is a thing to retry, not a crisis.
     await tester.pumpWidget(
       screen(
-        run: () => Stream.fromIterable(const [
+        run: () => Stream.fromIterable([
           SyncProgress(
             done: 8,
             total: 8,
-            failures: [SyncFailure(_shillongToSohra, 'busy')],
+            failures: [
+              SyncFailure(_shillongToSohra, describeSyncError('busy')),
+            ],
           ),
         ]),
       ),

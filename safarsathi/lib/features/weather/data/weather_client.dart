@@ -15,6 +15,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../discovery/data/geo.dart';
+import '../../../core/util/network.dart';
 
 const openMeteoEndpoint = 'https://api.open-meteo.com/v1/forecast';
 
@@ -107,7 +108,7 @@ class WeatherClient {
     : fetch = fetch ?? _fetchOverHttp;
 
   static Future<String> _fetchOverHttp(Uri url) async {
-    final response = await http.get(url);
+    final response = await http.get(url).timeout(NetTimeouts.weather);
     if (response.statusCode != 200) {
       throw WeatherException(
         'The forecast service returned ${response.statusCode}.',

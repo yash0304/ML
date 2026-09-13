@@ -5,6 +5,18 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-13 — [SYNC] **Thrown objects are classified into a sentence before they reach the sync screen; `TripSync._readable` is replaced by `describeSyncError`.** (`_readable` carried a comment saying it turned an exception "into something a person can act on" and then truncated the string to 160 characters. On Yash's phone that rendered seven rows of `ClientException with SocketException: Failed host lookup: 'router.project-osrm.org' (OS Error: No address associated with hostname, errno = 7), uri=https://r…`, each cut off mid-URL. A comment describing behaviour the code does not have is worse than no comment: it stops anybody looking.)
+
+2026-09-13 — [SYNC] A run where every task failed never says "Everything else went through". (It said exactly that under seven failures out of seven. `summariseSyncFailures` now leads with one sentence naming the actual cause and the actual fix, and the per-task rows sit under it — seven repetitions of one DNS failure is one fact rendered seven times.)
+
+2026-09-13 — [SYNC] A failed DNS lookup and a dropped connection are reported differently. (`Failed host lookup` means retrying on the same network cannot help; `Software caused connection abort` means it can. Both appeared on the same screen and the app treated them identically. `SyncError.needsDifferentNetwork` is the distinction.)
+
+2026-09-13 — [SYNC] A missing map key is never reported as a network problem. (It arrives in the same failure list as the DNS errors, and telling somebody to check their WiFi about it sends them to entirely the wrong place. The summary points at Settings → Map key instead.)
+
+2026-09-13 — [NET] Every outbound request now carries a client-side timeout; there were none. (`http.get` with no timeout waits as long as the socket stays open, which on a WiFi that has stopped forwarding packets is forever — and sync runs its tasks in sequence, so one hung request stalls the whole download behind it while the button still says "Downloading…". Overpass gets 90s, deliberately longer than the 60s server-side timeout in its own query, so a client cutoff never kills a query that was about to return.)
+
+2026-09-13 — [ANDROID] The manifest's `<queries>` comment no longer claims the release build ships without INTERNET. (It said so directly underneath the `uses-permission` line that grants it — left over from before #21 narrowed the offline claim. Two paragraphs in one file asserting opposite things is how somebody later trusts the wrong one.)
+
 2026-09-13 — [CONTACTS] **Multi-add writes through `ContactsDao.insertBatch`, the same function file import uses, rather than its own insert loop.** (`insertBatch` forces `userEntered` and `callConfirmed = false` on every row whatever the caller passes, so there is no argument the screen could get wrong. A second write path that re-implemented the guard is exactly how the invariant erodes — and that guard has already caught one real bug in this project. It also means a typed session is an `ImportBatch`, so it appears in the history and can be rolled back wholesale, which matters because the likeliest mistake is typing ten rows against the wrong trip.)
 
 2026-09-13 — [CONTACTS] The import history says "added" and "Undo these entries" for a typed batch, via `ImportBatchSummary.wasTyped`. (Reusing the batch machinery must not make the app tell somebody it "imported" numbers they sat and typed. The check lives on the summary so no call site compares the label string.)

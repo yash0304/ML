@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
+import '../data/sync_error.dart';
 import '../data/trip_sync.dart';
 
 class SyncScreen extends StatefulWidget {
@@ -117,21 +118,36 @@ class _SyncScreenState extends State<SyncScreen> {
 
           if (progress != null && progress.hadFailures) ...[
             const StencilLabel('What did not work'),
+            // Said ONCE, above the list, because seven rows repeating the
+            // same DNS failure is one fact rendered seven times.
+            Builder(
+              builder: (context) {
+                final summary = summariseSyncFailures(
+                  [for (final f in progress.failures) f.error],
+                  total: progress.total,
+                );
+                if (summary == null) return const SizedBox.shrink();
+                final offline = progress.failures.every(
+                  (f) => f.error.needsDifferentNetwork,
+                );
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTokens.gutter,
+                    0,
+                    AppTokens.gutter,
+                    AppTokens.s8,
+                  ),
+                  child: Text(
+                    summary,
+                    style: AppTokens.captionStyle.copyWith(
+                      color: offline ? c.cautionMark : c.muted,
+                    ),
+                  ),
+                );
+              },
+            ),
             for (final failure in progress.failures)
               _FailureRow(failure: failure),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppTokens.gutter,
-                AppTokens.s8,
-                AppTokens.gutter,
-                0,
-              ),
-              child: Text(
-                'Everything else went through. Pressing download again '
-                'retries only these — whatever already arrived is kept.',
-                style: AppTokens.captionStyle.copyWith(color: c.muted),
-              ),
-            ),
           ],
 
           if (progress != null &&
