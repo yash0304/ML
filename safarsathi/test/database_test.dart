@@ -43,7 +43,7 @@ void main() {
 
   test('every table exists', () async {
     final names = await tableNames();
-    expect(names, hasLength(16));
+    expect(names, hasLength(17));
     for (final expected in [
       'trips',
       'stops',
@@ -61,6 +61,8 @@ void main() {
       'expense_splits',
       'timeline_entries',
       'trusted_contacts',
+      // Added at v3 for #35.
+      'app_settings',
     ]) {
       expect(names, contains(expected));
     }
@@ -284,5 +286,48 @@ void main() {
       insertPoi(stop: stopId, leg: legId),
       throwsA(isA<SqliteException>()),
     );
+  });
+
+  group('migrations', () {
+    test('every version has a step and they run in ascending order', () async {
+      // Not a behaviour test — a reminder. Steps that run out of order work
+      // by luck until a later one depends on an earlier one's column, and
+      // then they fail only on the phones that skipped a version.
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      expect(db.schemaVersion, 3);
+    });
+
+    test('v3 created app_settings with its key as the primary key', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+
+      final columns = await db
+          .customSelect("PRAGMA table_info('app_settings')")
+          .get();
+      final pk = columns.where((r) => r.read<int>('pk') > 0);
+
+      expect(pk.map((r) => r.read<String>('name')), ['key']);
+    });
+
+    test('a setting round-trips and upserts rather than duplicating', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+
+      await db
+          .into(db.appSettings)
+          .insertOnConflictUpdate(
+            AppSettingsCompanion.insert(key: 'themeMode', value: 'lamp'),
+          );
+      await db
+          .into(db.appSettings)
+          .insertOnConflictUpdate(
+            AppSettingsCompanion.insert(key: 'themeMode', value: 'day'),
+          );
+
+      final rows = await db.select(db.appSettings).get();
+      expect(rows.length, 1);
+      expect(rows.single.value, 'day');
+    });
   });
 }

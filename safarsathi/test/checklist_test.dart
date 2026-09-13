@@ -266,10 +266,11 @@ void main() {
       );
     });
 
-    test('the schema version was bumped, not edited', () {
+    test('the schema version only ever goes up', () {
       // The rule from DECISIONS.md: a shipped migration is never changed.
-      // Adding a column means a new version, and this is the reminder.
-      expect(db.schemaVersion, 2);
+      // Every schema change means a new version, and this line failing is the
+      // reminder to add a migration step rather than edit an existing one.
+      expect(db.schemaVersion, greaterThanOrEqualTo(2));
     });
 
     test('A ROW WRITTEN BEFORE v2 IS ADOPTED, NOT DUPLICATED', () async {

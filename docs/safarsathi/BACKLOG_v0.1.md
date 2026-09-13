@@ -291,7 +291,11 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   that likely justifies introducing Riverpod.
   *Depends on #23, #24.*
 
-- [ ] **#26 Weather snapshot** — M
+- [x] **Stop coordinates** — S — *not a numbered issue; the gap that blocked
+  the corridor from running at all. Nominatim lookup with a candidate list,
+  plus typed lat/lon. Rate-limited to 1 req/sec in the client.*
+
+- [x] **#26 Weather snapshot** — M — *Open-Meteo, no API key; age stated in words, stale reads in caution*
   Fetch per stop for trip dates at setup. Store with `cachedAt` and
   **display staleness prominently** — a five-day-old forecast must not look
   current.
@@ -352,7 +356,7 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   *Depends on #18, #23.*
 - [ ] **#33 Trusted contacts + check-in** — M — SMS intent, no server relay
 - [ ] **#34 Check-in escalation** — M — WorkManager timer, alert on ETA + buffer
-- [ ] **#35 Settings + cache management** — S — per-trip cache size, clear, retention
+- [x] **#35 Settings + cache management** — S — *theme override, corridor width, call history, per-trip cache clear*
 
 ---
 

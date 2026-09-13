@@ -18,5 +18,5 @@ Future<void> main() async {
   // empty on a fresh install. Idempotent — it runs on every launch.
   await seedReferenceData(db);
 
-  runApp(SafarSathiApp(db: db));
+  runApp(SafarSathiRoot(db: db));
 }

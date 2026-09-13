@@ -463,3 +463,16 @@ class TrustedContacts extends Table {
   IntColumn get escalateAfterMinutes =>
       integer().withDefault(const Constant(120))();
 }
+
+/// Key-value settings — issue #35.
+///
+/// In the database rather than shared preferences, so there is still exactly
+/// one place this app keeps state and exactly one thing to back up. There are
+/// three keys and every one of them is a thing that can be wrong.
+class AppSettings extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {key};
+}

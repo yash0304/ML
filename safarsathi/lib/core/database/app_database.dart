@@ -36,6 +36,7 @@ part 'app_database.g.dart';
     ExpenseSplits,
     TimelineEntries,
     TrustedContacts,
+    AppSettings,
   ],
   daos: [ContactsDao],
 )
@@ -44,7 +45,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openOnDevice());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -55,12 +56,21 @@ class AppDatabase extends _$AppDatabase {
     // NEVER edit a shipped migration, and never add a destructive fallback in
     // release builds. Each version's step is additive and stays as written.
     onUpgrade: (Migrator m, int from, int to) async {
+      // STEPS RUN IN ASCENDING VERSION ORDER, always. These two happen to be
+      // independent, but a v3 step that assumes v2's column exists would
+      // silently fail if it ran first, and only on the phones that had been
+      // sitting on v1.
       if (from < 2) {
         // v2 adds ChecklistItems.generatorKey. Matching a generated item by
         // its label meant a rename produced a duplicate: the generator found
         // no row for its rule and inserted a second copy beside the user's.
         // Existing rows get null and are re-keyed on the next regeneration.
         await m.addColumn(checklistItems, checklistItems.generatorKey);
+      }
+      if (from < 3) {
+        // v3 adds the AppSettings key-value table (#35). Nothing reads it
+        // before it exists, so an empty table is a complete migration.
+        await m.createTable(appSettings);
       }
     },
 

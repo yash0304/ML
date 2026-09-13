@@ -18,6 +18,8 @@ class MoreScreen extends StatelessWidget {
   final VoidCallback onLegs;
   final VoidCallback onChecklist;
   final VoidCallback onTravellers;
+  final VoidCallback onWeather;
+  final VoidCallback onSettings;
   final VoidCallback onImport;
   final VoidCallback onHistory;
   final VoidCallback onTemplate;
@@ -33,6 +35,8 @@ class MoreScreen extends StatelessWidget {
     required this.onLegs,
     required this.onChecklist,
     required this.onTravellers,
+    required this.onWeather,
+    required this.onSettings,
     required this.onImport,
     required this.onHistory,
     required this.onTemplate,
@@ -91,6 +95,14 @@ class MoreScreen extends StatelessWidget {
               onTap: onTravellers,
             ),
             _Item(
+              icon: Icons.cloud_outlined,
+              title: 'Weather',
+              subtitle:
+                  'A forecast downloaded once and frozen. The app always '
+                  'says how old it is.',
+              onTap: onWeather,
+            ),
+            _Item(
               icon: Icons.directions_bus_outlined,
               title: 'Getting between stops',
               subtitle:
@@ -146,16 +158,25 @@ class MoreScreen extends StatelessWidget {
                 ),
               ),
             ),
+            const StencilLabel('App'),
+            _Item(
+              icon: Icons.settings_outlined,
+              title: 'Settings',
+              subtitle:
+                  'Theme, corridor width, call history, and what each trip '
+                  'has downloaded.',
+              onTap: onSettings,
+            ),
             const StencilLabel('Not built yet'),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppTokens.gutter,
               ),
               child: Text(
-                'Offline maps and the route corridor (#21 to #28). The GPS '
-                'timeline (#30). Trusted-contact check-ins (#33, #34). Call '
-                'history and a theme override, for a phone that does not know '
-                'it is night in a valley (#35).\n\n'
+                'The map itself and the route-discovery screen (#24, #25, '
+                '#27, #28) — the corridor data is built and waiting on a tile '
+                'provider. The GPS timeline (#30). Trusted-contact check-ins '
+                '(#33, #34).\n\n'
                 'This app makes no network call at any point. The release '
                 'build does not even ask for permission to.',
                 style: AppTokens.captionStyle.copyWith(color: c.muted),

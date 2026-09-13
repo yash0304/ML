@@ -36,6 +36,10 @@ import 'package:safarsathi/features/checklist/data/checklist_dao.dart';
 import 'package:safarsathi/features/checklist/presentation/checklist_screen.dart';
 import 'package:safarsathi/features/money/data/expense_editor.dart';
 import 'package:safarsathi/features/money/presentation/expense_form_screen.dart';
+import 'package:safarsathi/features/settings/data/settings.dart';
+import 'package:safarsathi/features/settings/presentation/settings_screen.dart';
+import 'package:safarsathi/features/weather/data/weather_sync.dart';
+import 'package:safarsathi/features/weather/presentation/weather_screen.dart';
 import 'package:safarsathi/features/import/data/column_mapping.dart';
 import 'package:safarsathi/features/import/data/import_commit.dart';
 import 'package:safarsathi/features/import/data/import_validation.dart';
@@ -664,6 +668,8 @@ void main() {
         onLegs: () {},
         onChecklist: () {},
         onTravellers: () {},
+        onWeather: () {},
+        onSettings: () {},
         onImport: () {},
         onHistory: () {},
         onTemplate: () {},
@@ -994,6 +1000,132 @@ void main() {
         ),
         onSave: (_) async {},
         onDelete: () async {},
+      ),
+    );
+  });
+
+  // ---------------------------------------------------------------------
+  // Setup: weather (#26) and settings (#35)
+  // ---------------------------------------------------------------------
+
+  testWidgets('weather', (tester) async {
+    // Taken a week and a bit ago, so the staleness treatment is what the
+    // image actually shows — the one rule this screen exists to enforce.
+    final taken = DateTime(2026, 9, 22, 8);
+    final now = DateTime(2026, 10, 1, 9);
+
+    WeatherSnapshot day(
+      int id,
+      int stopId,
+      int date,
+      String condition,
+      double min,
+      double max,
+      double rain,
+    ) => WeatherSnapshot(
+      id: id,
+      stopId: stopId,
+      forDate: DateTime(2026, 10, date),
+      condition: condition,
+      cachedAt: stopId == 1 ? taken : now.subtract(const Duration(hours: 5)),
+      tempMinC: min,
+      tempMaxC: max,
+      rainMm: rain,
+    );
+
+    await shootScreen(
+      tester,
+      'weather',
+      WeatherScreen(
+        now: now,
+        onRefresh: () async {},
+        weather: Stream.value([
+          StopWeather(
+            stopId: 1,
+            stopName: 'Shillong',
+            cachedAt: taken,
+            days: [
+              day(1, 1, 1, 'Light rain', 17.2, 24.1, 12.4),
+              day(2, 1, 2, 'Overcast', 16.9, 22.8, 0),
+              day(3, 1, 3, 'Thunderstorm', 16.1, 21.0, 38.6),
+            ],
+          ),
+          StopWeather(
+            stopId: 2,
+            stopName: 'Cherrapunji',
+            cachedAt: now.subtract(const Duration(hours: 5)),
+            days: [
+              day(4, 2, 3, 'Heavy rain', 15.8, 20.2, 61.0),
+              day(5, 2, 4, 'Rain showers', 16.0, 21.4, 24.5),
+            ],
+          ),
+          const StopWeather(stopId: 3, stopName: 'Dawki', days: []),
+        ]),
+      ),
+    );
+  });
+
+  testWidgets('settings', (tester) async {
+    await shootScreen(
+      tester,
+      'settings',
+      SettingsScreen(
+        themeMode: Stream.value(ThemeMode.system),
+        onThemeMode: (_) async {},
+        corridorKm: Stream.value(3.0),
+        onCorridorKm: (_) async {},
+        onClearCache: (_) async {},
+        onCallHistory: () {},
+        caches: Stream.value(const [
+          CacheSummary(
+            tripId: 1,
+            tripName: 'Meghalaya, October',
+            poiCount: 87,
+            routedLegCount: 3,
+            legCount: 4,
+            weatherDayCount: 18,
+          ),
+          CacheSummary(
+            tripId: 2,
+            tripName: 'Ladakh, next summer',
+            poiCount: 0,
+            routedLegCount: 0,
+            legCount: 6,
+            weatherDayCount: 0,
+          ),
+        ]),
+      ),
+    );
+  });
+
+  testWidgets('call history', (tester) async {
+    await shootScreen(
+      tester,
+      'call_history',
+      CallHistoryScreen(
+        history: Stream.value([
+          CallLogEntry(
+            id: 1,
+            action: 'dialer',
+            occurredAt: DateTime(2026, 10, 3, 18, 42),
+            contactName: 'Rina Kharkongor',
+            phoneRaw: '+91 90000 00001',
+          ),
+          CallLogEntry(
+            id: 2,
+            action: 'copy',
+            occurredAt: DateTime(2026, 10, 3, 18, 41),
+            contactName: 'Rina Kharkongor',
+            phoneRaw: '+91 90000 00001',
+          ),
+          CallLogEntry(
+            id: 3,
+            action: 'whatsapp',
+            occurredAt: DateTime(2026, 10, 3, 14, 5),
+            contactName: 'Biren Lyngdoh',
+            phoneRaw: '+91 90000 00002',
+          ),
+        ]),
       ),
     );
   });

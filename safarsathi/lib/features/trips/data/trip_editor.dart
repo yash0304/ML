@@ -24,6 +24,13 @@ class StopDraft {
   final List<String> activityTags;
   final String? note;
 
+  /// Where the place actually is. Null until someone looks it up or types it.
+  ///
+  /// The corridor cannot route a leg whose ends have no coordinates, so this
+  /// is the field that decides whether offline maps work on a real trip.
+  final double? lat;
+  final double? lon;
+
   const StopDraft({
     required this.name,
     this.id,
@@ -33,7 +40,11 @@ class StopDraft {
     this.nights = 0,
     this.activityTags = const [],
     this.note,
+    this.lat,
+    this.lon,
   });
+
+  bool get hasCoordinates => lat != null && lon != null;
 
   /// A stop the user sleeps at. This is what the readiness check at #20 keys
   /// off: a lunch stop with no number is an inconvenience, a homestay with no
@@ -65,10 +76,14 @@ class StopDraft {
     int? nights,
     List<String>? activityTags,
     Object? note = _unset,
+    Object? lat = _unset,
+    Object? lon = _unset,
   }) => StopDraft(
     id: id,
     name: name ?? this.name,
     countryCode: countryCode ?? this.countryCode,
+    lat: lat == _unset ? this.lat : lat as double?,
+    lon: lon == _unset ? this.lon : lon as double?,
     arrivalDate: arrivalDate == _unset
         ? this.arrivalDate
         : arrivalDate as DateTime?,
@@ -89,6 +104,8 @@ class StopDraft {
     nights: s.nights,
     activityTags: parseTags(s.activityTags),
     note: s.note,
+    lat: s.lat,
+    lon: s.lon,
   );
 }
 
@@ -254,6 +271,8 @@ class TripEditor {
         nights: Value(draft.effectiveNights),
         activityTags: Value(encodeTags(draft.activityTags)),
         note: Value(draft.note),
+        lat: Value(draft.lat),
+        lon: Value(draft.lon),
       ),
     );
   }
@@ -319,6 +338,8 @@ class TripEditor {
         nights: Value(d.effectiveNights),
         activityTags: Value(encodeTags(d.activityTags)),
         note: Value(d.note),
+        lat: Value(d.lat),
+        lon: Value(d.lon),
       );
 
   // -- legs ----------------------------------------------------------------

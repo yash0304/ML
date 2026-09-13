@@ -1,21 +1,22 @@
-# HANDOFF — SafarSathi — 2026-09-13 (after issues #21, #22, #23 — the corridor)
+# HANDOFF — SafarSathi — 2026-09-13 (after stop coordinates, #26 and #35)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1–#9, #11–#23, #29, #31, #32, #50, #53, #54, #55 are done except
-  for the device check.** The project analyses clean and passes **461 tests**
-  in about thirty seconds on Flutter 3.47.3 / Dart 3.13.3.
-- Backlog position: 29 / 55 done.
-- **The offline-map milestone has started.** #21–#23 are the data layer:
-  geometry, a route per leg, and the places along it. **No map is drawn yet**
-  and no screen exists for any of it — that is #24, and it is blocked.
-- **THE OFFLINE CLAIM CHANGED.** The release manifest declares `INTERNET`
-  again. The app is offline *while you are moving*, not offline absolutely.
-  Read the comment at the top of `android/app/src/main/AndroidManifest.xml`
-  before touching anything network-shaped.
+- **Issues #1–#9, #11–#23, #26, #29, #31, #32, #35, #50, #53, #54, #55 are
+  done except for the device check.** The project analyses clean and passes
+  **516 tests** in about thirty seconds on Flutter 3.47.3 / Dart 3.13.3.
+- Backlog position: 31 / 55 done.
+- **The database is at schemaVersion 3.** v2 added `ChecklistItems.
+  generatorKey`; v3 added the `AppSettings` table. Steps run in ascending
+  order and each one is additive; none is ever edited.
+- **The offline claim is narrower than it was.** The release manifest declares
+  `INTERNET`. The app is offline *while you are moving*, not offline
+  absolutely. Read the comment at the top of
+  `android/app/src/main/AndroidManifest.xml` before touching anything
+  network-shaped.
 - Yash has installed a build and says the app looks OK. The four
   hardware-only questions below are therefore probably fine, but none has been
   confirmed in words yet.
@@ -93,7 +94,7 @@ settle, and what to do when each fails.
 flutter test --update-goldens test/golden_test.dart
 ```
 
-Writes `test/goldens/*.png` — twenty-one images now: the diary in both themes, empty
+Writes `test/goldens/*.png` — twenty-four images now: the diary in both themes, empty
 and mid-copy; the entry form; an entry unconfirmed and confirmed; the
 emergency screen; the trip screen; the money screen. Rendered from the real
 widget tree with the bundled fonts and the SDK icon font loaded.
@@ -232,6 +233,21 @@ real Tier-1 codes with their government sources.
 | **A failed sync leaves the leg exactly as it was** | test |
 | OSRM coordinates go in lon,lat order | test |
 | Places outside the corridor are excluded | test |
+| **The geocoder rate-limits itself to 1/sec** | test, injected clock |
+| A lookup shows its candidates before saving | widget test |
+| An out-of-range coordinate is refused, not clamped | test |
+| A stop with no coordinates says what that costs | widget test |
+| Forecast days parse from a date range | test |
+| **Every day of one fetch shares its cachedAt** | test |
+| **Staleness bands, and the age in words** | test |
+| Beyond a week renders in caution | widget test |
+| Re-fetching weather replaces rather than duplicating | test |
+| The theme override reports the chosen mode | widget test |
+| A cache row states what is actually held | widget test |
+| Clearing says what survives it | widget test |
+| Call history shows copies as actions | widget test |
+| `app_settings` has `key` as its primary key | test against PRAGMA |
+| A setting upserts rather than duplicating | test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -307,31 +323,34 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**Ask Yash for the tile provider decision**, because #24 cannot start without
-it and he has to create an account either way. MapTiler or Stadia; the OSM
-standard tile server is not an option.
+**Still: ask Yash for the tile provider.** #24 cannot start without it and he
+has to create an account either way. MapTiler or Stadia; the OSM standard tile
+server is not an option.
 
-While waiting, the useful work is:
+Everything else that could be done without it now has been. What remains,
+in order of usefulness:
 
-1. **Stop coordinates.** `CorridorSync` needs `Stops.lat` and `Stops.lon`, and
-   nothing in the UI sets them. The stop form has no map picker and will not
-   have one until #24. A geocoding lookup at setup, or a plain lat/lon field,
-   is what unblocks the whole corridor from actually running on his trip.
-2. **#26, the weather snapshot.** Independent of maps, and the checklist
-   generator already has a hole where it belongs.
-3. **#35**, settings and call history.
+1. **#36, verify the four flagged numbers** (1930, 1078, 1033, 104) against
+   government sources. Small, and it is the SOS tab — the screen the whole
+   trust system exists to protect. This is the highest-value thing left that
+   is not blocked.
+2. **#51 and #52**, the stop and leg detail screens.
+3. **#10**, the multi-add screen for contacts.
+4. **#41–#49**, the visual polish pass. Mostly small.
 
-None of #21–#23 has a screen. The code runs and is tested; nobody can reach it
-from the app yet. That is deliberate — the discovery screen is #27 and it
-needs the map underneath it.
+**#30 (GPS timeline) and #33/#34 (check-in escalation) are large and involve
+background services.** Neither should be started before October.
 
 Still owed on hardware, none of it confirmed in words yet:
 
 1. Do the three fonts load, or is everything on a silent fallback?
 2. Are the haptics felt, especially the heavy one on the emergency screen?
-3. Does `tel:` with an empty path open the Android dialer, or error? The whole
-   copy-first workflow rests on this.
+3. Does `tel:` with an empty path open the Android dialer, or error?
 4. Is the night palette pleasant at 2am, as opposed to merely compliant?
+
+**Two new hardware risks in this build:** a second schema migration, and the
+first release build that can reach the network. If it crashes on launch,
+uninstall and reinstall rather than adding a destructive fallback.
 
 ## Note on the environment
 

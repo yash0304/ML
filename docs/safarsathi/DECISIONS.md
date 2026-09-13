@@ -5,6 +5,28 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-13 — [SCHEMA] schemaVersion goes to 3, adding the `AppSettings` key-value table. Migration steps now run in ascending version order, and a comment says why. (The v2 and v3 steps happen to be independent, but a step written as `from < 3` above one written as `from < 2` would silently misbehave the moment a later step assumed an earlier one's column — and only on the phones that had been sitting on the older version. Caught by reading, before it could matter.)
+
+2026-09-13 — [SETTINGS] Settings live in the database, not in shared preferences. (So there is still exactly one place this app keeps state and exactly one thing to back up. There are three keys, and every option is a thing that can be wrong.)
+
+2026-09-13 — [SETTINGS] Clearing a trip's cache removes only what came off the network — places, routes, forecasts — and the dialog says so. (Contacts, expenses, the itinerary and the checklist are the user's own work. Conflating the two is how a "free up space" button destroys an afternoon of typing.)
+
+2026-09-13 — [SETTINGS] Call history counts a COPY as an action. (The dial happens in the Android dialer after a paste, so the app never sees the call itself. Recording only calls would show an empty history to someone who used the app all day.)
+
+2026-09-13 — [WEATHER] Open-Meteo, not a provider needing an account. (Free, no API key, non-commercial use covered. Beyond cost that matters for one reason: it is the only network source in this app that blocks on nothing anybody has to sign up for, which is why #26 could ship while #24 waits on a tile provider.)
+
+2026-09-13 — [WEATHER] Every day of one fetch carries the SAME `cachedAt`, stamped once for the whole call. (Per-row timestamps drift by milliseconds and read as though some days were fresher than others, which is precisely the confusion the column exists to prevent.)
+
+2026-09-13 — [WEATHER] Staleness has three bands — fresh under two days, ageing under a week, stale beyond — and the age is stated IN WORDS beside every stop. Stale renders in caution and mutes its own numbers. (A five-day-old forecast shown as today's weather is worse than no forecast, because somebody packs on it. "Taken 5 days ago" is a fact a person can weigh; a timestamp is not, and a bare temperature is a lie by omission.)
+
+2026-09-13 — [GEO] Stop coordinates are set by a Nominatim lookup that SHOWS ITS CANDIDATES, or by typing a lat/lon pair. Nothing is saved until the user picks. (Two real places are called Shillong, 2,500 km apart. Silently accepting the first result is how a trip ends up routed to a village in Karnataka. The typed option exists because a good share of the homestays this app is for have no name any geocoder knows.)
+
+2026-09-13 — [GEO] The geocoding client rate-limits ITSELF to one request per second and sends a real User-Agent, because Nominatim's usage policy requires both. (Enforced in the client rather than hoped for at the call sites. Breaking either gets an IP banned, and it would be deserved. Pinned by a test with an injected clock.)
+
+2026-09-13 — [GEO] An out-of-range typed coordinate is refused, never clamped. (Clamping would place a stop somewhere real and wrong, which is worse than an empty field.)
+
+2026-09-13 — [UI] A stop with no coordinates says on the form what that costs: the legs either side cannot be downloaded and nothing along them will be found. (It is the quietest possible failure — everything else about the stop looks complete — so the form states it in caution rather than leaving a blank field.)
+
 2026-09-13 — [ARCH] **The release manifest declares INTERNET again. This supersedes the 2026-09-12 decision that it would declare no permissions at all.** (Offline maps make the absolute version of the claim impossible: routes, places and tiles have to come from somewhere, once, before you leave. So the claim narrows and has to be stated honestly — the app is offline WHILE YOU ARE MOVING, not offline absolutely. It reaches the network only on a screen the user opened, after a button saying what it will fetch and from whom, and never once the trip has started. There is still no other permission and no background service, precisely so that stays checkable. The rationale is written into the manifest itself, where the next person to read it will be standing.)
 
 2026-09-13 — [DISCOVERY] A phone number from OpenStreetMap is `communityOsm` and can never be anything else; saving one into the diary lands it as `userEntered`. (The trust invariant reaching the least trustworthy source the app has. It is a number a stranger typed into a public wiki and it may be a decade old. The tier is forced in `CorridorSync` at the single write point, the same way import forces it in the DAO.)

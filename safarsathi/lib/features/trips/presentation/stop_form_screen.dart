@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
+import '../../discovery/data/geo.dart';
+import '../../discovery/data/geocoder.dart' show formatLatLon;
 import '../data/trip_editor.dart';
 
 class StopFormScreen extends StatefulWidget {
@@ -23,12 +25,17 @@ class StopFormScreen extends StatefulWidget {
   final Future<int> Function()? contactsHere;
   final Future<void> Function()? onDelete;
 
+  /// Opens the place picker and returns the chosen coordinates, or null.
+  /// Optional so the golden harness and the widget tests render without one.
+  final Future<LatLng?> Function(String name, LatLng? current)? onPickPlace;
+
   const StopFormScreen({
     super.key,
     required this.onSave,
     this.existing,
     this.contactsHere,
     this.onDelete,
+    this.onPickPlace,
   });
 
   @override
@@ -285,6 +292,30 @@ class _StopFormScreenState extends State<StopFormScreen> {
             ),
           ),
 
+          if (widget.onPickPlace != null) ...[
+            const StencilLabel('Where it is'),
+            _CoordinateRow(
+              draft: _draft,
+              onPick: () async {
+                final picked = await widget.onPickPlace!(
+                  _name.text.trim().isEmpty ? _draft.name : _name.text.trim(),
+                  _draft.hasCoordinates
+                      ? LatLng(_draft.lat!, _draft.lon!)
+                      : null,
+                );
+                if (picked == null) return;
+                setState(
+                  () => _draft = _draft.copyWith(
+                    lat: picked.lat,
+                    lon: picked.lon,
+                  ),
+                );
+              },
+              onClear: () =>
+                  setState(() => _draft = _draft.copyWith(lat: null, lon: null)),
+            ),
+          ],
+
           const StencilLabel('Note'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
@@ -422,6 +453,91 @@ class _TagChip extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The coordinate line. Says plainly what is missing and why it matters,
+/// because a stop with no coordinates silently excludes its leg from every
+/// route and every place the corridor would have found.
+class _CoordinateRow extends StatelessWidget {
+  final StopDraft draft;
+  final VoidCallback onPick;
+  final VoidCallback onClear;
+
+  const _CoordinateRow({
+    required this.draft,
+    required this.onPick,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    final has = draft.hasCoordinates;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PressScale(
+          onTap: onPick,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTokens.gutter,
+              vertical: AppTokens.s12,
+            ),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: c.rule, width: AppTokens.hairline),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  has ? Icons.place_outlined : Icons.search,
+                  size: 18,
+                  color: has ? c.ink : c.cautionMark,
+                ),
+                const SizedBox(width: AppTokens.s12),
+                Expanded(
+                  child: Text(
+                    has
+                        ? formatLatLon(LatLng(draft.lat!, draft.lon!))
+                        : 'Not set — find it',
+                    style: has
+                        ? AppTokens.numberStyle.copyWith(color: c.ink)
+                        : AppTokens.rowTitleStyle.copyWith(
+                            color: c.cautionMark,
+                          ),
+                  ),
+                ),
+                if (has)
+                  GestureDetector(
+                    onTap: onClear,
+                    child: Icon(Icons.close, size: 18, color: c.muted),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTokens.gutter,
+            AppTokens.s8,
+            AppTokens.gutter,
+            0,
+          ),
+          child: Text(
+            has
+                ? 'Used to download the route and what is along it.'
+                : 'Without this, the leg into and out of this stop cannot be '
+                      'downloaded, and nothing along it will be found.',
+            style: AppTokens.captionStyle.copyWith(
+              color: has ? c.muted : c.cautionMark,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

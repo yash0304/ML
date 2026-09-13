@@ -21,6 +21,8 @@ import 'features/import/data/import_commit.dart';
 import 'features/import/presentation/import_flow.dart';
 import 'features/import/presentation/import_history_screen.dart';
 import 'features/import/presentation/more_screen.dart';
+import 'features/discovery/data/geo.dart';
+import 'features/discovery/data/geocoder.dart';
 import 'features/money/data/expense_editor.dart';
 import 'features/money/data/money_summary.dart';
 import 'features/money/presentation/expense_form_screen.dart';
@@ -29,7 +31,12 @@ import 'features/money/presentation/money_screen.dart';
 import 'features/trips/data/readiness.dart';
 import 'features/trips/data/trip_editor.dart';
 import 'features/trips/data/trip_summary.dart';
+import 'features/settings/data/settings.dart';
+import 'features/settings/presentation/settings_screen.dart';
 import 'features/trips/presentation/itinerary_screen.dart';
+import 'features/trips/presentation/place_picker_sheet.dart';
+import 'features/weather/data/weather_sync.dart';
+import 'features/weather/presentation/weather_screen.dart';
 import 'features/trips/presentation/leg_form_screen.dart';
 import 'features/trips/presentation/leg_list_screen.dart';
 import 'features/trips/presentation/stop_form_screen.dart';
@@ -43,7 +50,13 @@ class SafarSathiApp extends StatelessWidget {
   /// consumer of the same data appears.
   final AppDatabase db;
 
-  const SafarSathiApp({super.key, required this.db});
+  final ThemeMode themeMode;
+
+  const SafarSathiApp({
+    super.key,
+    required this.db,
+    this.themeMode = ThemeMode.system,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -52,11 +65,25 @@ class SafarSathiApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTokens.light,
       darkTheme: AppTokens.dark,
-      // Follows the system for now. A manual override lands in Settings at
-      // backlog #35 — a phone in a pocket does not know it is night in a
-      // valley.
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       home: _Home(db: db),
+    );
+  }
+}
+
+/// Wraps the app so the theme override from Settings (#35) reaches
+/// `MaterialApp.themeMode`. A phone in a pocket does not know it is night in a
+/// valley, so following the system is the default rather than the only option.
+class SafarSathiRoot extends StatelessWidget {
+  final AppDatabase db;
+  const SafarSathiRoot({super.key, required this.db});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<ThemeMode>(
+      stream: SettingsRepository(db).watchThemeMode(),
+      builder: (context, snap) =>
+          SafarSathiApp(db: db, themeMode: snap.data ?? ThemeMode.system),
     );
   }
 }
@@ -79,6 +106,9 @@ class _HomeState extends State<_Home> {
   late final TripEditor _editor = TripEditor(widget.db);
   late final ExpenseEditor _money = ExpenseEditor(widget.db);
   late final ChecklistDao _checklist = ChecklistDao(widget.db);
+  late final SettingsRepository _settings = SettingsRepository(widget.db);
+  late final WeatherSync _weather = WeatherSync(db: widget.db);
+  late final Geocoder _geocoder = Geocoder();
   late final Future<void> _ready = _bootstrap();
 
   Future<void> _bootstrap() async {
@@ -167,6 +197,7 @@ class _HomeState extends State<_Home> {
     MaterialPageRoute<void>(
       builder: (formContext) => StopFormScreen(
         existing: stop == null ? null : StopDraft.fromRow(stop),
+        onPickPlace: (name, current) => _pickPlace(formContext, name, current),
         contactsHere: stop == null ? null : () => _editor.contactsAt(stop.id),
         onDelete: stop == null
             ? null
@@ -188,6 +219,89 @@ class _HomeState extends State<_Home> {
       ),
     ),
   );
+
+  /// The place picker (stop coordinates). The geocoder lives here so the sheet
+  /// itself never reaches the network in a test.
+  Future<LatLng?> _pickPlace(
+    BuildContext context,
+    String name,
+    LatLng? current,
+  ) => Navigator.of(context).push<LatLng>(
+    MaterialPageRoute<LatLng>(
+      builder: (_) => PlacePickerSheet(
+        initialQuery: name,
+        current: current,
+        search: (query, country) =>
+            _geocoder.search(query, countryCode: country),
+      ),
+    ),
+  );
+
+  Future<void> _openWeather(BuildContext context, int tripId) =>
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (weatherContext) => WeatherScreen(
+            weather: _weather.watchTripWeather(tripId),
+            onRefresh: () => _fetchWeather(weatherContext, tripId),
+          ),
+        ),
+      );
+
+  /// Fetches every stop's forecast. Reports what failed rather than stopping
+  /// at the first stop with no coordinates.
+  Future<void> _fetchWeather(BuildContext context, int tripId) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final c = AppTokens.of(context);
+    final stops = await _editor.stopsOf(tripId);
+
+    var done = 0;
+    var skipped = 0;
+    for (final stop in stops) {
+      try {
+        await _weather.syncStop(stop);
+        done++;
+      } on Object {
+        skipped++;
+      }
+    }
+    if (!context.mounted) return;
+
+    Haptics.light();
+    messenger.showSnackBar(
+      SnackBar(
+        backgroundColor: c.ink,
+        content: Text(
+          skipped == 0
+              ? 'Forecast downloaded for $done '
+                    '${done == 1 ? 'stop' : 'stops'}.'
+              : 'Forecast downloaded for $done. $skipped skipped — those '
+                    'stops need coordinates first.',
+          style: AppTokens.captionStyle.copyWith(color: c.paper),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSettings(BuildContext context, int tripId) =>
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (settingsContext) => SettingsScreen(
+            themeMode: _settings.watchThemeMode(),
+            onThemeMode: _settings.setThemeMode,
+            corridorKm: _settings.watchCorridorKm(),
+            onCorridorKm: _settings.setCorridorKm,
+            caches: watchCacheSummaries(widget.db),
+            onClearCache: (id) => clearTripCache(widget.db, id),
+            onCallHistory: () => Navigator.of(settingsContext).push(
+              MaterialPageRoute<void>(
+                builder: (_) => CallHistoryScreen(
+                  history: watchCallHistory(widget.db, tripId),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 
   Future<void> _openLegForm(BuildContext context, int legId) async {
     final db = widget.db;
@@ -436,6 +550,8 @@ class _HomeState extends State<_Home> {
             onLegs: () => _openLegs(context, trip.tripId),
             onChecklist: () => _openChecklist(context, trip.tripId),
             onTravellers: () => _openTravellers(context, trip.tripId),
+            onWeather: () => _openWeather(context, trip.tripId),
+            onSettings: () => _openSettings(context, trip.tripId),
             onImport: () async {
               await ImportFlow(db: db, tripId: trip.tripId).start(context);
               await syncReadinessChecklist(db, trip.tripId);
