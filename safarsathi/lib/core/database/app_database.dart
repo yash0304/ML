@@ -45,8 +45,12 @@ class AppDatabase extends _$AppDatabase {
   /// Pass an executor in tests; production opens the on-device file.
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openOnDevice());
 
+  /// Exposed as a constant so a backup file can be checked against it
+  /// without opening a database.
+  static const currentSchemaVersion = 4;
+
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => currentSchemaVersion;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(

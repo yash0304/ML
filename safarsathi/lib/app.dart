@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'dart:io';
 
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:phone_numbers_parser/phone_numbers_parser.dart' show IsoCode;
@@ -15,6 +18,8 @@ import 'features/contacts/data/entry_draft.dart';
 import 'features/contacts/presentation/diary_screen.dart';
 import 'features/contacts/presentation/entry_form_screen.dart';
 import 'features/contacts/presentation/entry_screen.dart';
+import 'features/backup/data/backup.dart';
+import 'features/backup/presentation/backup_screen.dart';
 import 'features/contacts/data/multi_add.dart';
 import 'features/contacts/presentation/multi_add_screen.dart';
 import 'features/checklist/data/checklist_dao.dart';
@@ -821,6 +826,7 @@ class _HomeState extends State<_Home> {
             onSync: () => _openSync(context, trip.tripId),
             onSettings: () => _openSettings(context, trip.tripId),
             onMultiAdd: () => _openMultiAdd(context, trip.tripId),
+            onBackup: () => _openBackup(context),
             onImport: () async {
               await ImportFlow(db: db, tripId: trip.tripId).start(context);
               await syncReadinessChecklist(db, trip.tripId);
@@ -944,6 +950,43 @@ class _HomeState extends State<_Home> {
       ),
     );
   }
+
+  /// Backup and restore — issue #56.
+  Future<void> _openBackup(BuildContext context) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => BackupScreen(
+        onExport: () async {
+          final json = await exportBackup(widget.db);
+          final saved = await FilePicker.saveFile(
+            fileName: backupFileName(),
+            bytes: Uint8List.fromList(utf8.encode(json)),
+            mimeType: 'application/json',
+            dialogTitle: 'Save your SafarSathi backup',
+          );
+          if (saved == null) return null;
+          return 'Saved. Keep it somewhere that is not this phone — '
+              'that is the whole point of it.';
+        },
+        onPick: () async {
+          final file = await FilePicker.pickFile(
+            type: FileType.custom,
+            allowedExtensions: const ['json'],
+            dialogTitle: 'Pick a SafarSathi backup',
+          );
+          if (file == null) return null;
+          // Bytes, never a path: on Android a picked file usually lives
+          // behind a content:// URI with no readable filesystem path.
+          return readBackup(utf8.decode(await file.readAsBytes()));
+        },
+        onCurrent: () => currentContents(widget.db),
+        onRestore: (backup) async {
+          await restoreBackup(widget.db, backup);
+          // A restored database may hold a different active trip, or none.
+          await ensureActiveTrip(widget.db);
+        },
+      ),
+    ),
+  );
 
   /// Several contacts at once — issue #10.
   Future<void> _openMultiAdd(BuildContext context, int tripId) async {

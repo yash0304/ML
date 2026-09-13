@@ -19,6 +19,8 @@ import 'package:safarsathi/features/contacts/data/contacts_dao.dart';
 import 'package:safarsathi/features/contacts/data/entry_draft.dart';
 import 'package:safarsathi/features/contacts/presentation/diary_screen.dart';
 import 'package:safarsathi/features/contacts/presentation/entry_form_screen.dart';
+import 'package:safarsathi/features/backup/data/backup.dart';
+import 'package:safarsathi/features/backup/presentation/backup_screen.dart';
 import 'package:safarsathi/features/contacts/data/multi_add.dart';
 import 'package:safarsathi/features/contacts/presentation/entry_screen.dart';
 import 'package:safarsathi/features/contacts/presentation/multi_add_screen.dart';
@@ -690,6 +692,7 @@ void main() {
         onSync: () {},
         onImport: () {},
         onMultiAdd: () {},
+        onBackup: () {},
         onHistory: () {},
         onTemplate: () {},
       ),
@@ -1625,6 +1628,63 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/multi_add.png'),
+    );
+  });
+
+  // -- backup, #56 ----------------------------------------------------------
+
+  testWidgets('backup — a file chosen, waiting to be restored', (tester) async {
+    // The state worth looking at is after a file has been picked, so the
+    // golden taps the real button rather than mocking the screen into place.
+    final picked = BackupContents(
+      createdAt: DateTime.utc(2026, 9, 28, 14, 30),
+      schemaVersion: 4,
+      trips: 1,
+      stops: 6,
+      contacts: 23,
+      confirmedContacts: 17,
+      checklistItems: 21,
+      expenses: 9,
+      callLogs: 34,
+      tables: const {},
+    );
+    final current = BackupContents(
+      createdAt: DateTime.utc(2026, 10, 1),
+      schemaVersion: 4,
+      trips: 1,
+      stops: 2,
+      contacts: 4,
+      confirmedContacts: 0,
+      checklistItems: 3,
+      expenses: 0,
+      callLogs: 1,
+      tables: const {},
+    );
+
+    tester.view.physicalSize = const Size(840, 1780);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: AppTokens.light,
+        home: BackupScreen(
+          onExport: () async => null,
+          onPick: () async => picked,
+          onCurrent: () async => current,
+          onRestore: (_) async {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('CHOOSE A BACKUP FILE'));
+    await tester.pumpAndSettle();
+
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/backup.png'),
     );
   });
 }

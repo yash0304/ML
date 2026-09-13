@@ -1,4 +1,4 @@
-# HANDOFF — SafarSathi — 2026-09-13 (signing, and the first real-device sync)
+# HANDOFF — SafarSathi — 2026-09-13 (backup, signing, first real-device sync)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
@@ -6,8 +6,8 @@
 ## Where we are
 
 - **Issues #1–#9, #11–#29, #31, #32, #35, #41–#46, #48–#55 are done except
-  for the device check.** Analyses clean, **743 tests** in about a minute.
-- Backlog position: 47 / 56 done.
+  for the device check.** Analyses clean, **762 tests** in about a minute.
+- Backlog position: 48 / 57 done (#56, backup, was added on 13 Sep).
 - **Every feature this trip needs is now built.** What remains is one audit
   that needs a real phone, two curation jobs that need a browser, three
   background services parked until after October, and three international
@@ -68,10 +68,12 @@ again.
 because it is signed differently from whatever is on the phone now. Every
 build after that goes over the top.
 
-**The gap this exposed, and it is not fixed:** the app has no export or
-backup. Its whole value is a phone directory typed by hand before a trip, its
-only copy lives on one handset, and reinstalling has been silently destroying
-it. Worth building before October; not in the backlog yet.
+**The gap this exposed is now closed: #56, backup and restore.** More →
+Backup and restore. Whole database to one JSON file and back. See
+`ISSUE_56_Backup.md`; the two decisions worth knowing are that emergency
+helplines are never carried (a file must not be able to put a number on that
+screen) and that a restore *does* bring confirmations back, which is a
+deliberate exception to the import invariant with the reasoning written down.
 
 ## THE FIRST RUN ON A REAL PHONE, AND WHAT IT FOUND
 

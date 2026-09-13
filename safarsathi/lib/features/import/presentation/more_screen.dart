@@ -25,6 +25,7 @@ class MoreScreen extends StatelessWidget {
   final VoidCallback onImport;
   final VoidCallback onHistory;
   final VoidCallback onMultiAdd;
+  final VoidCallback onBackup;
   final VoidCallback onTemplate;
 
   /// Live count of contacts on this trip, so the tab says something true
@@ -45,6 +46,7 @@ class MoreScreen extends StatelessWidget {
     required this.onImport,
     required this.onHistory,
     required this.onMultiAdd,
+    required this.onBackup,
     required this.onTemplate,
     required this.contactCount,
   });
@@ -167,6 +169,16 @@ class MoreScreen extends StatelessWidget {
                   'will probably match anyway.',
               onTap: onTemplate,
             ),
+            const StencilLabel('Keeping it'),
+            _Item(
+              icon: Icons.save_alt,
+              title: 'Backup and restore',
+              subtitle:
+                  'Everything you typed, as one file. Nothing here is on a '
+                  'server, so this is the only second copy there is.',
+              onTap: onBackup,
+            ),
+
             const StencilLabel('This trip'),
             StreamBuilder<int>(
               stream: contactCount,

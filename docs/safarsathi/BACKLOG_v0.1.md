@@ -386,6 +386,18 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
 
 ---
 
+## Milestone 9 — Not losing it
+
+- [x] **#56 Backup and restore** — M — *added 13 Sep, after the signing bug*
+  Whole-database export to one JSON file, and restore from it. Carries what
+  you typed; leaves out what came off the network. **Never carries emergency
+  helplines** — a file must not be able to put a number on that screen.
+  Restores `callConfirmed` exactly, which is a deliberate exception to the
+  import invariant; the screen says what it is trusting.
+  *See ISSUE_56_Backup.md.*
+
+---
+
 ## Parked (revisit only if the constraint changes)
 
 - Google Places integration — costs scale badly for corridor queries
