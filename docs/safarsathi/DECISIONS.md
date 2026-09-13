@@ -5,6 +5,18 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-13 — [DISCOVERY] **Saving a corridor place lands the contact as `communityOsm`, NOT `userEntered`. The backlog line specifying `userEntered` is wrong and is superseded.** (Both tiers carry the amber dot, so the trust outcome is identical — but the entry screen reads provenance out loud: `userEntered` says "Typed by you · not confirmed" and `communityOsm` says "From open map data · nobody has checked it". Saving an OSM number as `userEntered` would make the app tell the user they typed a number a stranger put in a public wiki. In an app whose entire premise is knowing where a number came from, that is the one thing it must not do. The path out is unchanged: call it, mark it confirmed, and it becomes `userVerified` like anything else.)
+
+2026-09-13 — [DISCOVERY] Corridor places are ordered by distance ALONG the route, never by distance from the user. ("Coming up in 12 km" is the useful sentence while moving. "0.2 km away" treats the road as a plane, and a place 200 m off across a gorge is an hour of driving. Each place renders on a milestone marker, the same idiom the Trip screen uses — a milestone is a thing you pass.)
+
+2026-09-13 — [DISCOVERY] The category chips offer only the categories the leg actually contains. (A chip that matches nothing is a filter that only disappoints. `LegDiscovery.categoriesPresent` derives them from the data.)
+
+2026-09-13 — [DISCOVERY] An unsynced leg and a genuinely empty one read differently. ("This leg has not been downloaded yet" sends you to the sync screen; "OpenStreetMap simply has nothing tagged here" tells you to stop looking. Confusing them sends the user to the wrong place.)
+
+2026-09-13 — [DISCOVERY] The Google Maps handoff says it needs signal BEFORE the tap, and it is the only action in the app that does. (Reviews and photos are not something an offline app can carry, and deep-linking out costs nothing and needs no key. A dead tap on a mountain road with no explanation is worse than no button.)
+
+2026-09-13 — [DISCOVERY] The detail screen quotes the provenance in the exact words the entry screen uses. (Two screens describing the same tier differently is how a trust system stops being believed.)
+
 2026-09-13 — [ARCH] **Riverpod is not being introduced, and the backlog line saying #25 would justify it is superseded.** (What the sync screen holds is a plan and an index into it, for the lifetime of one route — a `StatefulWidget` over a stream does that. A state-management library here would mean a dependency, a second way of doing things beside the `StreamBuilder` every other screen uses, and a migration decision for the twelve screens already working without one. Revisit if a later feature needs genuinely shared cross-screen state; superseded, not forgotten.)
 
 2026-09-13 — [SYNC] Route and places are ONE task, not two. (`CorridorSync.syncLeg` routes the leg and queries its box in a single call and writes both in one transaction. Two progress rows would report progress corresponding to no work — the first draft did exactly that, with a no-op branch to make the second row "succeed".)

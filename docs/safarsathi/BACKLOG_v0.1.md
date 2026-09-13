@@ -305,12 +305,12 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
 
 ## Milestone 6 — En-route discovery
 
-- [ ] **#27 Route discovery screen** — M
+- [x] **#27 Route discovery screen** — M — *ordered by distance along the route, on milestone markers; category chips show only what is present*
   Map + list of corridor POIs, category filter chips, ordered by distance
   along route with a "coming up in X km" treatment.
   *Depends on #24, #25.*
 
-- [ ] **#28 POI detail** — S
+- [x] **#28 POI detail** — S — *saves as `communityOsm`, NOT `userEntered` — see DECISIONS.md; the backlog line was wrong*
   Details, distance off route, OSM contact number rendered **with an
   unverified marker**, "save as contact" action (lands as `userEntered`),
   deep-link out to Google Maps for reviews and photos.

@@ -106,6 +106,33 @@ class ContactActions {
     );
   }
 
+  /// Opens the phone's dialer on a number that is not a contact.
+  ///
+  /// Same empty-path trick as `openDialer`: the number goes on the clipboard
+  /// and the dialer opens ready to paste, because that is how this app was
+  /// designed to be used.
+  Future<void> openDialerFor(String number) async {
+    await copyToClipboard(number);
+    Haptics.light();
+    await _launchOrThrow(
+      Uri(scheme: 'tel'),
+      'No dialer app on this phone.',
+    );
+  }
+
+  /// Hands a place off to a maps app, for reviews and photos this app does
+  /// not carry.
+  ///
+  /// THIS IS THE ONE ACTION IN THE APP THAT NEEDS SIGNAL, and every screen
+  /// offering it says so before the tap rather than after.
+  Future<void> openMaps(String url) async {
+    Haptics.light();
+    await _launchOrThrow(
+      Uri.parse(url),
+      'No app on this phone can open a map link.',
+    );
+  }
+
   /// Copies a number that is not a contact.
   Future<String> copyNumber(String number) async {
     await copyToClipboard(number);

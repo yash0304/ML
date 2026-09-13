@@ -1,18 +1,16 @@
-# HANDOFF — SafarSathi — 2026-09-13 (after #25, the sync orchestrator)
+# HANDOFF — SafarSathi — 2026-09-13 (after #27 and #28, discovery)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1–#9, #11–#26, #29, #31, #32, #35, #50, #53, #54, #55 are done
-  except for the device check.** Analyses clean, **605 tests** in about fifty
-  seconds on Flutter 3.47.3 / Dart 3.13.3.
-- Backlog position: 34 / 56 done.
-- **One press downloads everything.** More → "Download everything" runs every
-  leg's route and places, every stop's weather, and the whole map, with
-  per-item progress and a list of anything that failed.
-- Database at **schemaVersion 4**. Steps ascend, each additive, none edited.
+- **Issues #1–#9, #11–#29, #31, #32, #35, #50, #53, #54, #55 are done except
+  for the device check.** Analyses clean, **638 tests** in about fifty seconds.
+- Backlog position: 36 / 56 done.
+- **The corridor data is finally visible.** More → Getting between stops → a
+  leg showing "N ON THE ROAD" opens the list of what is coming up, ordered by
+  kilometres along the route.
 
 ## Blocked on nothing — but #36 could not be done here
 
@@ -118,7 +116,7 @@ settle, and what to do when each fails.
 flutter test --update-goldens test/golden_test.dart
 ```
 
-Writes `test/goldens/*.png` — twenty-eight images now: the diary in both themes, empty
+Writes `test/goldens/*.png` — thirty images now: the diary in both themes, empty
 and mid-copy; the entry form; an entry unconfirmed and confirmed; the
 emergency screen; the trip screen; the money screen. Rendered from the real
 widget tree with the bundled fonts and the SDK icon font loaded.
@@ -299,6 +297,14 @@ real Tier-1 codes with their government sources.
 | Skipped legs and stops are named | widget test |
 | Counts read as singular for one | widget test |
 | No failure renders in emergency red | widget test |
+| Places ordered by distance along the route | test |
+| Only categories present are offered as chips | test + widget test |
+| An unsynced leg reads unlike an empty one | test + widget test |
+| **A saved place lands as `communityOsm`** | test |
+| A saved place is never confirmed | test |
+| Confirming it still promotes it normally | test |
+| Provenance matches the diary's wording | widget test |
+| The maps link says it needs signal | widget test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -374,21 +380,18 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**#27 and #28, the discovery screen and POI detail.** The corridor data has
-been downloaded since #21–#23 and no screen has ever shown it to a person.
-That is the last big gap between what the app knows and what it tells you: a
-list of what is coming up along the current leg, ordered by distance along the
-route, each with "in 12 km".
+**#51 and #52, the stop and leg detail screens.** SCREENS.md §10 and §11 are
+written and most of what they show already exists: weather with its staleness
+stamp, editable activity tags, what is cached, and the corridor list #27 just
+built. These are assembly, not invention.
 
-Both specs are written: SCREENS.md §5 and the backlog entries. #28 must render
-an OSM phone number **with its unverified marker**, and saving one lands it as
-`userEntered` — the tier rules already enforce that in `CorridorSync`, but the
-screen has to say it.
+Then **#10** (multi-add for contacts) and the visual polish pass **#41–#49**,
+which is nine small issues.
 
-After that, #51 and #52 (stop and leg detail), then #10 (multi-add), then the
-visual polish pass #41–#49.
-
-**#36 needs a browser Yash controls.** See the section above.
+**#36 needs a browser Yash controls.** This container's egress proxy blocks
+`.gov.in` entirely — `cybercrime.gov.in` and `ndma.gov.in` both refused. No
+emergency number ships without a government-domain source, so 1930, 1078, 1033
+and 104 stay unseeded until someone reads the page directly.
 
 **#30 (GPS timeline) and #33/#34 (check-in escalation) involve background
 services.** Neither before October.
@@ -399,10 +402,7 @@ Still owed on hardware, none of it confirmed in words yet:
 2. Are the haptics felt, especially the heavy one on the emergency screen?
 3. Does `tel:` with an empty path open the Android dialer, or error?
 4. Is the night palette pleasant at 2am, as opposed to merely compliant?
-
-**Also unverified:** no map tile has ever actually been fetched. Every test
-fakes the HTTP. The first real download is the first proof the MapTiler URL
-shape and key are right.
+5. **No map tile has ever actually been fetched.** Every test fakes the HTTP.
 
 ## Note on the environment
 

@@ -25,8 +25,11 @@ import 'features/import/presentation/import_flow.dart';
 import 'features/import/presentation/import_history_screen.dart';
 import 'features/import/presentation/more_screen.dart';
 import 'features/discovery/data/corridor_sync.dart';
+import 'features/discovery/data/discovery.dart';
 import 'features/discovery/data/geo.dart';
 import 'features/discovery/data/geocoder.dart';
+import 'features/discovery/presentation/discovery_screen.dart';
+import 'features/discovery/presentation/poi_detail_screen.dart';
 import 'features/map/data/map_download.dart';
 import 'features/map/data/tile_downloader.dart';
 import 'features/map/data/tile_provider.dart';
@@ -263,6 +266,77 @@ class _HomeState extends State<_Home> {
   ///
   /// The other three screens still exist for anyone who wants one piece; this
   /// is the one that means you cannot leave having forgotten a step.
+  // -- discovery -----------------------------------------------------------
+
+  Future<void> _openDiscovery(
+    BuildContext context,
+    int tripId,
+    int legId,
+  ) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (discoveryContext) => DiscoveryScreen(
+        discovery: watchLegDiscovery(widget.db, legId),
+        onOpen: (place) => _openPoi(discoveryContext, tripId, place),
+      ),
+    ),
+  );
+
+  Future<void> _openPoi(
+    BuildContext context,
+    int tripId,
+    CorridorPlace place,
+  ) async {
+    final db = widget.db;
+    final actions = ContactActions(dao: db.contactsDao, tripId: tripId);
+
+    // Already in the diary? Matched on the normalised number, so the same
+    // place saved from two legs is recognised once.
+    var saved = false;
+    for (final phone in place.phones) {
+      final e164 = phone.phoneE164;
+      if (e164 == null) continue;
+      if (await db.contactsDao.findByE164(e164, tripId: tripId) != null) {
+        saved = true;
+        break;
+      }
+    }
+    if (!context.mounted) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (poiContext) => PoiDetailScreen(
+          place: place,
+          alreadySaved: saved,
+          onCopy: (phone) => actions.copyNumber(phone.phoneRaw),
+          onOpenDialer: (phone) => actions.openDialerFor(phone.phoneRaw),
+          onOpenMaps: () => actions.openMaps(googleMapsUrl(place)),
+          onSave: (phone) async {
+            await savePlaceAsContact(
+              db,
+              tripId: tripId,
+              place: place,
+              phone: phone,
+            );
+            if (!poiContext.mounted) return;
+            final c = AppTokens.of(poiContext);
+            Haptics.confirm();
+            Navigator.of(poiContext).pop();
+            ScaffoldMessenger.of(poiContext).showSnackBar(
+              SnackBar(
+                backgroundColor: c.ink,
+                content: Text(
+                  'Saved. It still reads "from open map data" until you call '
+                  'it and say so.',
+                  style: AppTokens.captionStyle.copyWith(color: c.paper),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _openSync(BuildContext context, int tripId) async {
     final store = _tiles;
     if (store == null) return;
@@ -761,6 +835,8 @@ class _HomeState extends State<_Home> {
           builder: (legsContext) => LegListScreen(
             legs: watchLegSummaries(widget.db, tripId),
             onOpen: (legId) => _openLegForm(legsContext, legId),
+            onDiscover: (legId) =>
+                _openDiscovery(legsContext, tripId, legId),
           ),
         ),
       );

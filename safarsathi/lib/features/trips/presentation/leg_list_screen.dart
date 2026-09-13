@@ -14,6 +14,7 @@ import '../../../core/theme/app_tokens.dart';
 
 class LegRow {
   final int id;
+  final int poiCount;
   final String fromName;
   final String toName;
   final String? mode;
@@ -23,6 +24,7 @@ class LegRow {
 
   const LegRow({
     required this.id,
+    this.poiCount = 0,
     required this.fromName,
     required this.toName,
     required this.isBooked,
@@ -50,10 +52,21 @@ Stream<List<LegRow>> watchLegSummaries(AppDatabase db, int tripId) {
     )..where((s) => s.tripId.equals(tripId))).get();
     final byId = {for (final s in stops) s.id: s.name};
 
+    final pois = await (db.select(
+      db.pois,
+    )..where((p) => p.tripId.equals(tripId))).get();
+    final poisPerLeg = <int, int>{};
+    for (final p in pois) {
+      if (p.legId != null) {
+        poisPerLeg[p.legId!] = (poisPerLeg[p.legId!] ?? 0) + 1;
+      }
+    }
+
     return [
       for (final l in legs)
         LegRow(
           id: l.id,
+          poiCount: poisPerLeg[l.id] ?? 0,
           fromName: byId[l.fromStopId] ?? '—',
           toName: byId[l.toStopId] ?? '—',
           mode: l.mode,
@@ -69,7 +82,16 @@ class LegListScreen extends StatelessWidget {
   final Stream<List<LegRow>> legs;
   final void Function(int legId) onOpen;
 
-  const LegListScreen({super.key, required this.legs, required this.onOpen});
+  /// Opens what is along the leg (#27). Optional so tests and goldens can
+  /// render the list without one.
+  final void Function(int legId)? onDiscover;
+
+  const LegListScreen({
+    super.key,
+    required this.legs,
+    required this.onOpen,
+    this.onDiscover,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -103,8 +125,13 @@ class LegListScreen extends StatelessWidget {
           }
           return ListView.builder(
             itemCount: list.length,
-            itemBuilder: (context, i) =>
-                _LegRowTile(row: list[i], onTap: () => onOpen(list[i].id)),
+            itemBuilder: (context, i) => _LegRowTile(
+              row: list[i],
+              onTap: () => onOpen(list[i].id),
+              onDiscover: onDiscover == null
+                  ? null
+                  : () => onDiscover!(list[i].id),
+            ),
           );
         },
       ),
@@ -115,8 +142,13 @@ class LegListScreen extends StatelessWidget {
 class _LegRowTile extends StatelessWidget {
   final LegRow row;
   final VoidCallback onTap;
+  final VoidCallback? onDiscover;
 
-  const _LegRowTile({required this.row, required this.onTap});
+  const _LegRowTile({
+    required this.row,
+    required this.onTap,
+    this.onDiscover,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -186,6 +218,20 @@ class _LegRowTile extends StatelessWidget {
                       style: AppTokens.stencilStyle.copyWith(
                         fontSize: 9,
                         color: c.signal,
+                      ),
+                    ),
+                  ),
+                if (onDiscover != null && row.poiCount > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppTokens.s8),
+                    child: GestureDetector(
+                      onTap: onDiscover,
+                      child: Text(
+                        '${row.poiCount} ON THE ROAD',
+                        style: AppTokens.stencilStyle.copyWith(
+                          fontSize: 9,
+                          color: c.signal,
+                        ),
                       ),
                     ),
                   ),

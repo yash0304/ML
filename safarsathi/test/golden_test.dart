@@ -46,6 +46,9 @@ import 'package:safarsathi/features/map/data/tile_provider.dart';
 import 'package:safarsathi/features/map/presentation/map_download_screen.dart';
 import 'package:safarsathi/features/sync/data/trip_sync.dart';
 import 'package:safarsathi/features/sync/presentation/sync_screen.dart';
+import 'package:safarsathi/features/discovery/data/discovery.dart';
+import 'package:safarsathi/features/discovery/presentation/discovery_screen.dart';
+import 'package:safarsathi/features/discovery/presentation/poi_detail_screen.dart';
 
 import 'package:safarsathi/features/import/data/column_mapping.dart';
 import 'package:safarsathi/features/import/data/import_commit.dart';
@@ -1277,6 +1280,110 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/sync_failed.png'),
+    );
+  });
+
+  // ---------------------------------------------------------------------
+  // What is along the way (#27, #28)
+  // ---------------------------------------------------------------------
+
+  PoiContact osmPhone(int id, String raw) => PoiContact(
+    id: id,
+    poiId: id,
+    phoneRaw: raw,
+    phoneE164: raw.replaceAll(' ', ''),
+    tier: 'communityOsm',
+    sourceTag: 'phone',
+  );
+
+  CorridorPlace corridorPlace({
+    required int id,
+    required String name,
+    required String category,
+    required double along,
+    required double off,
+    String? phone,
+  }) => CorridorPlace(
+    id: id,
+    name: name,
+    category: category,
+    lat: 25.4,
+    lon: 91.8,
+    alongRouteKm: along,
+    offRouteKm: off,
+    osmId: 'node/$id',
+    phones: phone == null ? const [] : [osmPhone(id, phone)],
+  );
+
+  testWidgets('discovery', (tester) async {
+    await shootScreen(
+      tester,
+      'discovery',
+      DiscoveryScreen(
+        onOpen: (_) {},
+        discovery: Stream.value(
+          LegDiscovery(
+            legId: 1,
+            fromName: 'Shillong',
+            toName: 'Cherrapunji',
+            distanceKm: 54,
+            lastSyncedAt: DateTime(2026, 9, 20),
+            places: [
+              corridorPlace(
+                id: 1,
+                name: 'IOC Umroi',
+                category: ContactCategory.fuel,
+                along: 6,
+                off: 0.1,
+                phone: '+91 364 111 1111',
+              ),
+              corridorPlace(
+                id: 2,
+                name: 'Mawkdok viewpoint',
+                category: ContactCategory.other,
+                along: 14,
+                off: 0.3,
+              ),
+              corridorPlace(
+                id: 3,
+                name: 'Sohra PHC',
+                category: ContactCategory.hospital,
+                along: 21,
+                off: 0.4,
+                phone: '+91 364 222 2222',
+              ),
+              corridorPlace(
+                id: 4,
+                name: 'Laitlum dhaba',
+                category: ContactCategory.restaurant,
+                along: 38,
+                off: 2.1,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('place detail', (tester) async {
+    await shootScreen(
+      tester,
+      'poi_detail',
+      PoiDetailScreen(
+        place: corridorPlace(
+          id: 3,
+          name: 'Sohra Primary Health Centre',
+          category: ContactCategory.hospital,
+          along: 21,
+          off: 0.4,
+          phone: '+91 364 222 2222',
+        ),
+        onCopy: (_) async {},
+        onOpenDialer: (_) async {},
+        onSave: (_) async {},
+        onOpenMaps: () async {},
+      ),
     );
   });
 }
