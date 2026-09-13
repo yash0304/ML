@@ -101,7 +101,10 @@ class _BatchCard extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text('Undo import', style: TextStyle(color: c.emergency)),
+            child: Text(
+              batch.wasTyped ? 'Undo these entries' : 'Undo import',
+              style: TextStyle(color: c.emergency),
+            ),
           ),
         ],
       ),
@@ -144,7 +147,8 @@ class _BatchCard extends StatelessWidget {
               ),
               const SizedBox(width: AppTokens.s4),
               Text(
-                'imported',
+                // A typed batch was not imported from anywhere.
+                batch.wasTyped ? 'added' : 'imported',
                 style: AppTokens.captionStyle.copyWith(color: c.muted),
               ),
               if (batch.rowsSkipped > 0) ...[

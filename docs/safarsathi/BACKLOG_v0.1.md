@@ -187,7 +187,7 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
 
 ## Milestone 3 — Bulk import
 
-- [ ] **#10 Multi-add screen** — S
+- [x] **#10 Multi-add screen** — S — *lands through `insertBatch`, so the trust guard and rollback both come free*
   Repeatable inline rows for adding 5–10 contacts without reopening a form.
   *Depends on #8.*
 

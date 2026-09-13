@@ -5,6 +5,16 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-13 — [CONTACTS] **Multi-add writes through `ContactsDao.insertBatch`, the same function file import uses, rather than its own insert loop.** (`insertBatch` forces `userEntered` and `callConfirmed = false` on every row whatever the caller passes, so there is no argument the screen could get wrong. A second write path that re-implemented the guard is exactly how the invariant erodes — and that guard has already caught one real bug in this project. It also means a typed session is an `ImportBatch`, so it appears in the history and can be rolled back wholesale, which matters because the likeliest mistake is typing ten rows against the wrong trip.)
+
+2026-09-13 — [CONTACTS] The import history says "added" and "Undo these entries" for a typed batch, via `ImportBatchSummary.wasTyped`. (Reusing the batch machinery must not make the app tell somebody it "imported" numbers they sat and typed. The check lives on the summary so no call site compares the label string.)
+
+2026-09-13 — [CONTACTS] A new multi-add row inherits the category of the row above it. (Most bulk sessions are one kind at a time — "here are my three hotels". Setting it once and having it stick is the fast path; overriding a row costs one tap. Nothing else on the sheet carries downward.)
+
+2026-09-13 — [CONTACTS] Multi-add takes a name, a number and a category, and nothing else. (Stop, note and WhatsApp belong to the entry form, which owns one contact properly. A sheet is for getting digits down; the details are edited later on an entry that now exists. Declined: parsing a pasted block of text — guessing at that is how a phone number becomes a note, and the CSV import already exists for bulk.)
+
+2026-09-13 — [UI] Multi-add's fields are transparent with a hairline rule, not the app's filled `stone` inputs. (The shared `inputDecorationTheme` is right for the entry form's three or four fields and wrong for eight stacked pairs, which merge into one grey block and lose the ruled-notebook idiom the diary is built on.)
+
 2026-09-13 — [UI] **`StampBadge` is mounted unconditionally and collapses to zero width until it lands; DIALER_RETRO_PATCH.md edit 8, which mounts it only when already confirmed, is wrong and superseded.** (`if (confirmed) StampBadge(landed: confirmed)` reads correctly and can never animate: the widget only ever exists in the landed state, so it never sees the false → true transition that fires the stamp and the haptic. The patch document has spelled it that way since before there was code. The badge now owns its own space via `Align(widthFactor:)`, which is what makes unconditional mounting free.)
 
 2026-09-13 — [UI] Every diary row carries `ValueKey(contact.id)`. (`ListView` recycles elements. Without a key a confirmed row's element gets handed an unconfirmed contact and back, `StampBadge` reads that as a confirmation, and the phone stamps and buzzes at somebody who is only scrolling. Pinned by a test that flings a list of thirty rows and asserts the haptic channel stayed silent.)

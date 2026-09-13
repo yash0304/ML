@@ -1,4 +1,4 @@
-# HANDOFF — SafarSathi — 2026-09-13 (after the polish pass, #41–#49)
+# HANDOFF — SafarSathi — 2026-09-13 (after #10, the last feature)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
@@ -6,12 +6,12 @@
 ## Where we are
 
 - **Issues #1–#9, #11–#29, #31, #32, #35, #41–#46, #48–#55 are done except
-  for the device check.** Analyses clean, **698 tests** in about fifty
-  seconds.
-- Backlog position: 46 / 56 done.
-- Every screen SCREENS.md specifies exists, and the retro pass over them is
-  finished. What remains is #10, one audit, background services, and one
-  thing that cannot be done from this container.
+  for the device check.** Analyses clean, **726 tests** in about a minute.
+- Backlog position: 47 / 56 done.
+- **Every feature this trip needs is now built.** What remains is one audit
+  that needs a real phone, two curation jobs that need a browser, three
+  background services parked until after October, and three international
+  items that Meghalaya does not touch.
 
 ## The MapTiler key — fixed, and Yash needs to do one thing
 
@@ -42,6 +42,19 @@ The project rule is absolute — no emergency number ships without a
 government-domain source recorded in `sourceNote`. A search-engine summary is
 not that. **Those four numbers remain unseeded and must stay unseeded until
 someone reads a `.gov.in` page directly.**
+
+## What #10 added
+
+Multi-add: a sheet of thin rows, a name and a number each, for sitting at
+home with a booking confirmation open and eight numbers to get down. More →
+Add several at once. See `ISSUE_10_MultiAdd.md`.
+
+The decision worth knowing: **it writes through `ContactsDao.insertBatch`,
+the same function file import uses.** That function forces `userEntered` and
+`callConfirmed = false` whatever the caller passes, so there is no argument
+this screen could get wrong — and a typed session becomes an `ImportBatch`,
+so it shows in the import history and rolls back wholesale. The history says
+"added" rather than "imported" for those, via `ImportBatchSummary.wasTyped`.
 
 ## What the polish pass added
 
@@ -142,7 +155,6 @@ now unblocked — it needs Yash to paste his key and press download.
 
 ## What is left
 
-- **#10** multi-add for contacts — the last unbuilt feature before October.
 - **#47** night theme audit. Deliberately NOT ticked: the numbers check out
   (grain drops to 2%, the emergency red has no glow) and both themes render
   in tests, but the backlog asks for contrast checked *on a real device* and

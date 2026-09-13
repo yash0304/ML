@@ -19,7 +19,9 @@ import 'package:safarsathi/features/contacts/data/contacts_dao.dart';
 import 'package:safarsathi/features/contacts/data/entry_draft.dart';
 import 'package:safarsathi/features/contacts/presentation/diary_screen.dart';
 import 'package:safarsathi/features/contacts/presentation/entry_form_screen.dart';
+import 'package:safarsathi/features/contacts/data/multi_add.dart';
 import 'package:safarsathi/features/contacts/presentation/entry_screen.dart';
+import 'package:safarsathi/features/contacts/presentation/multi_add_screen.dart';
 import 'package:safarsathi/features/emergency/presentation/emergency_screen.dart';
 import 'package:safarsathi/features/trips/data/trip_summary.dart';
 import 'package:safarsathi/features/money/data/money_summary.dart';
@@ -686,6 +688,7 @@ void main() {
         onMap: () {},
         onSync: () {},
         onImport: () {},
+        onMultiAdd: () {},
         onHistory: () {},
         onTemplate: () {},
       ),
@@ -1576,6 +1579,49 @@ void main() {
           ),
         ),
       ),
+    );
+  });
+
+  // -- multi-add, #10 -------------------------------------------------------
+
+  testWidgets('multi add', (tester) async {
+    // Typed in for real rather than mocked into place, so the image is of the
+    // screen somebody would actually be looking at part way through: two rows
+    // down, a duplicate caught, one half-finished, and a blank waiting.
+    tester.view.physicalSize = const Size(840, 1780);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: AppTokens.light,
+        home: MultiAddScreen(
+          check: (row) async => row.copyWith(
+            phoneE164: '+91${row.phoneRaw.replaceAll(RegExp(r"[^0-9]"), "")}',
+            duplicateOf: row.name.contains('Wanshai') ? 'Wanshai' : null,
+          ),
+          onSave: (_) async => const MultiAddResult(added: 0, skipped: 0),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    Future<void> type(int row, String name, String phone) async {
+      await tester.enterText(find.byType(TextField).at(row * 2), name);
+      if (phone.isNotEmpty) {
+        await tester.enterText(find.byType(TextField).at(row * 2 + 1), phone);
+      }
+      await tester.pumpAndSettle();
+    }
+
+    await type(0, 'Kongthong homestay', '+91 90000 00001');
+    await type(1, 'Wanshai · driver', '+91 90000 00002');
+    await type(2, 'Sohra chemist', '');
+
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/multi_add.png'),
     );
   });
 }

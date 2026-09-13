@@ -24,6 +24,7 @@ class MoreScreen extends StatelessWidget {
   final VoidCallback onSettings;
   final VoidCallback onImport;
   final VoidCallback onHistory;
+  final VoidCallback onMultiAdd;
   final VoidCallback onTemplate;
 
   /// Live count of contacts on this trip, so the tab says something true
@@ -43,6 +44,7 @@ class MoreScreen extends StatelessWidget {
     required this.onSettings,
     required this.onImport,
     required this.onHistory,
+    required this.onMultiAdd,
     required this.onTemplate,
     required this.contactCount,
   });
@@ -134,6 +136,14 @@ class MoreScreen extends StatelessWidget {
             ),
             const StencilLabel('Contacts'),
             _Item(
+              icon: Icons.playlist_add,
+              title: 'Add several at once',
+              subtitle:
+                  'A name and a number per line, for when you have a booking '
+                  'sheet open and eight of them to get down.',
+              onTap: onMultiAdd,
+            ),
+            _Item(
               icon: Icons.upload_file_outlined,
               title: 'Import from a sheet',
               subtitle:
@@ -144,7 +154,9 @@ class MoreScreen extends StatelessWidget {
             _Item(
               icon: Icons.history,
               title: 'Import history',
-              subtitle: 'Undo a whole import in one action.',
+              subtitle:
+                  'Undo a whole import, or a whole batch you typed, in one '
+                  'action.',
               onTap: onHistory,
             ),
             _Item(

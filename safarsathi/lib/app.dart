@@ -15,6 +15,8 @@ import 'features/contacts/data/entry_draft.dart';
 import 'features/contacts/presentation/diary_screen.dart';
 import 'features/contacts/presentation/entry_form_screen.dart';
 import 'features/contacts/presentation/entry_screen.dart';
+import 'features/contacts/data/multi_add.dart';
+import 'features/contacts/presentation/multi_add_screen.dart';
 import 'features/checklist/data/checklist_dao.dart';
 import 'features/checklist/data/checklist_generator.dart';
 import 'features/checklist/presentation/checklist_screen.dart';
@@ -818,6 +820,7 @@ class _HomeState extends State<_Home> {
             onMap: () => _openMap(context, trip.tripId),
             onSync: () => _openSync(context, trip.tripId),
             onSettings: () => _openSettings(context, trip.tripId),
+            onMultiAdd: () => _openMultiAdd(context, trip.tripId),
             onImport: () async {
               await ImportFlow(db: db, tripId: trip.tripId).start(context);
               await syncReadinessChecklist(db, trip.tripId);
@@ -940,6 +943,30 @@ class _HomeState extends State<_Home> {
         ),
       ),
     );
+  }
+
+  /// Several contacts at once — issue #10.
+  Future<void> _openMultiAdd(BuildContext context, int tripId) async {
+    final db = widget.db;
+    final dao = db.contactsDao;
+
+    final result = await Navigator.of(context).push<MultiAddResult>(
+      MaterialPageRoute<MultiAddResult>(
+        builder: (_) => MultiAddScreen(
+          check: (row) => checkRow(
+            row,
+            findDuplicate: (e164) => dao.findByE164(e164, tripId: tripId),
+          ),
+          onSave: (sheet) =>
+              commitMultiAdd(db, tripId: tripId, sheet: sheet),
+        ),
+      ),
+    );
+
+    if (result != null && result.added > 0) {
+      // New unconfirmed numbers change what blocks departure.
+      await syncReadinessChecklist(db, tripId);
+    }
   }
 
   Future<void> _openLegs(BuildContext context, int tripId) =>

@@ -10,6 +10,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../contacts/data/multi_add.dart' show typedBatchLabel;
 import 'import_validation.dart';
 
 class ImportResult {
@@ -110,6 +111,13 @@ class ImportBatchSummary {
     required this.stillPresent,
     this.sheetName,
   });
+
+  /// True for a multi-add session (#10) rather than a file.
+  ///
+  /// Both go through `insertBatch` and both can be rolled back, but the
+  /// history should not tell somebody they "imported" numbers they sat and
+  /// typed. Checked here so no call site compares the label itself.
+  bool get wasTyped => fileName == typedBatchLabel;
 }
 
 /// Every batch on this trip, newest first, with a live count of surviving rows.
