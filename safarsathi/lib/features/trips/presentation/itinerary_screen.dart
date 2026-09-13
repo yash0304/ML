@@ -20,6 +20,12 @@ class ItineraryScreen extends StatelessWidget {
   final VoidCallback onAdd;
   final VoidCallback? onEditTrip;
 
+  /// The stop detail screen (#51). When it is wired, tapping a row opens the
+  /// stop rather than the form — the form is then one pencil further in.
+  /// Without it the row still opens the form, which is what this screen did
+  /// before the detail screen existed.
+  final void Function(Stop stop)? onOpen;
+
   const ItineraryScreen({
     super.key,
     required this.tripName,
@@ -28,6 +34,7 @@ class ItineraryScreen extends StatelessWidget {
     required this.onEdit,
     required this.onAdd,
     this.onEditTrip,
+    this.onOpen,
   });
 
   @override
@@ -72,7 +79,7 @@ class ItineraryScreen extends StatelessWidget {
               key: ValueKey(list[i].id),
               stop: list[i],
               index: i,
-              onTap: () => onEdit(list[i]),
+              onTap: () => (onOpen ?? onEdit)(list[i]),
             ),
           );
         },

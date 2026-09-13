@@ -345,12 +345,12 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   Test with the three-person Meghalaya ledger and with a cycle.
   *Depends on #31.*
 
-- [ ] **#51 Stop detail screen** — M — *see SCREENS.md §10*
+- [x] **#51 Stop detail screen** — M — *see SCREENS.md §10* — *staleness corrected from seven days to three, per the spec*
   Weather snapshot with the staleness treatment, what-is-here counts,
   editable activity tags, per-stop cache sizes.
   *Depends on #16, #26.*
 
-- [ ] **#52 Leg detail screen** — M — *see SCREENS.md §11*
+- [x] **#52 Leg detail screen** — M — *see SCREENS.md §11* — *five places inline on a milestone rail, then SEE ALL*
   Typed transport details, and the corridor list ordered by distance along
   the route with each place on its own milestone.
   *Depends on #18, #23.*

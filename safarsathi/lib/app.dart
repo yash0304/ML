@@ -42,6 +42,7 @@ import 'features/money/presentation/travellers_screen.dart';
 import 'features/money/presentation/money_screen.dart';
 import 'features/trips/data/readiness.dart';
 import 'features/trips/data/trip_editor.dart';
+import 'features/trips/data/stop_detail.dart';
 import 'features/trips/data/trip_summary.dart';
 import 'features/settings/data/settings.dart';
 import 'features/sync/data/trip_sync.dart';
@@ -51,8 +52,10 @@ import 'features/trips/presentation/itinerary_screen.dart';
 import 'features/trips/presentation/place_picker_sheet.dart';
 import 'features/weather/data/weather_sync.dart';
 import 'features/weather/presentation/weather_screen.dart';
+import 'features/trips/presentation/leg_detail_screen.dart';
 import 'features/trips/presentation/leg_form_screen.dart';
 import 'features/trips/presentation/leg_list_screen.dart';
+import 'features/trips/presentation/stop_detail_screen.dart';
 import 'features/trips/presentation/stop_form_screen.dart';
 import 'features/trips/presentation/trip_form_screen.dart';
 import 'features/trips/presentation/trip_list_screen.dart';
@@ -202,6 +205,8 @@ class _HomeState extends State<_Home> {
         onReorder: (from, to) => _editor.reorderStops(tripId, from, to),
         onAdd: () => _openStopForm(itineraryContext, tripId),
         onEdit: (stop) => _openStopForm(itineraryContext, tripId, stop: stop),
+        onOpen: (stop) =>
+            _openStopDetail(itineraryContext, tripId, tripName, stop),
         onEditTrip: () async {
           final trip = await (widget.db.select(
             widget.db.trips,
@@ -209,6 +214,85 @@ class _HomeState extends State<_Home> {
           if (trip != null && itineraryContext.mounted) {
             await _openTripForm(itineraryContext, existing: trip);
           }
+        },
+      ),
+    ),
+  );
+
+  /// One stop — issue #51.
+  ///
+  /// The stop row itself is passed only for the title and the edit hop; every
+  /// number on the screen arrives on the stream, so an edit made from here is
+  /// reflected without popping back.
+  Future<void> _openStopDetail(
+    BuildContext context,
+    int tripId,
+    String tripName,
+    Stop stop,
+  ) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (detailContext) => StopDetailScreen(
+        detail: watchStopDetail(widget.db, stop.id),
+        onEdit: () async {
+          // Re-read rather than reusing the row this route was opened with:
+          // by now the tags may have been edited on this very screen, and the
+          // form would open showing the old ones.
+          final fresh = await (widget.db.select(
+            widget.db.stops,
+          )..where((s) => s.id.equals(stop.id))).getSingleOrNull();
+          if (fresh != null && detailContext.mounted) {
+            await _openStopForm(detailContext, tripId, stop: fresh);
+          }
+        },
+        onOpenDiary: () => Navigator.of(detailContext).push(
+          MaterialPageRoute<void>(
+            builder: (diaryContext) {
+              final actions = ContactActions(
+                dao: widget.db.contactsDao,
+                tripId: tripId,
+              );
+              return DiaryScreen(
+                watchContacts: widget.db.contactsDao.watchContacts,
+                unconfirmedCount: widget.db.contactsDao.watchUnconfirmedCount(
+                  tripId,
+                ),
+                tripId: tripId,
+                tripName: tripName,
+                currentStopId: stop.id,
+                currentStopName: stop.name,
+                // The count on the stop screen said "here", so the list has
+                // to open saying the same thing.
+                startStopScoped: true,
+                onCopy: actions.copy,
+                onOpenDialer: actions.openDialer,
+                onOpen: (contact) async {
+                  final trip = await watchActiveTripContext(
+                    widget.db,
+                  ).first;
+                  if (trip != null && diaryContext.mounted) {
+                    await _openEntry(diaryContext, trip, contact, actions);
+                  }
+                },
+              );
+            },
+          ),
+        ),
+        onOpenChecklist: () => _openChecklist(detailContext, tripId),
+        onTags: (tags) async {
+          final fresh = await (widget.db.select(
+            widget.db.stops,
+          )..where((s) => s.id.equals(stop.id))).getSingleOrNull();
+          if (fresh == null) return;
+          await _editor.updateStop(
+            tripId,
+            StopDraft.fromRow(fresh).copyWith(activityTags: tags),
+          );
+          // THE LINK THE SCREEN CLAIMS. Editing tags here has to actually
+          // rebuild the packing list, or the sentence under the chips is a
+          // lie. Hand edits survive: regeneratePackList keys on the
+          // generator, not the label.
+          await regeneratePackList(widget.db, tripId);
+          await syncReadinessChecklist(widget.db, tripId);
         },
       ),
     ),
@@ -453,6 +537,23 @@ class _HomeState extends State<_Home> {
           ),
         ),
       );
+
+  /// One leg — issue #52.
+  Future<void> _openLegDetail(
+    BuildContext context,
+    int tripId,
+    int legId,
+  ) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (detailContext) => LegDetailScreen(
+        discovery: watchLegDiscovery(widget.db, legId),
+        transport: watchLegTransport(widget.db, legId),
+        onEditTransport: () => _openLegForm(detailContext, legId),
+        onSeeAll: () => _openDiscovery(detailContext, tripId, legId),
+        onOpenPlace: (place) => _openPoi(detailContext, tripId, place),
+      ),
+    ),
+  );
 
   Future<void> _openLegForm(BuildContext context, int legId) async {
     final db = widget.db;
@@ -834,7 +935,7 @@ class _HomeState extends State<_Home> {
         MaterialPageRoute<void>(
           builder: (legsContext) => LegListScreen(
             legs: watchLegSummaries(widget.db, tripId),
-            onOpen: (legId) => _openLegForm(legsContext, legId),
+            onOpen: (legId) => _openLegDetail(legsContext, tripId, legId),
             onDiscover: (legId) =>
                 _openDiscovery(legsContext, tripId, legId),
           ),

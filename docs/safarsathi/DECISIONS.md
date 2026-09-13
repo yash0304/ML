@@ -5,6 +5,20 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-13 — [WEATHER] **The staleness caution boundary is three days, not seven. #26 shipped seven and that is corrected here.** (SCREENS.md §10 has always said "under three days it is muted; past three days it turns caution". Seven was laxer than the app's own specification, and wrong on the facts for the trip it was built for: an October forecast for Meghalaya is a different season after five days. Bands are now fresh under a day, ageing one to three, stale at three and over, and the wording moved with them — "Over a week old" became "More than three days old". A stale forecast that looks current is the failure mode the whole screen exists to prevent, so the laxer number was the one thing it could not afford.)
+
+2026-09-13 — [TRIPS] Editing activity tags on the stop screen calls `regeneratePackList`, and the screen says out loud that it does. (The chips are editable *because* they drive the checklist. A row of chips that silently rebuilds a list elsewhere is a surprise; a row of chips that claims to and does not is a lie. Hand edits survive because #29 keys generated items on `generatorKey` rather than on the label.)
+
+2026-09-13 — [TRIPS] The stop screen's "diary entries" chevron opens the diary already narrowed to that stop. (`DiaryScreen` gained a `startStopScoped` flag for it. The count said "here"; opening the whole-trip list would answer a different question from the one the count asked.)
+
+2026-09-13 — [TRIPS] "Places on the roads either side" is the union over every leg touching the stop, and the label says so. (A stop has no corridor of its own — a corridor belongs to a leg. Calling it "nearby" would imply a radius the app never computes.)
+
+2026-09-13 — [TRIPS] The leg screen reports no per-leg tile figure, and says why. (Adjacent legs share the ground between them, so a per-leg number would double-count. The honest total lives in Settings, which is where the delete button is anyway.)
+
+2026-09-13 — [TRIPS] `watchLegTransport` is a separate stream from `watchLegDiscovery`. (The two halves of a leg change for different reasons — one when a person edits a field, the other when a download lands. Merging them would rebuild the corridor list on every keystroke in the form.)
+
+2026-09-13 — [TRIPS] Tapping a stop in the itinerary opens the stop, not the form; the form is one pencil further in. (The itinerary is still the planning surface, but a stop now has somewhere to be. `ItineraryScreen.onOpen` is optional, so the older behaviour is what happens when nothing is wired to it.)
+
 2026-09-13 — [DISCOVERY] **Saving a corridor place lands the contact as `communityOsm`, NOT `userEntered`. The backlog line specifying `userEntered` is wrong and is superseded.** (Both tiers carry the amber dot, so the trust outcome is identical — but the entry screen reads provenance out loud: `userEntered` says "Typed by you · not confirmed" and `communityOsm` says "From open map data · nobody has checked it". Saving an OSM number as `userEntered` would make the app tell the user they typed a number a stranger put in a public wiki. In an app whose entire premise is knowing where a number came from, that is the one thing it must not do. The path out is unchanged: call it, mark it confirmed, and it becomes `userVerified` like anything else.)
 
 2026-09-13 — [DISCOVERY] Corridor places are ordered by distance ALONG the route, never by distance from the user. ("Coming up in 12 km" is the useful sentence while moving. "0.2 km away" treats the road as a plane, and a place 200 m off across a gorge is an hour of driving. Each place renders on a milestone marker, the same idiom the Trip screen uses — a milestone is a thing you pass.)

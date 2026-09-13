@@ -48,10 +48,16 @@ enum Staleness { fresh, ageing, stale }
 /// A FORECAST MUST NEVER LOOK CURRENT. `cachedAt` is non-nullable in the
 /// schema for exactly this reason; this turns it into something the screen can
 /// say out loud.
+/// THE CAUTION BOUNDARY IS THREE DAYS, per SCREENS.md §10: "under three days
+/// it is muted; past three days it turns caution". #26 first shipped seven,
+/// which was laxer than the app's own specification — an October forecast for
+/// Meghalaya is not something to lean on after five days, and a stale
+/// forecast that looks current is the failure mode the whole screen exists to
+/// prevent.
 Staleness stalenessOf(DateTime cachedAt, {DateTime? now}) {
   final age = (now ?? DateTime.now()).difference(cachedAt);
-  if (age < const Duration(days: 2)) return Staleness.fresh;
-  if (age < const Duration(days: 7)) return Staleness.ageing;
+  if (age < const Duration(days: 1)) return Staleness.fresh;
+  if (age < const Duration(days: 3)) return Staleness.ageing;
   return Staleness.stale;
 }
 

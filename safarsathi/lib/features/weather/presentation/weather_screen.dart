@@ -161,8 +161,8 @@ class _StopBlock extends StatelessWidget {
               AppTokens.s8,
             ),
             child: Text(
-              'Over a week old. Treat this as a rough idea of the season, '
-              'not a forecast.',
+              'More than three days old. Treat this as a rough idea of the '
+              'season, not a forecast.',
               style: AppTokens.captionStyle.copyWith(color: c.cautionMark),
             ),
           ),

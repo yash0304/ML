@@ -227,10 +227,14 @@ void main() {
     test('A FORECAST MUST NEVER LOOK CURRENT', () {
       // Three bands, because a five-day-old forecast shown as today's weather
       // is worse than no forecast: somebody packs on it.
+      // The boundary is THREE DAYS, per SCREENS.md §10. #26 first shipped
+      // seven, which was laxer than the app's own specification.
       expect(stalenessOf(taken, now: taken.add(const Duration(hours: 6))),
           Staleness.fresh);
-      expect(stalenessOf(taken, now: taken.add(const Duration(days: 3))),
+      expect(stalenessOf(taken, now: taken.add(const Duration(days: 2))),
           Staleness.ageing);
+      expect(stalenessOf(taken, now: taken.add(const Duration(days: 3))),
+          Staleness.stale);
       expect(stalenessOf(taken, now: taken.add(const Duration(days: 9))),
           Staleness.stale);
     });
@@ -328,6 +332,10 @@ void main() {
       expect(
         view.single.staleness(now: taken.add(const Duration(days: 9))),
         Staleness.stale,
+      );
+      expect(
+        view.single.staleness(now: taken.add(const Duration(days: 2))),
+        Staleness.ageing,
       );
       expect(
         view.single.ageDescription(now: taken.add(const Duration(days: 3))),

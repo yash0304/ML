@@ -276,12 +276,32 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.textContaining('Over a week old'), findsOneWidget);
+      expect(find.textContaining('More than three days old'), findsOneWidget);
 
       final context = tester.element(find.byType(WeatherScreen));
       final c = AppTokens.of(context);
       final label = tester.widget<Text>(find.text('TAKEN 9 DAYS AGO'));
       expect(label.style?.color, c.cautionMark);
+    });
+
+    testWidgets('a two-day-old forecast is muted, not shouted about', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        screen(
+          [
+            StopWeather(
+              stopId: 1,
+              stopName: 'Shillong',
+              cachedAt: taken,
+              days: [day(1, DateTime(2026, 10, 2), 'Clear', taken)],
+            ),
+          ],
+          now: taken.add(const Duration(days: 2)),
+        ),
+      );
+      await tester.pump();
+      expect(find.textContaining('More than three days old'), findsNothing);
     });
 
     testWidgets('a fresh forecast does not shout', (tester) async {
@@ -299,7 +319,7 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.textContaining('Over a week old'), findsNothing);
+      expect(find.textContaining('More than three days old'), findsNothing);
     });
 
     testWidgets('nothing downloaded explains what to do', (tester) async {

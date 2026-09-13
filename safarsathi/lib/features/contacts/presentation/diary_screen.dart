@@ -47,6 +47,12 @@ class DiaryScreen extends StatefulWidget {
   final void Function(Contact)? onOpen;
   final VoidCallback? onAdd;
 
+  /// Opens already narrowed to [currentStopId]. The tab wants the whole trip;
+  /// the stop screen's "diary entries" chevron (#51) means *these* entries,
+  /// and arriving at an unfiltered list would quietly answer a different
+  /// question from the one the count asked.
+  final bool startStopScoped;
+
   const DiaryScreen({
     super.key,
     required this.watchContacts,
@@ -59,6 +65,7 @@ class DiaryScreen extends StatefulWidget {
     this.onOpenDialer,
     this.onOpen,
     this.onAdd,
+    this.startStopScoped = false,
   });
 
   @override
@@ -67,8 +74,11 @@ class DiaryScreen extends StatefulWidget {
 
 class _DiaryScreenState extends State<DiaryScreen> {
   final _searchController = TextEditingController();
-  late ContactFilter _filter = ContactFilter(tripId: widget.tripId);
-  bool _stopScoped = false;
+  late ContactFilter _filter = ContactFilter(
+    tripId: widget.tripId,
+    stopId: widget.startStopScoped ? widget.currentStopId : null,
+  );
+  late bool _stopScoped = widget.startStopScoped;
 
   String? _toastNumber;
   String? _toastMessage;

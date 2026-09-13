@@ -28,7 +28,10 @@ import 'package:safarsathi/features/money/presentation/money_screen.dart';
 import 'package:safarsathi/features/trips/presentation/trip_screen.dart';
 import 'package:safarsathi/features/trips/data/readiness.dart';
 import 'package:safarsathi/features/trips/data/trip_editor.dart';
+import 'package:safarsathi/features/trips/data/stop_detail.dart';
 import 'package:safarsathi/features/trips/presentation/itinerary_screen.dart';
+import 'package:safarsathi/features/trips/presentation/leg_detail_screen.dart';
+import 'package:safarsathi/features/trips/presentation/stop_detail_screen.dart';
 import 'package:safarsathi/features/trips/presentation/leg_list_screen.dart';
 import 'package:safarsathi/features/trips/presentation/stop_form_screen.dart';
 import 'package:safarsathi/features/trips/presentation/trip_list_screen.dart';
@@ -1383,6 +1386,192 @@ void main() {
         onOpenDialer: (_) async {},
         onSave: (_) async {},
         onOpenMaps: () async {},
+      ),
+    );
+  });
+
+  // -- the two detail screens, #51 and #52 ---------------------------------
+
+  final shotNow = DateTime(2026, 9, 28, 18);
+
+  WeatherSnapshot forecast(
+    int id,
+    DateTime date,
+    String condition, {
+    required DateTime cachedAt,
+    double? rain,
+    double min = 17,
+    double max = 24,
+  }) => WeatherSnapshot(
+    id: id,
+    stopId: 4,
+    forDate: date,
+    condition: condition,
+    tempMinC: min,
+    tempMaxC: max,
+    rainMm: rain,
+    cachedAt: cachedAt,
+  );
+
+  StopDetail stopDetail({required DateTime cachedAt, DateTime? synced}) =>
+      StopDetail(
+        stop: Stop(
+          id: 4,
+          tripId: 1,
+          name: 'Cherrapunji',
+          sequenceOrder: 3,
+          nights: 2,
+          countryCode: 'IN',
+          activityTags: 'trek,caves,rain',
+          arrivalDate: DateTime(2026, 10, 2),
+          lat: 25.2702,
+          lon: 91.7323,
+        ),
+        weather: [
+          forecast(
+            1,
+            DateTime(2026, 10, 2),
+            'Heavy rain',
+            cachedAt: cachedAt,
+            rain: 41,
+          ),
+          forecast(
+            2,
+            DateTime(2026, 10, 3),
+            'Rain showers',
+            cachedAt: cachedAt,
+            rain: 12,
+            min: 18,
+            max: 25,
+          ),
+          forecast(
+            3,
+            DateTime(2026, 10, 4),
+            'Overcast',
+            cachedAt: cachedAt,
+            min: 19,
+            max: 26,
+          ),
+        ],
+        weatherCachedAt: cachedAt,
+        diaryCount: 5,
+        unconfirmedCount: 2,
+        checklistCount: 14,
+        checklistDone: 6,
+        nearbyPlaceCount: 9,
+        lastSyncedAt: synced,
+      );
+
+  testWidgets('stop detail', (tester) async {
+    await shootScreen(
+      tester,
+      'stop_detail',
+      StopDetailScreen(
+        now: shotNow,
+        detail: Stream.value(
+          stopDetail(
+            cachedAt: shotNow.subtract(const Duration(hours: 5)),
+            synced: DateTime(2026, 9, 26),
+          ),
+        ),
+        onEdit: () {},
+        onOpenDiary: () {},
+        onOpenChecklist: () {},
+        onTags: (_) async {},
+      ),
+    );
+  });
+
+  /// The one the whole screen is designed against: a forecast old enough to
+  /// mislead. The stamp and the sentence both have to be visible in the image.
+  testWidgets('stop detail — stale forecast', (tester) async {
+    await shootScreen(
+      tester,
+      'stop_detail_stale',
+      StopDetailScreen(
+        now: shotNow,
+        detail: Stream.value(
+          stopDetail(cachedAt: shotNow.subtract(const Duration(days: 5))),
+        ),
+        onEdit: () {},
+        onOpenDiary: () {},
+        onOpenChecklist: () {},
+        onTags: (_) async {},
+      ),
+    );
+  });
+
+  testWidgets('leg detail', (tester) async {
+    await shootScreen(
+      tester,
+      'leg_detail',
+      LegDetailScreen(
+        onEditTransport: () {},
+        onSeeAll: () {},
+        onOpenPlace: (_) {},
+        transport: Stream.value(
+          LegTransport(
+            mode: 'Shared sumo',
+            plannedDeparture: DateTime(2026, 10, 2, 7, 30),
+            plannedArrival: DateTime(2026, 10, 2, 9, 45),
+            note: 'Bara Bazar stand. Ask for the Sohra counter, not Mawsynram.',
+          ),
+        ),
+        discovery: Stream.value(
+          LegDiscovery(
+            legId: 1,
+            fromName: 'Shillong',
+            toName: 'Cherrapunji',
+            distanceKm: 54,
+            lastSyncedAt: DateTime(2026, 9, 26),
+            places: [
+              corridorPlace(
+                id: 1,
+                name: 'IOC Umroi',
+                category: ContactCategory.fuel,
+                along: 6,
+                off: 0.1,
+                phone: '+91 364 111 1111',
+              ),
+              corridorPlace(
+                id: 2,
+                name: 'Mawkdok Dympep viewpoint',
+                category: ContactCategory.other,
+                along: 14,
+                off: 0.3,
+              ),
+              corridorPlace(
+                id: 3,
+                name: 'Sohra PHC',
+                category: ContactCategory.hospital,
+                along: 21,
+                off: 0.4,
+                phone: '+91 364 222 2222',
+              ),
+              corridorPlace(
+                id: 4,
+                name: 'Laitlum dhaba',
+                category: ContactCategory.restaurant,
+                along: 38,
+                off: 2.1,
+              ),
+              corridorPlace(
+                id: 5,
+                name: 'Nohkalikai turning',
+                category: ContactCategory.other,
+                along: 47,
+                off: 0.2,
+              ),
+              corridorPlace(
+                id: 6,
+                name: 'Sohra market',
+                category: ContactCategory.other,
+                along: 53,
+                off: 0.1,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   });
