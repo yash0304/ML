@@ -5,6 +5,30 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-13 — [ARCH] **The release manifest declares INTERNET again. This supersedes the 2026-09-12 decision that it would declare no permissions at all.** (Offline maps make the absolute version of the claim impossible: routes, places and tiles have to come from somewhere, once, before you leave. So the claim narrows and has to be stated honestly — the app is offline WHILE YOU ARE MOVING, not offline absolutely. It reaches the network only on a screen the user opened, after a button saying what it will fetch and from whom, and never once the trip has started. There is still no other permission and no background service, precisely so that stays checkable. The rationale is written into the manifest itself, where the next person to read it will be standing.)
+
+2026-09-13 — [DISCOVERY] A phone number from OpenStreetMap is `communityOsm` and can never be anything else; saving one into the diary lands it as `userEntered`. (The trust invariant reaching the least trustworthy source the app has. It is a number a stranger typed into a public wiki and it may be a decade old. The tier is forced in `CorridorSync` at the single write point, the same way import forces it in the DAO.)
+
+2026-09-13 — [DISCOVERY] Overpass queries refuse a bounding box beyond 15,000 km², send a real User-Agent, and run once per leg at setup. (It is free infrastructure paid for by volunteers. A query bigger than that is a bug, and it costs someone else money. An anonymous flood is how a free service gets an IP blocked.)
+
+2026-09-13 — [DISCOVERY] An OSM place with no name is dropped. ("Unnamed fuel station, 14 km ahead" tells you nothing you can act on or ask a local for.)
+
+2026-09-13 — [DISCOVERY] Category matching is by declaration order and the more specific tag wins, so a hotel with a restaurant reads as somewhere to sleep. (`tourism=hotel` says what a place IS; `amenity=restaurant`, which half of them also carry, says what it also does. Backwards — which is how it was first written — every guest house on the route files under Food, and at 8pm that is the wrong answer. Caught by a test whose comment asserted the behaviour the code did not have.)
+
+2026-09-13 — [DISCOVERY] Re-syncing a leg replaces its places wholesale rather than merging. (A re-sync is the user asking for what is there now. Merging would leave places that have since closed, with no way to tell which.)
+
+2026-09-13 — [DISCOVERY] A leg's whole sync is one transaction written at the end. (A failure halfway would otherwise leave the leg half-synced with a `lastSyncedAt` implying otherwise, which is worse than not synced at all. Pinned by a test that fails the Overpass call after the route succeeds.)
+
+2026-09-13 — [DISCOVERY] The sync screen states what it will fetch before it fetches anything, and the estimate uses straight-line distance while saying it underestimates. (The real route is precisely the thing not yet downloaded. An app that just starts pulling data on someone's hotel WiFi is an app they stop trusting the moment they notice.)
+
+2026-09-13 — [GEO] Bounding-box padding widens longitude by 1/cos φ, using whichever edge is furthest from the equator. (Three kilometres is 3/111 degrees of latitude but 3/(111·cos φ) degrees of longitude. At Shillong's 25.6° that is a 10% difference; ignoring it makes the corridor narrower than advertised east–west and the promised places are simply missing, with no error anywhere.)
+
+2026-09-13 — [GEO] Distance from a point to a route is distance to a SEGMENT, never to the nearest vertex. (A road running dead straight for 40 km has two vertices. Measuring to the nearer one would report a dhaba halfway along it as 20 km off the route when it is sitting on it.)
+
+2026-09-13 — [GEO] The encoded-polyline codec is written out, and precision is an explicit argument on both encode and decode. (Forty lines of bit-shifting over a format unchanged since 2005; a package would mean trusting somebody else's forty lines and carrying their release cycle. Precision matters because OSRM's older API returns 5 and its v5 API returns 6 on request: decoding one as the other scales the whole route by ten and puts Shillong in the Bay of Bengal, which reads as a broken map rather than a wrong number. The request pins `geometries=polyline` rather than letting the server choose.)
+
+2026-09-13 — [GEO] OSRM takes coordinates in LON,LAT order, and the URL builder is tested for it. (It follows GeoJSON, not the lat-first convention the rest of this app uses. Swapping them does not error — it silently routes somewhere else entirely.)
+
 2026-09-13 — [SCHEMA] schemaVersion goes to 2, adding `ChecklistItems.generatorKey`. Version 1's step is untouched. (The first migration this project has needed. The rule stands: a shipped migration is never edited, each version's step is additive and stays as written. Rows written before v2 carry a null key and are adopted by label once, then keyed from then on — pinned by a test that simulates exactly what is already on the phone.)
 
 2026-09-13 — [CHECKLIST] A generated item is keyed by the RULE that produced it, never by its label. (Matching by label looked fine until someone renamed an item: the generator then found no row for its rule and inserted a second copy beside the user's. Caught by the acceptance test for the one rule this issue exists to enforce, which is the test earning its place — the feature's headline promise was quietly broken by its own implementation.)

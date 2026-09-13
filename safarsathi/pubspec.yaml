@@ -25,6 +25,11 @@ dependencies:
   csv: ^6.0.0
   excel: ^4.0.6
 
+  # The ONLY network dependency, and it is used at trip setup on WiFi, never
+  # at runtime. See DECISIONS.md: the app is offline while you are moving, not
+  # offline absolutely, and every sync surface says what it is fetching.
+  http: ^1.5.0
+
   # E.164 normalisation. Pure Dart, no platform channel, works offline.
   # The backlog originally named libphonenumber_plugin, which wraps the
   # native library over a channel — see DECISIONS.md.

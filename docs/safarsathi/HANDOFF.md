@@ -1,26 +1,43 @@
-# HANDOFF — SafarSathi — 2026-09-13 (after issues #29, #31, #32)
+# HANDOFF — SafarSathi — 2026-09-13 (after issues #21, #22, #23 — the corridor)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1–#9, #11–#20, #29, #31, #32, #50, #53, #54, #55 are done except
-  for the device check.** The project analyses clean and passes **391 tests**
-  in about twenty seconds on Flutter 3.47.3 / Dart 3.13.3.
-- Backlog position: 26 / 55 done. **Every screen the app needs before a trip
-  now exists.** Create a trip, build the itinerary, import contacts, call and
-  confirm them, pack from a generated checklist, and settle the money.
-- **The database is at schemaVersion 2.** The first migration this project has
-  needed: `ChecklistItems.generatorKey`, added because matching a generated
-  item by its label duplicated it the moment someone renamed one. Version 1's
-  step is untouched and stays that way.
-- Yash has installed the APK and says the app looks OK. The four
+- **Issues #1–#9, #11–#23, #29, #31, #32, #50, #53, #54, #55 are done except
+  for the device check.** The project analyses clean and passes **461 tests**
+  in about thirty seconds on Flutter 3.47.3 / Dart 3.13.3.
+- Backlog position: 29 / 55 done.
+- **The offline-map milestone has started.** #21–#23 are the data layer:
+  geometry, a route per leg, and the places along it. **No map is drawn yet**
+  and no screen exists for any of it — that is #24, and it is blocked.
+- **THE OFFLINE CLAIM CHANGED.** The release manifest declares `INTERNET`
+  again. The app is offline *while you are moving*, not offline absolutely.
+  Read the comment at the top of `android/app/src/main/AndroidManifest.xml`
+  before touching anything network-shaped.
+- Yash has installed a build and says the app looks OK. The four
   hardware-only questions below are therefore probably fine, but none has been
   confirmed in words yet.
-- **An APK is built on every push** to `claude/offline-retro-modern-app-design-r2n4ju`
-  by GitHub Actions, which runs `flutter analyze` and the full suite first.
-  Download the run's `safarsathi-apk` artifact.
+
+## BLOCKED: the tile provider
+
+**#24 cannot start until Yash picks MapTiler or Stadia and creates an account.**
+Both have a free tier that covers one person's trips. The standard OSM tile
+server is explicitly not an option — its usage policy forbids bulk downloading,
+which is the entire feature. See PROJECT_RUNDOWN §6.
+
+Whoever picks this up: ask, do not guess, and do not ship a key in the repo.
+
+## The corridor, in one paragraph
+
+`Corridor` takes a decoded route and a buffer in kilometres. It yields the
+bounding box to query, and for any point, how far off the route it sits and how
+far along. `OsrmClient` fetches one route per leg at setup; `OverpassClient`
+asks OpenStreetMap what is in the box. `CorridorSync.syncLeg` runs all three
+and writes the result in **one transaction at the end**, so a failure halfway
+leaves the leg exactly as it was. Every phone number that arrives this way is
+`communityOsm` and cannot be anything else.
 
 ## The checklist and the ledger, in one paragraph
 
@@ -199,6 +216,22 @@ real Tier-1 codes with their government sources.
 | A cycle collapses to nothing | test |
 | Paise are shown, never rounded away | test |
 | The money summary updates on a new traveller | test |
+| Haversine matches known distances | test |
+| **Distance measures to the segment, not the vertex** | test |
+| **Box padding widens more in longitude than latitude** | test |
+| Padding is really the distance asked for | test |
+| Google's canonical polyline decodes | test |
+| Polylines round-trip at precision 5 and 6 | test |
+| The wrong precision is off by ten | test |
+| An oversized Overpass box is refused | test |
+| An unnamed OSM place is dropped | test |
+| A hotel with a restaurant reads as a hotel | test |
+| **Every OSM number lands as `communityOsm`** | test on a real DB |
+| A semicolon list becomes several numbers | test |
+| Re-syncing replaces rather than accumulating | test |
+| **A failed sync leaves the leg exactly as it was** | test |
+| OSRM coordinates go in lon,lat order | test |
+| Places outside the corridor are excluded | test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -274,38 +307,31 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**Build the real Meghalaya trip in the app and use it end to end.** Every
-piece now exists and none of it has been used together on a phone with real
-data. That is the test the 391 automated ones cannot do.
+**Ask Yash for the tile provider decision**, because #24 cannot start without
+it and he has to create an account either way. MapTiler or Stadia; the OSM
+standard tile server is not an option.
 
-The run that finds the most, in order:
+While waiting, the useful work is:
 
-1. Create the trip, add the five stops with real dates and tags, drag one.
-2. Import the actual contacts sheet.
-3. Open the checklist. Rename something, remove something, then hit rebuild
-   and check both survived. That promise is the feature.
-4. Add the travellers and a few real expenses. Check the settle-up.
-5. Watch the Trip tab read not-ready, call a homestay, confirm it, watch the
-   block clear.
+1. **Stop coordinates.** `CorridorSync` needs `Stops.lat` and `Stops.lon`, and
+   nothing in the UI sets them. The stop form has no map picker and will not
+   have one until #24. A geocoding lookup at setup, or a plain lat/lon field,
+   is what unblocks the whole corridor from actually running on his trip.
+2. **#26, the weather snapshot.** Independent of maps, and the checklist
+   generator already has a hole where it belongs.
+3. **#35**, settings and call history.
 
-Then the backlog's remaining useful work is **#35** (call history, settings, a
-theme override) and **#51/#52** (stop and leg detail screens). The whole
-offline-map milestone (#21–#28) is a different size of problem and should not
-be started before October.
+None of #21–#23 has a screen. The code runs and is tested; nobody can reach it
+from the app yet. That is deliberate — the discovery screen is #27 and it
+needs the map underneath it.
 
-Still owed on hardware, and none of it confirmed in words yet:
+Still owed on hardware, none of it confirmed in words yet:
 
-1. Do the three fonts load, or is everything sitting on a silent fallback?
+1. Do the three fonts load, or is everything on a silent fallback?
 2. Are the haptics felt, especially the heavy one on the emergency screen?
 3. Does `tel:` with an empty path open the Android dialer, or error? The whole
-   copy-first workflow rests on this. If it errors, fall back to `ACTION_DIAL`
-   over a platform channel and log a decision.
+   copy-first workflow rests on this.
 4. Is the night palette pleasant at 2am, as opposed to merely compliant?
-
-**One new hardware risk:** this build carries the first schema migration. An
-existing install upgrades in place; if anything goes wrong there it will show
-as a crash on launch, and the fix is to uninstall and reinstall rather than to
-add a destructive fallback.
 
 ## Note on the environment
 

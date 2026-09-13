@@ -1,4 +1,25 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      THE ONLY PERMISSION THIS APP ASKS FOR.
+
+      Until issue #21 the release build declared nothing at all, and that was
+      logged as the clearest possible proof of the offline claim: it could not
+      reach the network even if a future line of code tried.
+
+      Offline maps make that impossible. Routes, places and tiles have to come
+      from somewhere, once, before you leave. So the claim is now narrower and
+      it has to be stated honestly: the app is offline WHILE YOU ARE MOVING,
+      not offline absolutely. It reaches the network only on a screen you
+      opened, after a button that says what it is about to fetch and from whom,
+      and never once the trip has started.
+
+      Anything weaker than that — a background refresh, a silent retry on the
+      road, a "just checking for updates" — breaks the promise the whole app is
+      built on. There is no other permission here, and there is no background
+      service, precisely so that stays checkable.
+    -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
         android:label="safarsathi"
         android:name="${applicationName}"

@@ -262,18 +262,18 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
 
 ## Milestone 5 — Offline sync
 
-- [ ] **#21 Overpass client** — M
+- [x] **#21 Overpass client** — M — *OSM numbers land as `communityOsm`, always; oversized boxes refused*
   Query by bbox and category. Parse into Pois. Extract `phone` /
   `contact:phone` tags into PoiContacts as `communityOsm`.
   Verify: query a small Shillong bbox, get plausible results.
   *Depends on #2.*
 
-- [ ] **#22 Route polyline fetch** — M
+- [x] **#22 Route polyline fetch** — M — *codec written out; precision is an explicit argument*
   OSRM call per leg at setup time, store encoded polyline. **This is the
   only live routing call and it happens once, on WiFi.**
   *Depends on #17.*
 
-- [ ] **#23 Corridor buffering** — M
+- [x] **#23 Corridor buffering** — M — *distance to the segment, not the vertex; bbox padding accounts for latitude*
   Buffer the polyline (default 3 km, per-leg adjustable), derive the query
   bbox, compute each POI's distance from the route.
   *Depends on #21, #22.*
