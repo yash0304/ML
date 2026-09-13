@@ -1,6 +1,8 @@
 // lib/features/trips/presentation/trip_screen.dart
 //
-// The trip, read only. SCREENS.md §4. Building and editing a trip is #16.
+// The trip, read only. SCREENS.md §4. Editing happens in the itinerary screen
+// behind the EDIT rule, so the thing you look at on the road stays a thing you
+// look at rather than a thing you can knock out of shape with a stray tap.
 //
 // The milestone cap carries cache state: signal green when the next leg has
 // been downloaded, muted when it has not. An unprepared leg should be visible
@@ -11,17 +13,51 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/retro.dart';
 import '../../contacts/presentation/diary_widgets.dart';
+import '../data/readiness.dart';
 import '../data/trip_summary.dart';
+import 'readiness_panel.dart';
 
 class TripScreen extends StatelessWidget {
   final Stream<TripSummary> trip;
   final Stream<int> unconfirmedCount;
 
+  /// The pre-departure block (#20). Optional, so the golden harness and the
+  /// widget tests can render the screen without building one.
+  final Stream<Readiness>? readiness;
+
+  /// Opens the itinerary editor (#16).
+  final VoidCallback? onEditItinerary;
+
   const TripScreen({
     super.key,
     required this.trip,
     required this.unconfirmedCount,
+    this.readiness,
+    this.onEditItinerary,
   });
+
+  /// The section rule, with a way into the editor when one is wired.
+  Widget _stopsHeader(AppColors c) {
+    if (onEditItinerary == null) return const StencilLabel('Stops');
+    return Row(
+      children: [
+        const Expanded(child: StencilLabel('Stops')),
+        Padding(
+          padding: const EdgeInsets.only(right: AppTokens.gutter),
+          child: GestureDetector(
+            onTap: onEditItinerary,
+            child: Text(
+              'EDIT',
+              style: AppTokens.stencilStyle.copyWith(
+                fontSize: 9.5,
+                color: c.signal,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,8 +82,11 @@ class TripScreen extends StatelessWidget {
                     _nextLeg(c, data.nextLeg!),
                   ],
                   const SizedBox(height: AppTokens.s16),
-                  ReadinessBanner(unconfirmedCount: unconfirmedCount),
-                  const StencilLabel('Stops'),
+                  if (readiness != null)
+                    ReadinessPanel(readiness: readiness!)
+                  else
+                    ReadinessBanner(unconfirmedCount: unconfirmedCount),
+                  _stopsHeader(c),
                   for (final stop in data.stops) _stopTicket(c, stop),
                   _footer(c, data),
                 ],
@@ -259,8 +298,8 @@ class TripScreen extends StatelessWidget {
         0,
       ),
       child: Text(
-        'Building and editing a trip comes later. This one is placeholder '
-        'data so the rest of the app has something to stand on.',
+        'This screen is read only. Change the itinerary from EDIT above, or '
+        'from the More tab.',
         style: AppTokens.captionStyle.copyWith(color: c.muted),
       ),
     );

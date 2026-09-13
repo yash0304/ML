@@ -6,6 +6,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
+import 'trip_editor.dart';
 
 class StopSummary {
   final int id;
@@ -70,16 +71,28 @@ class TripSummary {
 
 /// One stream over everything the Trip screen shows.
 ///
-/// Rebuilds whenever any of the underlying tables changes, which is what
-/// keeps the readiness banner and the per-stop counts honest.
+/// The tick query exists because this summary reads four tables and a Drift
+/// stream only fires for the tables its own query touches. Watching `trips`
+/// alone looked correct for as long as nothing could edit a stop; the moment
+/// #16 shipped, adding a stop would have left this screen stale with no error
+/// anywhere. `readsFrom` names the real dependency set.
 Stream<TripSummary> watchTripSummary(
   AppDatabase db,
   int tripId, {
   int? currentStopId,
 }) {
-  final query = db.select(db.trips)..where((t) => t.id.equals(tripId));
+  final tick = db
+      .customSelect(
+        'SELECT 1',
+        readsFrom: {db.trips, db.stops, db.legs, db.contacts},
+      )
+      .watch();
 
-  return query.watchSingle().asyncMap((trip) async {
+  return tick.asyncMap((_) async {
+    final trip = await (db.select(
+      db.trips,
+    )..where((t) => t.id.equals(tripId))).getSingle();
+
     final stops =
         await (db.select(db.stops)
               ..where((s) => s.tripId.equals(tripId))
@@ -89,6 +102,10 @@ Stream<TripSummary> watchTripSummary(
     final contacts = await (db.select(
       db.contacts,
     )..where((c) => c.tripId.equals(tripId))).get();
+
+    // Where the app thinks you are. The caller may override it; otherwise it
+    // follows today's date against the stops' own dates (#19).
+    final here = currentStopId ?? currentStopOf(stops)?.id;
 
     int countFor(int stopId) =>
         contacts.where((c) => c.stopId == stopId || c.stopId == null).length;
@@ -102,7 +119,7 @@ Stream<TripSummary> watchTripSummary(
           nights: s.nights,
           arrivalDate: s.arrivalDate,
           diaryCount: countFor(s.id),
-          isCurrent: s.id == currentStopId,
+          isCurrent: s.id == here,
         ),
     ];
 
@@ -117,7 +134,7 @@ Stream<TripSummary> watchTripSummary(
     if (legs.isNotEmpty) {
       final byId = {for (final s in stops) s.id: s.name};
       final leg = legs.firstWhere(
-        (l) => currentStopId == null || l.fromStopId == currentStopId,
+        (l) => here == null || l.fromStopId == here,
         orElse: () => legs.first,
       );
       next = LegSummary(

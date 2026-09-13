@@ -26,6 +26,12 @@ import 'package:safarsathi/features/money/data/money_summary.dart';
 import 'package:safarsathi/features/money/data/settlement.dart';
 import 'package:safarsathi/features/money/presentation/money_screen.dart';
 import 'package:safarsathi/features/trips/presentation/trip_screen.dart';
+import 'package:safarsathi/features/trips/data/readiness.dart';
+import 'package:safarsathi/features/trips/data/trip_editor.dart';
+import 'package:safarsathi/features/trips/presentation/itinerary_screen.dart';
+import 'package:safarsathi/features/trips/presentation/leg_list_screen.dart';
+import 'package:safarsathi/features/trips/presentation/stop_form_screen.dart';
+import 'package:safarsathi/features/trips/presentation/trip_list_screen.dart';
 import 'package:safarsathi/features/import/data/column_mapping.dart';
 import 'package:safarsathi/features/import/data/import_commit.dart';
 import 'package:safarsathi/features/import/data/import_validation.dart';
@@ -649,9 +655,241 @@ void main() {
       'more',
       MoreScreen(
         contactCount: Stream.value(23),
+        onTrips: () {},
+        onItinerary: () {},
+        onLegs: () {},
         onImport: () {},
         onHistory: () {},
         onTemplate: () {},
+      ),
+    );
+  });
+
+  // ---------------------------------------------------------------------
+  // Trip structure (#16–#20)
+  // ---------------------------------------------------------------------
+
+  Stop stopRow(
+    int id,
+    String name,
+    int order, {
+    int nights = 0,
+    String tags = '',
+    DateTime? arrival,
+  }) => Stop(
+    id: id,
+    tripId: 1,
+    name: name,
+    sequenceOrder: order,
+    countryCode: 'IN',
+    nights: nights,
+    activityTags: tags,
+    arrivalDate: arrival,
+  );
+
+  testWidgets('itinerary', (tester) async {
+    await shootScreen(
+      tester,
+      'itinerary',
+      ItineraryScreen(
+        tripName: 'Meghalaya, October',
+        onReorder: (_, _) async {},
+        onEdit: (_) {},
+        onAdd: () {},
+        onEditTrip: () {},
+        stops: Stream.value([
+          stopRow(
+            1,
+            'Shillong',
+            1,
+            nights: 2,
+            tags: 'city,rain',
+            arrival: DateTime(2026, 10, 1),
+          ),
+          stopRow(
+            2,
+            'Cherrapunji',
+            2,
+            nights: 2,
+            tags: 'caves,rain,trek',
+            arrival: DateTime(2026, 10, 3),
+          ),
+          // The same place again, which is the rule this screen exists to
+          // make visible.
+          stopRow(
+            3,
+            'Shillong',
+            3,
+            nights: 1,
+            tags: 'city',
+            arrival: DateTime(2026, 10, 5),
+          ),
+          stopRow(4, 'Dawki', 4, arrival: DateTime(2026, 10, 6)),
+          stopRow(
+            5,
+            'Mawlynnong',
+            5,
+            nights: 1,
+            tags: 'homestay',
+            arrival: DateTime(2026, 10, 6),
+          ),
+        ]),
+      ),
+    );
+  });
+
+  testWidgets('stop form', (tester) async {
+    await shootScreen(
+      tester,
+      'stop_form',
+      StopFormScreen(
+        existing: StopDraft(
+          id: 2,
+          name: 'Cherrapunji',
+          nights: 2,
+          activityTags: const ['caves', 'rain'],
+          arrivalDate: DateTime(2026, 10, 3),
+          departureDate: DateTime(2026, 10, 5),
+          note: 'Blue gate past the church',
+        ),
+        contactsHere: () async => 3,
+        onDelete: () async {},
+        onSave: (_) async {},
+      ),
+    );
+  });
+
+  testWidgets('trips', (tester) async {
+    await shootScreen(
+      tester,
+      'trips',
+      TripListScreen(
+        onActivate: (_) async {},
+        onOpen: (_) {},
+        onDelete: (_) async {},
+        onCreate: () {},
+        trips: Stream.value([
+          Trip(
+            id: 1,
+            name: 'Meghalaya, October',
+            startDate: DateTime(2026, 10, 1),
+            endDate: DateTime(2026, 10, 5),
+            baseCurrency: 'INR',
+            isActive: true,
+            createdAt: DateTime(2026, 9, 1),
+          ),
+          Trip(
+            id: 2,
+            name: 'Ladakh, next summer',
+            baseCurrency: 'INR',
+            isActive: false,
+            createdAt: DateTime(2026, 8, 1),
+          ),
+        ]),
+      ),
+    );
+  });
+
+  testWidgets('legs', (tester) async {
+    await shootScreen(
+      tester,
+      'legs',
+      LegListScreen(
+        onOpen: (_) {},
+        legs: Stream.value([
+          LegRow(
+            id: 1,
+            fromName: 'Shillong',
+            toName: 'Cherrapunji',
+            mode: 'Shared sumo',
+            plannedDeparture: DateTime(2026, 10, 3, 7, 30),
+            isBooked: true,
+            distanceKm: 54,
+          ),
+          const LegRow(
+            id: 2,
+            fromName: 'Cherrapunji',
+            toName: 'Shillong',
+            isBooked: false,
+            distanceKm: 54,
+          ),
+          const LegRow(
+            id: 3,
+            fromName: 'Shillong',
+            toName: 'Dawki',
+            mode: 'Taxi',
+            isBooked: false,
+            distanceKm: 82,
+          ),
+        ]),
+      ),
+    );
+  });
+
+  testWidgets('trip — not ready', (tester) async {
+    // The Trip screen carrying the pre-departure block, which is the payoff
+    // for the whole trust system.
+    await shootScreen(
+      tester,
+      'trip_blocked',
+      TripScreen(
+        unconfirmedCount: Stream.value(2),
+        onEditItinerary: () {},
+        readiness: Stream.value(
+          const Readiness([
+            ReadinessItem(
+              stopId: 2,
+              stopName: 'Cherrapunji',
+              contactId: 9,
+              label: 'Call and confirm the Cherrapunji accommodation number.',
+            ),
+            ReadinessItem(
+              stopId: 5,
+              stopName: 'Mawlynnong',
+              missing: true,
+              label: 'No accommodation number for Mawlynnong.',
+            ),
+          ]),
+        ),
+        trip: Stream.value(
+          TripSummary(
+            name: 'Meghalaya, October',
+            startDate: DateTime(2026, 10, 1),
+            endDate: DateTime(2026, 10, 6),
+            nextLeg: const LegSummary(
+              fromName: 'Shillong',
+              toName: 'Cherrapunji',
+              mode: 'Shared sumo',
+              distanceKm: 54,
+            ),
+            stops: [
+              const StopSummary(
+                id: 1,
+                name: 'Shillong',
+                sequenceOrder: 1,
+                nights: 2,
+                diaryCount: 6,
+                isCurrent: true,
+              ),
+              const StopSummary(
+                id: 2,
+                name: 'Cherrapunji',
+                sequenceOrder: 2,
+                nights: 2,
+                diaryCount: 3,
+                isCurrent: false,
+              ),
+              const StopSummary(
+                id: 5,
+                name: 'Mawlynnong',
+                sequenceOrder: 3,
+                nights: 1,
+                diaryCount: 0,
+                isCurrent: false,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   });

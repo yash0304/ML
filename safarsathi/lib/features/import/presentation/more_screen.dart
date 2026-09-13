@@ -13,6 +13,9 @@ import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
 
 class MoreScreen extends StatelessWidget {
+  final VoidCallback onTrips;
+  final VoidCallback onItinerary;
+  final VoidCallback onLegs;
   final VoidCallback onImport;
   final VoidCallback onHistory;
   final VoidCallback onTemplate;
@@ -23,6 +26,9 @@ class MoreScreen extends StatelessWidget {
 
   const MoreScreen({
     super.key,
+    required this.onTrips,
+    required this.onItinerary,
+    required this.onLegs,
     required this.onImport,
     required this.onHistory,
     required this.onTemplate,
@@ -48,6 +54,31 @@ class MoreScreen extends StatelessWidget {
                 'More',
                 style: AppTokens.titleStyle.copyWith(color: c.ink),
               ),
+            ),
+            const StencilLabel('Trip'),
+            _Item(
+              icon: Icons.luggage_outlined,
+              title: 'Trips',
+              subtitle:
+                  'Switch between trips, or start a new one. The app is '
+                  'always on exactly one.',
+              onTap: onTrips,
+            ),
+            _Item(
+              icon: Icons.list_alt_outlined,
+              title: 'Edit the itinerary',
+              subtitle:
+                  'Add stops, drag to reorder, set dates and nights. The same '
+                  'place can appear twice.',
+              onTap: onItinerary,
+            ),
+            _Item(
+              icon: Icons.directions_bus_outlined,
+              title: 'Getting between stops',
+              subtitle:
+                  'How you are travelling each leg, and when. Typed, not '
+                  'looked up.',
+              onTap: onLegs,
             ),
             const StencilLabel('Contacts'),
             _Item(
@@ -103,10 +134,10 @@ class MoreScreen extends StatelessWidget {
                 horizontal: AppTokens.gutter,
               ),
               child: Text(
-                'Trip and stop editing (#16). Offline maps and the route '
-                'corridor (#21 to #28). The packing checklist (#29). Call '
-                'history (#35). A theme override, for a phone that does not '
-                'know it is night in a valley (#35).\n\n'
+                'Offline maps and the route corridor (#21 to #28). The '
+                'packing checklist (#29). Call history (#35). A theme '
+                'override, for a phone that does not know it is night in a '
+                'valley (#35).\n\n'
                 'This app makes no network call at any point. The release '
                 'build does not even ask for permission to.',
                 style: AppTokens.captionStyle.copyWith(color: c.muted),

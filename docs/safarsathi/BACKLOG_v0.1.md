@@ -229,28 +229,28 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
 
 ## Milestone 4 — Trip structure
 
-- [ ] **#16 Trip + Stop CRUD** — M
+- [x] **#16 Trip + Stop CRUD** — M — *two Shillong rows coexist, pinned by test*
   Create a trip, add ordered stops, reorder by drag, set arrival/departure
   dates and activity tags. Handle repeat visits (Shillong twice) correctly.
   Verify: build the full Meghalaya itinerary; two Shillong rows coexist.
   *Depends on #2.*
 
-- [ ] **#17 Leg auto-generation** — S
+- [x] **#17 Leg auto-generation** — S — *a leg whose pair is unchanged keeps its cached route*
   Legs derive from consecutive stops. Reordering stops regenerates legs
   without orphaning cached data where the pair is unchanged.
   *Depends on #16.*
 
-- [ ] **#18 Transport leg details** — S
+- [x] **#18 Transport leg details** — S — *all typed; nothing here fetches anything*
   Mode, planned departure/arrival, notes. Manual entry (no Rome2Rio-style
   live fetch — see PROJECT_RUNDOWN §3).
   *Depends on #17.*
 
-- [ ] **#19 Dialer trip scoping** — S
+- [x] **#19 Dialer trip scoping** — S — *current stop follows the date; a dateless trip still has one*
   Wire the real trip and current stop into the dialer, replacing the
   hardcoded values from #6. Stop-scope toggle uses the live current stop.
   *Depends on #16, #6.*
 
-- [ ] **#20 Pre-departure readiness check** — M
+- [x] **#20 Pre-departure readiness check** — M — *an absent number blocks too, and says so differently*
   Auto-generate a blocking checklist item per overnight stop: *"Call and
   confirm <stop> accommodation number."* Trip shows not-ready until each is
   confirmed.

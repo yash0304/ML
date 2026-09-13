@@ -5,6 +5,44 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-13 — [TRIP] A place may appear more than once, and nothing keys a stop by its name. (The Meghalaya itinerary is Shillong → Cherrapunji → Shillong → Dawki, and the two Shillong rows are different stops with different dates, contacts and nights. This is why `sequenceOrder` exists, why `addStop` appends rather than upserting, and why the acceptance test builds the real itinerary and asserts the two rows have distinct ids. The stop form says it out loud too, because it looks like a mistake.)
+
+2026-09-13 — [TRIP] `sequenceOrder` is renumbered densely — 1, 2, 3 — inside a transaction after every change. (A sparse ordering works right up until two stops share a number, and then the itinerary scrambles in a way that is very hard to read back off the screen.)
+
+2026-09-13 — [TRIP] Deleting a stop keeps its contacts, unattached. Deleting a TRIP takes them. (The schema already said this with `setNull` on `Contacts.stopId`; the confirmation dialog now says it in words and names the count. A number you have dialled and confirmed does not stop being a real number because you dropped the stop from the plan. A trip is a different matter: it is the container everything hangs off.)
+
+2026-09-13 — [TRIP] Nights derive from the dates when both are set, and are typed otherwise. A reversed range is zero, never negative. (Two dates plus a contradicting night count is a question with an obvious answer, and asking the user to keep them in sync by hand is asking them to maintain the app's data model.)
+
+2026-09-13 — [TRIP] A leg whose (from, to) pair is unchanged KEEPS ITS ROW, and therefore its cached polyline, distance and `lastSyncedAt`. Matching is by pair, never by sequence position. (Regenerating by deleting every leg and inserting fresh ones is four lines shorter and throws away the only data in this app that needed a network connection to obtain. Reordering the last two stops of a ten-stop trip has to leave the first eight legs untouched, and a test proves it does.)
+
+2026-09-13 — [TRIP] A repeated pair consumes existing leg rows one at a time rather than matching by lookup. (Shillong → Cherrapunji → Shillong → Cherrapunji is a real itinerary. A single lookup per pair would reuse one row twice and silently drop a leg.)
+
+2026-09-13 — [TRIP] Legs cannot be created directly. They exist because two stops are consecutive, and the leg list says so on its empty state. (A leg the user made by hand would have no pair to match on, so the generator would delete it on the next reorder — a bug that would look like the app losing data.)
+
+2026-09-13 — [TRIP] Transport details are typed and there is no schedule lookup, now or ever. (A Rome2Rio-style fetch is precisely the runtime network dependency this project exists to avoid. What the app can do is hold what the user was told, where they can read it with no signal.)
+
+2026-09-13 — [TRIP] Exactly one trip is active, and activation is a transaction that clears the rest. (The diary scopes to it, the money splits within it, the emergency screen reads its stops. Two active trips would make all three ambiguous. `ensureActiveTrip` promotes the newest at startup, because every trip predating #16 is stored with the flag unset.)
+
+2026-09-13 — [TRIP] The current stop is derived from today's date, and THE FALLBACK IS A STOP, NEVER NULL. (Before the trip: the first stop. After it, or with no dates at all: the last one reached. A trip whose dates were never filled in is exactly the trip planned in a hurry, and returning null there would make the diary's stop-scope toggle vanish on the itineraries most likely to need it. The boundary day belongs to the stop that is leaving, not the one arriving: you are still there until you go.)
+
+2026-09-13 — [TRIP] `watchTripSummary` and `watchActiveTripContext` name their real dependency set with a `readsFrom` tick query. (A Drift stream only fires for the tables its own query touches. Watching `trips` alone looked correct for as long as nothing could edit a stop; the moment #16 shipped, adding a stop would have left the Trip screen stale with no error anywhere. Found by reading, not by a test — a stale stream fails no assertion.)
+
+2026-09-13 — [READINESS] Only OVERNIGHT stops block departure, and an ABSENT accommodation number blocks as loudly as an unconfirmed one, with different words. (A lunch stop with no number is an inconvenience; a homestay with no number at 9pm in a valley is a night in the car. Absence is the more dangerous of the two and the case apps usually say nothing at all about, so it reads "NOTHING TO CALL" rather than being silently ready.)
+
+2026-09-13 — [READINESS] One confirmed number clears a stop, however many unconfirmed ones sit beside it. (A second number for the same homestay is not a second problem. Blocking on every row would make the check unclearable for anyone who imported a sheet.)
+
+2026-09-13 — [READINESS] A generated checklist item the user has edited survives regeneration untouched, and is not silently ticked off either. (`isUserEdited` exists for exactly this. #20 is the first generator to run, so the rule is settled here rather than at #29: their wording wins over ours, always.)
+
+2026-09-13 — [READINESS] An item that stops blocking is marked done, not deleted. (Something that got handled should stay visible. A list that empties itself gives no sense that anything was accomplished.)
+
+2026-09-13 — [READINESS] The pre-departure block uses `cautionMark`, never emergency red, and a test asserts no red on the panel. (Red means emergency and nothing else. A number you have not called yet is a thing to do before you leave, and spending the emergency colour on it blunts red on the one screen where it has to carry weight.)
+
+2026-09-13 — [ARCH] `combineLatest2` is written out in thirty lines rather than adding rxdart. (The app needs exactly this and nothing else from the reactive-extensions world. It waits for both sources before emitting, so a readiness check built from stops alone cannot flash "not ready" for one frame and then correct itself — a screen that lies briefly is worse than one that is briefly empty.)
+
+2026-09-13 — [UI] The Trip tab stays read only; editing lives behind an EDIT rule on the Stops header and in the More tab. (The thing you look at on the road should not be a thing you can knock out of shape with a stray tap while driving.)
+
+2026-09-13 — [UI] `ReorderableListView.onReorderItem`, not `onReorder`. (The older callback reports the destination index as it would be before the item is removed, so every downward drag lands one row too high unless the caller subtracts one. The newer one has already done that arithmetic.)
+
 2026-09-12 — [IMPORT] The sheet parser takes BYTES, not a path. (No `file_picker` import, no `dart:io`, no platform channel, so the whole of #11 is testable in a plain Dart test with a string literal. It also survives the file picker being replaced, and it is the only thing that works on Android anyway: a picked file usually lives behind a `content://` URI with no readable filesystem path.)
 
 2026-09-12 — [IMPORT] Every row carries the 1-based line number it occupied in the original file, header included, and blank rows do not renumber what follows. (Every warning downstream says "row 14", and row 14 has to mean what the user sees in Excel. Dropping blank rows and reindexing turns each message into a scavenger hunt through a sixty-line sheet.)

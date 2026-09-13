@@ -1,29 +1,36 @@
-# HANDOFF — SafarSathi — 2026-09-12 (after issues #11–#15, bulk import)
+# HANDOFF — SafarSathi — 2026-09-13 (after issues #16–#20, trip structure)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1–#9, #11–#15, #50, #53, #54, #55 are done except for the device
-  check.** The project analyses clean and passes **241 tests** in about twelve
+- **Issues #1–#9, #11–#20, #50, #53, #54, #55 are done except for the device
+  check.** The project analyses clean and passes **322 tests** in about twenty
   seconds on Flutter 3.47.3 / Dart 3.13.3.
-- Backlog position: 18 / 55 done. **All five tabs are live.** Diary, Trip,
-  Money, SOS and More all render real data. Nothing in the app is a
-  placeholder any more.
+- Backlog position: 23 / 55 done. **The app is now a whole thing.** You can
+  create a trip, build its itinerary, import contacts in bulk, call and
+  confirm them, split money, and be told what is blocking departure.
+- **Nothing runs off `DemoTrip` any more.** Every tab reads whichever trip
+  carries the active flag, and a current stop derived from today's date.
+  Adding a stop or dragging one updates every tab without a restart. The demo
+  seed survives as a convenience for an empty database, nothing more.
 - Yash has installed the APK and says the app looks OK. The four
   hardware-only questions below are therefore probably fine, but none has been
   confirmed in words yet.
-- **Bulk import works end to end**: pick a CSV or XLSX, columns are
-  auto-matched against the headers a real sheet uses, every row is previewed
-  with its specific problem named, and the whole batch rolls back in one
-  action from history.
 - **An APK is built on every push** to `claude/offline-retro-modern-app-design-r2n4ju`
   by GitHub Actions, which runs `flutter analyze` and the full suite first.
   Download the run's `safarsathi-apk` artifact.
-- The app opens with no trip and a **"Create demo trip"** button, which seeds
-  three stops, two legs (the second deliberately unsynced), seven contacts,
-  three travellers and five split expenses. Every number is `+91 90000 000xx`.
+
+## Trip structure, in one paragraph
+
+A trip has ordered stops; legs exist between consecutive stops and are never
+created by hand. Editing lives in the itinerary screen (More tab, or the EDIT
+rule on the Trip tab's Stops header), which is separate from the read-only
+Trip tab on purpose. The rule that shapes the data model: **a place may appear
+twice**, so nothing keys a stop by name. The rule that earns issue #17: **a
+leg whose from/to pair is unchanged keeps its row**, and therefore the cached
+route that cost a network connection to obtain.
 
 ## The import flow, in one paragraph
 
@@ -59,7 +66,7 @@ settle, and what to do when each fails.
 flutter test --update-goldens test/golden_test.dart
 ```
 
-Writes `test/goldens/*.png` — fourteen images now: the diary in both themes, empty
+Writes `test/goldens/*.png` — nineteen images now: the diary in both themes, empty
 and mid-copy; the entry form; an entry unconfirmed and confirmed; the
 emergency screen; the trip screen; the money screen. Rendered from the real
 widget tree with the bundled fonts and the SDK icon font loaded.
@@ -149,6 +156,23 @@ real Tier-1 codes with their government sources.
 | History counts what survives, not what landed | test |
 | `Puri` does not match `Pune` | test |
 | An unmatched stop still imports, trip-wide | test |
+| **Two Shillong rows coexist with distinct ids** | test on the real itinerary |
+| Reordering renumbers densely | test |
+| Deleting a stop keeps its contacts, unattached | test |
+| Deleting a trip takes everything under it | test |
+| **A reorder preserves an earlier leg's cached route** | test on a real DB |
+| A repeated pair gets its own leg row | test |
+| Removing a middle stop joins its neighbours | test |
+| Exactly one trip is ever active | test |
+| The current stop follows today's date | test |
+| **A dateless trip still has a current stop** | test |
+| Nights derive from dates; reversed is zero | test |
+| **Unconfirmed blocks; confirming clears** | test |
+| **An absent number blocks, with different words** | test |
+| A pass-through stop never blocks | test |
+| A user-edited checklist item survives regeneration | test |
+| The readiness panel uses no emergency red | widget test |
+| combineLatest2 waits for both, closes on both | test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -224,15 +248,25 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**#16, trip and stop CRUD.** It is the last thing standing between the demo
-trip and Yash's actual Meghalaya trip: right now every screen reads real data
-off a trip nobody can create or edit. Contacts can be typed in one at a time
-or imported in bulk, money splits between seeded travellers, the emergency
-screen works — but the trip itself is fixed.
+**Build Yash's real Meghalaya trip in the app and use it.** Every piece now
+exists; nothing has been used together on a phone with real data. That is the
+test that finds what the 322 automated ones cannot.
 
-After that the useful order is #29 (the packing checklist, which is the
-`BEFORE YOU LEAVE SIGNAL` blocking section and the place the trust system
-finally pays off) then #35 (call history and settings).
+The order that finds the most:
+
+1. Create the trip, add the five stops with real dates, drag one to reorder.
+2. Import his actual contacts sheet. Every parser bug this project will hit is
+   in a file already on his phone.
+3. Watch the Trip tab read not-ready, then call a homestay and confirm it, and
+   watch the block clear.
+
+Then the backlog's own answer is **#29, the packing checklist** — the
+`BEFORE YOU LEAVE SIGNAL` section already exists as the readiness panel, and
+#29 is the rest of that screen. #35 (call history, settings, a theme override)
+is the other obvious one.
+
+The whole offline-map milestone (#21–#28) is a different size of problem and
+should not be started before October.
 
 Still owed on hardware, and none of it confirmed in words yet:
 
@@ -242,10 +276,6 @@ Still owed on hardware, and none of it confirmed in words yet:
    copy-first workflow rests on this. If it errors, fall back to `ACTION_DIAL`
    over a platform channel and log a decision.
 4. Is the night palette pleasant at 2am, as opposed to merely compliant?
-
-One more that only a real file can settle: **import a sheet Yash actually
-has.** Every parser bug this project will hit is in a file that already
-exists on his phone, not in a file a test invented.
 
 ## Note on the environment
 
