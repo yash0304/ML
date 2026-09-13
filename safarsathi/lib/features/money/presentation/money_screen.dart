@@ -11,6 +11,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/motion.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/retro.dart';
 import '../data/money_summary.dart';
@@ -20,7 +21,25 @@ class MoneyScreen extends StatelessWidget {
   final Stream<MoneySummary> summary;
   final String? selfName;
 
-  const MoneyScreen({super.key, required this.summary, this.selfName});
+  /// Adding an expense (#31). Optional so the golden harness and the widget
+  /// tests can render the screen without wiring an editor.
+  final VoidCallback? onAdd;
+
+  /// Opening one to edit it.
+  final void Function(int expenseId)? onOpen;
+
+  /// Managing who is on the trip. Also the way out of the empty state, since
+  /// an expense needs at least one traveller to be paid by.
+  final VoidCallback? onTravellers;
+
+  const MoneyScreen({
+    super.key,
+    required this.summary,
+    this.selfName,
+    this.onAdd,
+    this.onOpen,
+    this.onTravellers,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +47,21 @@ class MoneyScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: c.paper,
+      floatingActionButton: onAdd == null
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: onAdd,
+              backgroundColor: c.signal,
+              foregroundColor: c.paper,
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(
+                'Add expense',
+                style: AppTokens.stencilStyle.copyWith(
+                  fontSize: 10.5,
+                  color: c.paper,
+                ),
+              ),
+            ),
       body: GrainOverlay(
         child: SafeArea(
           bottom: false,
@@ -36,7 +70,7 @@ class MoneyScreen extends StatelessWidget {
             builder: (context, snap) {
               final data = snap.data;
               if (data == null) return const SizedBox();
-              if (data.ledger.isEmpty) return _empty(c);
+              if (data.ledger.isEmpty) return _empty(c, data);
 
               return ListView(
                 padding: const EdgeInsets.only(bottom: AppTokens.s24),
@@ -48,7 +82,14 @@ class MoneyScreen extends StatelessWidget {
                   ..._settlements(c, data),
                   _settleNote(c, data),
                   const StencilLabel('Ledger'),
-                  for (final e in data.ledger) _ledgerRow(c, e),
+                  for (final e in data.ledger)
+                    onOpen == null
+                        ? _ledgerRow(c, e)
+                        : GestureDetector(
+                            onTap: () => onOpen!(e.id),
+                            behavior: HitTestBehavior.opaque,
+                            child: _ledgerRow(c, e),
+                          ),
                   _currencyNote(c),
                 ],
               );
@@ -59,7 +100,7 @@ class MoneyScreen extends StatelessWidget {
     );
   }
 
-  Widget _empty(AppColors c) {
+  Widget _empty(AppColors c, MoneySummary data) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppTokens.s32),
@@ -72,11 +113,38 @@ class MoneyScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppTokens.s8),
             Text(
-              'Expenses are local rows and the settling is local maths, so '
-              'none of this needs a signal.',
+              data.travellerCount == 0
+                  ? 'Add whoever is sharing costs first. Just names — there '
+                        'are no accounts and nothing is sent anywhere.'
+                  : 'Expenses are local rows and the settling is local maths, '
+                        'so none of this needs a signal.',
               textAlign: TextAlign.center,
               style: AppTokens.captionStyle.copyWith(color: c.muted),
             ),
+            if (data.travellerCount == 0 && onTravellers != null) ...[
+              const SizedBox(height: AppTokens.s24),
+              PressScale(
+                onTap: onTravellers,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTokens.s24,
+                    vertical: AppTokens.s12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: c.signal,
+                    border: Border.all(color: c.ink),
+                    borderRadius: BorderRadius.circular(AppTokens.radiusSoft),
+                  ),
+                  child: Text(
+                    'Add travellers',
+                    style: AppTokens.stencilStyle.copyWith(
+                      fontSize: 11.5,
+                      color: c.paper,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

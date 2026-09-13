@@ -1,26 +1,36 @@
-# HANDOFF — SafarSathi — 2026-09-13 (after issues #16–#20, trip structure)
+# HANDOFF — SafarSathi — 2026-09-13 (after issues #29, #31, #32)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1–#9, #11–#20, #50, #53, #54, #55 are done except for the device
-  check.** The project analyses clean and passes **322 tests** in about twenty
-  seconds on Flutter 3.47.3 / Dart 3.13.3.
-- Backlog position: 23 / 55 done. **The app is now a whole thing.** You can
-  create a trip, build its itinerary, import contacts in bulk, call and
-  confirm them, split money, and be told what is blocking departure.
-- **Nothing runs off `DemoTrip` any more.** Every tab reads whichever trip
-  carries the active flag, and a current stop derived from today's date.
-  Adding a stop or dragging one updates every tab without a restart. The demo
-  seed survives as a convenience for an empty database, nothing more.
+- **Issues #1–#9, #11–#20, #29, #31, #32, #50, #53, #54, #55 are done except
+  for the device check.** The project analyses clean and passes **391 tests**
+  in about twenty seconds on Flutter 3.47.3 / Dart 3.13.3.
+- Backlog position: 26 / 55 done. **Every screen the app needs before a trip
+  now exists.** Create a trip, build the itinerary, import contacts, call and
+  confirm them, pack from a generated checklist, and settle the money.
+- **The database is at schemaVersion 2.** The first migration this project has
+  needed: `ChecklistItems.generatorKey`, added because matching a generated
+  item by its label duplicated it the moment someone renamed one. Version 1's
+  step is untouched and stays that way.
 - Yash has installed the APK and says the app looks OK. The four
   hardware-only questions below are therefore probably fine, but none has been
   confirmed in words yet.
 - **An APK is built on every push** to `claude/offline-retro-modern-app-design-r2n4ju`
   by GitHub Actions, which runs `flutter analyze` and the full suite first.
   Download the run's `safarsathi-apk` artifact.
+
+## The checklist and the ledger, in one paragraph
+
+The checklist is generated from stop tags and nights, with the blocking items
+from #20 sitting above the pack list in the same screen. Its one promise is
+that **your edits survive regeneration** — including a removal, which marks
+the item edited-and-done rather than deleting a row the generator would simply
+rewrite. The ledger takes expenses with even or hand-set splits, and **will
+not save a split that does not sum to the amount**. Every figure is integer
+paise, and `formatRupees` shows those paise whenever they exist.
 
 ## Trip structure, in one paragraph
 
@@ -66,7 +76,7 @@ settle, and what to do when each fails.
 flutter test --update-goldens test/golden_test.dart
 ```
 
-Writes `test/goldens/*.png` — nineteen images now: the diary in both themes, empty
+Writes `test/goldens/*.png` — twenty-one images now: the diary in both themes, empty
 and mid-copy; the entry form; an entry unconfirmed and confirmed; the
 emergency screen; the trip screen; the money screen. Rendered from the real
 widget tree with the bundled fonts and the SDK icon font loaded.
@@ -173,6 +183,22 @@ real Tier-1 codes with their government sources.
 | A user-edited checklist item survives regeneration | test |
 | The readiness panel uses no emergency red | widget test |
 | combineLatest2 waits for both, closes on both | test |
+| Tags and nights produce pack items | test |
+| A count scales with its own tag's nights | test |
+| **An edited label survives regeneration** | test |
+| **A removed generated item stays removed** | test |
+| Ticking is not an edit | test |
+| **A pre-v2 row is adopted, not duplicated** | test |
+| `generator_key` exists on the table | test against PRAGMA |
+| Rupee text parses to exact paise | test |
+| More than two decimals truncate | test |
+| Nonsense parses to null, never zero | test |
+| **An unbalanced split cannot be saved** | test, form and editor |
+| **A traveller in the ledger cannot be removed** | test |
+| The Meghalaya ledger settles in two payments | test |
+| A cycle collapses to nothing | test |
+| Paise are shown, never rounded away | test |
+| The money summary updates on a new traveller | test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -248,25 +274,24 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**Build Yash's real Meghalaya trip in the app and use it.** Every piece now
-exists; nothing has been used together on a phone with real data. That is the
-test that finds what the 322 automated ones cannot.
+**Build the real Meghalaya trip in the app and use it end to end.** Every
+piece now exists and none of it has been used together on a phone with real
+data. That is the test the 391 automated ones cannot do.
 
-The order that finds the most:
+The run that finds the most, in order:
 
-1. Create the trip, add the five stops with real dates, drag one to reorder.
-2. Import his actual contacts sheet. Every parser bug this project will hit is
-   in a file already on his phone.
-3. Watch the Trip tab read not-ready, then call a homestay and confirm it, and
-   watch the block clear.
+1. Create the trip, add the five stops with real dates and tags, drag one.
+2. Import the actual contacts sheet.
+3. Open the checklist. Rename something, remove something, then hit rebuild
+   and check both survived. That promise is the feature.
+4. Add the travellers and a few real expenses. Check the settle-up.
+5. Watch the Trip tab read not-ready, call a homestay, confirm it, watch the
+   block clear.
 
-Then the backlog's own answer is **#29, the packing checklist** — the
-`BEFORE YOU LEAVE SIGNAL` section already exists as the readiness panel, and
-#29 is the rest of that screen. #35 (call history, settings, a theme override)
-is the other obvious one.
-
-The whole offline-map milestone (#21–#28) is a different size of problem and
-should not be started before October.
+Then the backlog's remaining useful work is **#35** (call history, settings, a
+theme override) and **#51/#52** (stop and leg detail screens). The whole
+offline-map milestone (#21–#28) is a different size of problem and should not
+be started before October.
 
 Still owed on hardware, and none of it confirmed in words yet:
 
@@ -276,6 +301,11 @@ Still owed on hardware, and none of it confirmed in words yet:
    copy-first workflow rests on this. If it errors, fall back to `ACTION_DIAL`
    over a platform channel and log a decision.
 4. Is the night palette pleasant at 2am, as opposed to merely compliant?
+
+**One new hardware risk:** this build carries the first schema migration. An
+existing install upgrades in place; if anything goes wrong there it will show
+as a crash on launch, and the fix is to uninstall and reinstall rather than to
+add a destructive fallback.
 
 ## Note on the environment
 

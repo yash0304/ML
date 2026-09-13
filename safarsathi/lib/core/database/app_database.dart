@@ -44,7 +44,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openOnDevice());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -53,8 +53,17 @@ class AppDatabase extends _$AppDatabase {
     },
 
     // NEVER edit a shipped migration, and never add a destructive fallback in
-    // release builds. When schemaVersion goes to 2, add an onUpgrade step
-    // here; do not change what version 1 did.
+    // release builds. Each version's step is additive and stays as written.
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        // v2 adds ChecklistItems.generatorKey. Matching a generated item by
+        // its label meant a rename produced a duplicate: the generator found
+        // no row for its rule and inserted a second copy beside the user's.
+        // Existing rows get null and are re-keyed on the next regeneration.
+        await m.addColumn(checklistItems, checklistItems.generatorKey);
+      }
+    },
+
     beforeOpen: (details) async {
       // SQLite has foreign keys OFF by default. Every ON DELETE CASCADE in
       // tables.dart is inert without this line — deleting a trip would leave

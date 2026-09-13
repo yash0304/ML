@@ -5,6 +5,34 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-13 — [SCHEMA] schemaVersion goes to 2, adding `ChecklistItems.generatorKey`. Version 1's step is untouched. (The first migration this project has needed. The rule stands: a shipped migration is never edited, each version's step is additive and stays as written. Rows written before v2 carry a null key and are adopted by label once, then keyed from then on — pinned by a test that simulates exactly what is already on the phone.)
+
+2026-09-13 — [CHECKLIST] A generated item is keyed by the RULE that produced it, never by its label. (Matching by label looked fine until someone renamed an item: the generator then found no row for its rule and inserted a second copy beside the user's. Caught by the acceptance test for the one rule this issue exists to enforce, which is the test earning its place — the feature's headline promise was quietly broken by its own implementation.)
+
+2026-09-13 — [CHECKLIST] A manual edit survives regeneration, and a REMOVED generated item stays removed by being marked edited-and-done rather than deleted. (Deleting the row would simply bring it back on the next run. "I do not need leech socks" has to survive, and this is the only way it can without a separate tombstone table.)
+
+2026-09-13 — [CHECKLIST] Ticking an item is NOT an edit. (Everyone ticks things off. Treating that as taking ownership would freeze the entire list against regeneration the first time someone packed a toothbrush.)
+
+2026-09-13 — [CHECKLIST] The generator is not run automatically on every stop edit; it runs when the checklist is opened, and on an explicit rebuild. (Regeneration is cheap but it is also the moment edits could be lost, so it happens while the user is looking at the list rather than invisibly behind a drag on another screen. The rebuild button also lets them test the promise on purpose.)
+
+2026-09-13 — [CHECKLIST] Item counts scale with the nights carrying that TAG, not with the whole trip. (Five nights in a city and two trekking means two pairs of trekking socks, not seven. A generated list that is obviously wrong about one thing gets ignored about everything.)
+
+2026-09-13 — [CHECKLIST] No weather lookup at generation time, and the screen says so. (The forecast is a cached snapshot that may not exist. A checklist you cannot produce without one is a checklist you cannot produce at a dhaba.)
+
+2026-09-13 — [MONEY] `formatRupees` shows paise whenever they exist and never rounds them away. Supersedes the rounding introduced at #55. (Rounding read better right up until the split screen put three shares of a ₹3,200.11 taxi beside their total: ₹1,067 three times against ₹3,200, under a line claiming the shares added up exactly. They did, in paise. A ledger that rounds is a ledger that looks wrong at exactly the moment someone checks it. Found by rendering the golden.)
+
+2026-09-13 — [MONEY] `parseRupees` truncates beyond two decimals rather than rounding, and returns null on nonsense rather than zero. (Rounding 340.567 to 340.57 invents a paisa nobody spent and the ledger is out by it forever. Recording zero for unparseable text would put a free taxi in the ledger.)
+
+2026-09-13 — [MONEY] The expense form cannot save an unbalanced split, and the editor asserts it again. (Shares that do not sum to the amount put the ledger permanently out by the difference and nothing downstream would ever notice. The form is a convenience; the editor is the guarantee.)
+
+2026-09-13 — [MONEY] Shares follow the amount until the user takes them over by hand, and an existing uneven split opens already in hand-set mode. (Recomputing an even split on open would silently rewrite a deliberate arrangement — someone who paid more of a room does not want it averaged away by opening the screen.)
+
+2026-09-13 — [MONEY] Deleting a traveller who appears in the ledger is REFUSED with the count, never cascaded. (The schema cascades their splits, which would quietly change everyone else's balance: the expense keeps its total but loses a share, so the payer is suddenly owed more than they are.)
+
+2026-09-13 — [MONEY] Editing an expense replaces its splits wholesale rather than diffing them. (A split whose traveller was removed from the expense has to go, and the unique key on (expense, traveller) makes a partial update fiddly for no gain.)
+
+2026-09-13 — [MONEY] `watchMoneySummary` names its real dependency set with a `readsFrom` tick. (Same bug the trip summary had at #16: it watched only `expenses`, so adding a traveller or editing a split left the screen stale. Invisible until #31 made either possible.)
+
 2026-09-13 — [TRIP] A place may appear more than once, and nothing keys a stop by its name. (The Meghalaya itinerary is Shillong → Cherrapunji → Shillong → Dawki, and the two Shillong rows are different stops with different dates, contacts and nights. This is why `sequenceOrder` exists, why `addStop` appends rather than upserting, and why the acceptance test builds the real itinerary and asserts the two rows have distinct ids. The stop form says it out loud too, because it looks like a mistake.)
 
 2026-09-13 — [TRIP] `sequenceOrder` is renumbered densely — 1, 2, 3 — inside a transaction after every change. (A sparse ordering works right up until two stops share a number, and then the itinerary scrambles in a way that is very hard to read back off the screen.)

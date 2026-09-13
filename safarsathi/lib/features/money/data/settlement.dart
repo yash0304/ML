@@ -101,7 +101,17 @@ List<int> evenShares(int totalMinor, int people) {
 /// then pairs.
 String formatRupees(int minor, {bool signed = false}) {
   final negative = minor < 0;
-  final major = (minor.abs() / 100).round();
+  final abs = minor.abs();
+
+  // PAISE ARE SHOWN WHENEVER THEY EXIST, and never rounded away.
+  //
+  // Rounding read better until the split screen put three shares of a
+  // ₹3,200.11 taxi next to their total: ₹1,067 three times against ₹3,200,
+  // under a line claiming the shares added up exactly. They did, in paise.
+  // A ledger that rounds is a ledger that looks wrong at exactly the moment
+  // someone checks it.
+  final major = abs ~/ 100;
+  final paise = abs % 100;
   final digits = major.toString();
 
   String grouped;
@@ -124,5 +134,8 @@ String formatRupees(int minor, {bool signed = false}) {
       : signed
       ? '+'
       : '';
-  return '$sign₹$grouped';
+  final fraction = paise == 0
+      ? ''
+      : '.${paise.toString().padLeft(2, '0')}';
+  return '$sign₹$grouped$fraction';
 }

@@ -16,6 +16,8 @@ class MoreScreen extends StatelessWidget {
   final VoidCallback onTrips;
   final VoidCallback onItinerary;
   final VoidCallback onLegs;
+  final VoidCallback onChecklist;
+  final VoidCallback onTravellers;
   final VoidCallback onImport;
   final VoidCallback onHistory;
   final VoidCallback onTemplate;
@@ -29,6 +31,8 @@ class MoreScreen extends StatelessWidget {
     required this.onTrips,
     required this.onItinerary,
     required this.onLegs,
+    required this.onChecklist,
+    required this.onTravellers,
     required this.onImport,
     required this.onHistory,
     required this.onTemplate,
@@ -71,6 +75,20 @@ class MoreScreen extends StatelessWidget {
                   'Add stops, drag to reorder, set dates and nights. The same '
                   'place can appear twice.',
               onTap: onItinerary,
+            ),
+            _Item(
+              icon: Icons.checklist_outlined,
+              title: 'Packing checklist',
+              subtitle:
+                  'Built from your stop tags and nights. Anything you change '
+                  'stays changed.',
+              onTap: onChecklist,
+            ),
+            _Item(
+              icon: Icons.group_outlined,
+              title: 'Who is on this trip',
+              subtitle: 'Names only. No accounts, nothing sent anywhere.',
+              onTap: onTravellers,
             ),
             _Item(
               icon: Icons.directions_bus_outlined,
@@ -134,10 +152,10 @@ class MoreScreen extends StatelessWidget {
                 horizontal: AppTokens.gutter,
               ),
               child: Text(
-                'Offline maps and the route corridor (#21 to #28). The '
-                'packing checklist (#29). Call history (#35). A theme '
-                'override, for a phone that does not know it is night in a '
-                'valley (#35).\n\n'
+                'Offline maps and the route corridor (#21 to #28). The GPS '
+                'timeline (#30). Trusted-contact check-ins (#33, #34). Call '
+                'history and a theme override, for a phone that does not know '
+                'it is night in a valley (#35).\n\n'
                 'This app makes no network call at any point. The release '
                 'build does not even ask for permission to.',
                 style: AppTokens.captionStyle.copyWith(color: c.muted),

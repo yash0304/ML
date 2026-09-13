@@ -118,6 +118,29 @@ void main() {
       expect(formatRupees(120601100), '₹12,06,011');
     });
 
+    test('PAISE ARE SHOWN, never rounded away', () {
+      // Rounding read better until the split screen put three shares of a
+      // ₹3,200.11 taxi beside their total: ₹1,067 three times against
+      // ₹3,200, under a line claiming they added up exactly.
+      expect(formatRupees(320011), '₹3,200.11');
+      expect(formatRupees(106671), '₹1,066.71');
+      expect(formatRupees(5), '₹0.05');
+    });
+
+    test('a whole amount carries no decimal point', () {
+      expect(formatRupees(320000), '₹3,200');
+      expect(formatRupees(0), '₹0');
+    });
+
+    test('three shares still read as their total', () {
+      final shares = evenShares(320011, 3);
+      final shown = shares.map(formatRupees).toSet();
+      // Two distinct values, and both say their paise, so the arithmetic is
+      // checkable on screen.
+      expect(shown.length, 2);
+      expect(shown.every((s) => s.contains('.')), isTrue);
+    });
+
     test('a negative balance reads as a minus, not a bracket', () {
       expect(formatRupees(-155337), startsWith('−₹'));
     });

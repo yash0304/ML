@@ -32,6 +32,10 @@ import 'package:safarsathi/features/trips/presentation/itinerary_screen.dart';
 import 'package:safarsathi/features/trips/presentation/leg_list_screen.dart';
 import 'package:safarsathi/features/trips/presentation/stop_form_screen.dart';
 import 'package:safarsathi/features/trips/presentation/trip_list_screen.dart';
+import 'package:safarsathi/features/checklist/data/checklist_dao.dart';
+import 'package:safarsathi/features/checklist/presentation/checklist_screen.dart';
+import 'package:safarsathi/features/money/data/expense_editor.dart';
+import 'package:safarsathi/features/money/presentation/expense_form_screen.dart';
 import 'package:safarsathi/features/import/data/column_mapping.dart';
 import 'package:safarsathi/features/import/data/import_commit.dart';
 import 'package:safarsathi/features/import/data/import_validation.dart';
@@ -658,6 +662,8 @@ void main() {
         onTrips: () {},
         onItinerary: () {},
         onLegs: () {},
+        onChecklist: () {},
+        onTravellers: () {},
         onImport: () {},
         onHistory: () {},
         onTemplate: () {},
@@ -890,6 +896,104 @@ void main() {
             ],
           ),
         ),
+      ),
+    );
+  });
+
+  // ---------------------------------------------------------------------
+  // Checklist and expense entry (#29, #31)
+  // ---------------------------------------------------------------------
+
+  ChecklistItem listItem(
+    int id,
+    String label, {
+    bool done = false,
+    bool blocking = false,
+    String? quantity,
+    String tags = '',
+    bool edited = false,
+  }) => ChecklistItem(
+    id: id,
+    tripId: 1,
+    label: label,
+    quantity: quantity,
+    sourceTags: tags,
+    isDone: done,
+    isBlocking: blocking,
+    isGenerated: true,
+    isUserEdited: edited,
+    sortOrder: id,
+  );
+
+  testWidgets('checklist', (tester) async {
+    await shootScreen(
+      tester,
+      'checklist',
+      ChecklistScreen(
+        onToggle: (_, _) async {},
+        onRemove: (_) async {},
+        onEdit: (_, _, _) async {},
+        onAdd: (_) async {},
+        onRegenerate: () async {},
+        checklist: Stream.value(
+          ChecklistView(
+            blocking: [
+              listItem(
+                1,
+                'Call and confirm the Cherrapunji accommodation number.',
+                blocking: true,
+                tags: 'readiness',
+              ),
+              listItem(
+                2,
+                'No accommodation number for Mawlynnong.',
+                blocking: true,
+                tags: 'readiness',
+              ),
+            ],
+            pack: [
+              listItem(3, 'Changes of clothes', quantity: '6', done: true),
+              listItem(4, 'Toothbrush and paste', done: true),
+              listItem(5, 'Any medicines you take'),
+              listItem(6, 'Headtorch', tags: 'caves'),
+              listItem(7, 'Spare batteries', tags: 'caves'),
+              listItem(8, 'Poncho or rain jacket', tags: 'rain'),
+              listItem(9, 'Dry bag for the phone', tags: 'rain'),
+              listItem(10, 'Trekking socks', quantity: '2', tags: 'trek'),
+              listItem(11, 'Leech socks', tags: 'trek'),
+              listItem(
+                12,
+                'Rina says bring cash, no card machine',
+                tags: 'homestay',
+                edited: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  });
+
+  testWidgets('expense form', (tester) async {
+    await shootScreen(
+      tester,
+      'expense_form',
+      ExpenseFormScreen(
+        travellers: [
+          const Traveller(id: 1, tripId: 1, name: 'Yash', isSelf: true),
+          const Traveller(id: 2, tripId: 1, name: 'Priya', isSelf: false),
+          const Traveller(id: 3, tripId: 1, name: 'Ankit', isSelf: false),
+        ],
+        existing: ExpenseDraft(
+          id: 1,
+          description: 'Taxi, Shillong to Cherrapunji',
+          amountMinor: 320011,
+          paidById: 1,
+          shares: evenSplit(320011, const [1, 2, 3]),
+          spentAt: DateTime(2026, 10, 3),
+        ),
+        onSave: (_) async {},
+        onDelete: () async {},
       ),
     );
   });

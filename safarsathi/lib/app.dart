@@ -12,13 +12,19 @@ import 'features/contacts/data/entry_draft.dart';
 import 'features/contacts/presentation/diary_screen.dart';
 import 'features/contacts/presentation/entry_form_screen.dart';
 import 'features/contacts/presentation/entry_screen.dart';
+import 'features/checklist/data/checklist_dao.dart';
+import 'features/checklist/data/checklist_generator.dart';
+import 'features/checklist/presentation/checklist_screen.dart';
 import 'features/dev/dev_seed.dart';
 import 'features/emergency/presentation/emergency_screen.dart';
 import 'features/import/data/import_commit.dart';
 import 'features/import/presentation/import_flow.dart';
 import 'features/import/presentation/import_history_screen.dart';
 import 'features/import/presentation/more_screen.dart';
+import 'features/money/data/expense_editor.dart';
 import 'features/money/data/money_summary.dart';
+import 'features/money/presentation/expense_form_screen.dart';
+import 'features/money/presentation/travellers_screen.dart';
 import 'features/money/presentation/money_screen.dart';
 import 'features/trips/data/readiness.dart';
 import 'features/trips/data/trip_editor.dart';
@@ -71,6 +77,8 @@ class _Home extends StatefulWidget {
 
 class _HomeState extends State<_Home> {
   late final TripEditor _editor = TripEditor(widget.db);
+  late final ExpenseEditor _money = ExpenseEditor(widget.db);
+  late final ChecklistDao _checklist = ChecklistDao(widget.db);
   late final Future<void> _ready = _bootstrap();
 
   Future<void> _bootstrap() async {
@@ -397,7 +405,12 @@ class _HomeState extends State<_Home> {
         ShellDestination(
           label: 'Money',
           icon: Icons.currency_rupee,
-          screen: MoneyScreen(summary: watchMoneySummary(db, trip.tripId)),
+          screen: MoneyScreen(
+            summary: watchMoneySummary(db, trip.tripId),
+            onAdd: () => _openExpense(context, trip.tripId),
+            onOpen: (id) => _openExpense(context, trip.tripId, expenseId: id),
+            onTravellers: () => _openTravellers(context, trip.tripId),
+          ),
         ),
         ShellDestination(
           label: 'SOS',
@@ -421,6 +434,8 @@ class _HomeState extends State<_Home> {
             onTrips: () => _openTrips(context),
             onItinerary: () => _openItinerary(context, trip.tripId, trip.name),
             onLegs: () => _openLegs(context, trip.tripId),
+            onChecklist: () => _openChecklist(context, trip.tripId),
+            onTravellers: () => _openTravellers(context, trip.tripId),
             onImport: () async {
               await ImportFlow(db: db, tripId: trip.tripId).start(context);
               await syncReadinessChecklist(db, trip.tripId);
@@ -440,6 +455,108 @@ class _HomeState extends State<_Home> {
           ),
         ),
       ],
+    );
+  }
+
+  // -- money ---------------------------------------------------------------
+
+  Future<void> _openTravellers(BuildContext context, int tripId) =>
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => TravellersScreen(
+            travellers: _money.watchTravellers(tripId),
+            onAdd: (name) => _money.addTraveller(tripId, name),
+            onRename: (t, name) => _money.renameTraveller(t.id, name),
+            onDelete: _money.deleteTraveller,
+          ),
+        ),
+      );
+
+  Future<void> _openExpense(
+    BuildContext context,
+    int tripId, {
+    int? expenseId,
+  }) async {
+    final db = widget.db;
+    final travellers = await _money.travellersOf(tripId);
+
+    if (travellers.isEmpty) {
+      // An expense needs someone to have paid it, so there is nothing useful
+      // the form could show. Send them to the place that fixes it.
+      if (!context.mounted) return;
+      await _openTravellers(context, tripId);
+      return;
+    }
+
+    ExpenseDraft? existing;
+    if (expenseId != null) {
+      final row = await (db.select(
+        db.expenses,
+      )..where((e) => e.id.equals(expenseId))).getSingleOrNull();
+      if (row != null) {
+        existing = ExpenseDraft(
+          id: row.id,
+          description: row.description,
+          amountMinor: row.amountMinor,
+          paidById: row.paidById,
+          shares: await _money.sharesOf(row.id),
+          spentAt: row.spentAt,
+          category: row.category,
+          stopId: row.stopId,
+          currency: row.currency,
+          rateToBase: row.rateToBase,
+          rateCapturedAt: row.rateCapturedAt,
+        );
+      }
+    }
+    if (!context.mounted) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (formContext) => ExpenseFormScreen(
+          travellers: travellers,
+          existing: existing,
+          onDelete: expenseId == null
+              ? null
+              : () async {
+                  await _money.deleteExpense(expenseId);
+                  if (formContext.mounted) Navigator.of(formContext).pop();
+                },
+          onSave: (draft) async {
+            await _money.saveExpense(tripId, draft);
+            if (formContext.mounted) Navigator.of(formContext).pop();
+          },
+        ),
+      ),
+    );
+  }
+
+  // -- checklist -------------------------------------------------------------
+
+  Future<void> _openChecklist(BuildContext context, int tripId) async {
+    final db = widget.db;
+    // Build it on first open rather than on every stop edit: regeneration is
+    // cheap but it is also the moment edits could be lost, so it happens when
+    // the user is looking at the list.
+    await regeneratePackList(db, tripId);
+    await syncReadinessChecklist(db, tripId);
+    if (!context.mounted) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChecklistScreen(
+          checklist: watchChecklist(db, tripId),
+          onToggle: (item, done) => _checklist.setDone(item.id, done),
+          onRemove: _checklist.remove,
+          onEdit: (item, label, qty) =>
+              _checklist.edit(item.id, label: label, quantity: qty),
+          onAdd: (label) => _checklist.addOwn(tripId, label),
+          onRegenerate: () async {
+            await regeneratePackList(db, tripId);
+            await syncReadinessChecklist(db, tripId);
+          },
+        ),
+      ),
     );
   }
 

@@ -5791,6 +5791,17 @@ class $ChecklistItemsTable extends ChecklistItems
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _generatorKeyMeta = const VerificationMeta(
+    'generatorKey',
+  );
+  @override
+  late final GeneratedColumn<String> generatorKey = GeneratedColumn<String>(
+    'generator_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isUserEditedMeta = const VerificationMeta(
     'isUserEdited',
   );
@@ -5830,6 +5841,7 @@ class $ChecklistItemsTable extends ChecklistItems
     isBlocking,
     contactId,
     isGenerated,
+    generatorKey,
     isUserEdited,
     sortOrder,
   ];
@@ -5909,6 +5921,15 @@ class $ChecklistItemsTable extends ChecklistItems
         ),
       );
     }
+    if (data.containsKey('generator_key')) {
+      context.handle(
+        _generatorKeyMeta,
+        generatorKey.isAcceptableOrUnknown(
+          data['generator_key']!,
+          _generatorKeyMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_user_edited')) {
       context.handle(
         _isUserEditedMeta,
@@ -5973,6 +5994,10 @@ class $ChecklistItemsTable extends ChecklistItems
         DriftSqlType.bool,
         data['${effectivePrefix}is_generated'],
       )!,
+      generatorKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}generator_key'],
+      ),
       isUserEdited: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_user_edited'],
@@ -6009,6 +6034,14 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
   final int? contactId;
   final bool isGenerated;
 
+  /// The generator rule that produced this item, stable across renames.
+  ///
+  /// Matching a generated item by its LABEL looked fine until someone renamed
+  /// one: the generator then found no row for its rule and inserted a second
+  /// copy alongside the user's. Null for items the user wrote themselves and
+  /// for blocking items, which are keyed by stop.
+  final String? generatorKey;
+
   /// Set the moment a user edits a generated item, so regeneration cannot
   /// silently discard their change.
   final bool isUserEdited;
@@ -6024,6 +6057,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     required this.isBlocking,
     this.contactId,
     required this.isGenerated,
+    this.generatorKey,
     required this.isUserEdited,
     required this.sortOrder,
   });
@@ -6046,6 +6080,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       map['contact_id'] = Variable<int>(contactId);
     }
     map['is_generated'] = Variable<bool>(isGenerated);
+    if (!nullToAbsent || generatorKey != null) {
+      map['generator_key'] = Variable<String>(generatorKey);
+    }
     map['is_user_edited'] = Variable<bool>(isUserEdited);
     map['sort_order'] = Variable<int>(sortOrder);
     return map;
@@ -6069,6 +6106,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
           ? const Value.absent()
           : Value(contactId),
       isGenerated: Value(isGenerated),
+      generatorKey: generatorKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(generatorKey),
       isUserEdited: Value(isUserEdited),
       sortOrder: Value(sortOrder),
     );
@@ -6090,6 +6130,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       isBlocking: serializer.fromJson<bool>(json['isBlocking']),
       contactId: serializer.fromJson<int?>(json['contactId']),
       isGenerated: serializer.fromJson<bool>(json['isGenerated']),
+      generatorKey: serializer.fromJson<String?>(json['generatorKey']),
       isUserEdited: serializer.fromJson<bool>(json['isUserEdited']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
     );
@@ -6108,6 +6149,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       'isBlocking': serializer.toJson<bool>(isBlocking),
       'contactId': serializer.toJson<int?>(contactId),
       'isGenerated': serializer.toJson<bool>(isGenerated),
+      'generatorKey': serializer.toJson<String?>(generatorKey),
       'isUserEdited': serializer.toJson<bool>(isUserEdited),
       'sortOrder': serializer.toJson<int>(sortOrder),
     };
@@ -6124,6 +6166,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     bool? isBlocking,
     Value<int?> contactId = const Value.absent(),
     bool? isGenerated,
+    Value<String?> generatorKey = const Value.absent(),
     bool? isUserEdited,
     int? sortOrder,
   }) => ChecklistItem(
@@ -6137,6 +6180,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     isBlocking: isBlocking ?? this.isBlocking,
     contactId: contactId.present ? contactId.value : this.contactId,
     isGenerated: isGenerated ?? this.isGenerated,
+    generatorKey: generatorKey.present ? generatorKey.value : this.generatorKey,
     isUserEdited: isUserEdited ?? this.isUserEdited,
     sortOrder: sortOrder ?? this.sortOrder,
   );
@@ -6158,6 +6202,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       isGenerated: data.isGenerated.present
           ? data.isGenerated.value
           : this.isGenerated,
+      generatorKey: data.generatorKey.present
+          ? data.generatorKey.value
+          : this.generatorKey,
       isUserEdited: data.isUserEdited.present
           ? data.isUserEdited.value
           : this.isUserEdited,
@@ -6178,6 +6225,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
           ..write('isBlocking: $isBlocking, ')
           ..write('contactId: $contactId, ')
           ..write('isGenerated: $isGenerated, ')
+          ..write('generatorKey: $generatorKey, ')
           ..write('isUserEdited: $isUserEdited, ')
           ..write('sortOrder: $sortOrder')
           ..write(')'))
@@ -6196,6 +6244,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     isBlocking,
     contactId,
     isGenerated,
+    generatorKey,
     isUserEdited,
     sortOrder,
   );
@@ -6213,6 +6262,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
           other.isBlocking == this.isBlocking &&
           other.contactId == this.contactId &&
           other.isGenerated == this.isGenerated &&
+          other.generatorKey == this.generatorKey &&
           other.isUserEdited == this.isUserEdited &&
           other.sortOrder == this.sortOrder);
 }
@@ -6228,6 +6278,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
   final Value<bool> isBlocking;
   final Value<int?> contactId;
   final Value<bool> isGenerated;
+  final Value<String?> generatorKey;
   final Value<bool> isUserEdited;
   final Value<int> sortOrder;
   const ChecklistItemsCompanion({
@@ -6241,6 +6292,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     this.isBlocking = const Value.absent(),
     this.contactId = const Value.absent(),
     this.isGenerated = const Value.absent(),
+    this.generatorKey = const Value.absent(),
     this.isUserEdited = const Value.absent(),
     this.sortOrder = const Value.absent(),
   });
@@ -6255,6 +6307,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     this.isBlocking = const Value.absent(),
     this.contactId = const Value.absent(),
     this.isGenerated = const Value.absent(),
+    this.generatorKey = const Value.absent(),
     this.isUserEdited = const Value.absent(),
     this.sortOrder = const Value.absent(),
   }) : tripId = Value(tripId),
@@ -6270,6 +6323,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     Expression<bool>? isBlocking,
     Expression<int>? contactId,
     Expression<bool>? isGenerated,
+    Expression<String>? generatorKey,
     Expression<bool>? isUserEdited,
     Expression<int>? sortOrder,
   }) {
@@ -6284,6 +6338,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
       if (isBlocking != null) 'is_blocking': isBlocking,
       if (contactId != null) 'contact_id': contactId,
       if (isGenerated != null) 'is_generated': isGenerated,
+      if (generatorKey != null) 'generator_key': generatorKey,
       if (isUserEdited != null) 'is_user_edited': isUserEdited,
       if (sortOrder != null) 'sort_order': sortOrder,
     });
@@ -6300,6 +6355,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     Value<bool>? isBlocking,
     Value<int?>? contactId,
     Value<bool>? isGenerated,
+    Value<String?>? generatorKey,
     Value<bool>? isUserEdited,
     Value<int>? sortOrder,
   }) {
@@ -6314,6 +6370,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
       isBlocking: isBlocking ?? this.isBlocking,
       contactId: contactId ?? this.contactId,
       isGenerated: isGenerated ?? this.isGenerated,
+      generatorKey: generatorKey ?? this.generatorKey,
       isUserEdited: isUserEdited ?? this.isUserEdited,
       sortOrder: sortOrder ?? this.sortOrder,
     );
@@ -6352,6 +6409,9 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     if (isGenerated.present) {
       map['is_generated'] = Variable<bool>(isGenerated.value);
     }
+    if (generatorKey.present) {
+      map['generator_key'] = Variable<String>(generatorKey.value);
+    }
     if (isUserEdited.present) {
       map['is_user_edited'] = Variable<bool>(isUserEdited.value);
     }
@@ -6374,6 +6434,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
           ..write('isBlocking: $isBlocking, ')
           ..write('contactId: $contactId, ')
           ..write('isGenerated: $isGenerated, ')
+          ..write('generatorKey: $generatorKey, ')
           ..write('isUserEdited: $isUserEdited, ')
           ..write('sortOrder: $sortOrder')
           ..write(')'))
@@ -15765,6 +15826,7 @@ typedef $$ChecklistItemsTableCreateCompanionBuilder =
       Value<bool> isBlocking,
       Value<int?> contactId,
       Value<bool> isGenerated,
+      Value<String?> generatorKey,
       Value<bool> isUserEdited,
       Value<int> sortOrder,
     });
@@ -15780,6 +15842,7 @@ typedef $$ChecklistItemsTableUpdateCompanionBuilder =
       Value<bool> isBlocking,
       Value<int?> contactId,
       Value<bool> isGenerated,
+      Value<String?> generatorKey,
       Value<bool> isUserEdited,
       Value<int> sortOrder,
     });
@@ -15885,6 +15948,11 @@ class $$ChecklistItemsTableFilterComposer
 
   ColumnFilters<bool> get isGenerated => $composableBuilder(
     column: $table.isGenerated,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get generatorKey => $composableBuilder(
+    column: $table.generatorKey,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16012,6 +16080,11 @@ class $$ChecklistItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get generatorKey => $composableBuilder(
+    column: $table.generatorKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isUserEdited => $composableBuilder(
     column: $table.isUserEdited,
     builder: (column) => ColumnOrderings(column),
@@ -16125,6 +16198,11 @@ class $$ChecklistItemsTableAnnotationComposer
 
   GeneratedColumn<bool> get isGenerated => $composableBuilder(
     column: $table.isGenerated,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get generatorKey => $composableBuilder(
+    column: $table.generatorKey,
     builder: (column) => column,
   );
 
@@ -16246,6 +16324,7 @@ class $$ChecklistItemsTableTableManager
                 Value<bool> isBlocking = const Value.absent(),
                 Value<int?> contactId = const Value.absent(),
                 Value<bool> isGenerated = const Value.absent(),
+                Value<String?> generatorKey = const Value.absent(),
                 Value<bool> isUserEdited = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
               }) => ChecklistItemsCompanion(
@@ -16259,6 +16338,7 @@ class $$ChecklistItemsTableTableManager
                 isBlocking: isBlocking,
                 contactId: contactId,
                 isGenerated: isGenerated,
+                generatorKey: generatorKey,
                 isUserEdited: isUserEdited,
                 sortOrder: sortOrder,
               ),
@@ -16274,6 +16354,7 @@ class $$ChecklistItemsTableTableManager
                 Value<bool> isBlocking = const Value.absent(),
                 Value<int?> contactId = const Value.absent(),
                 Value<bool> isGenerated = const Value.absent(),
+                Value<String?> generatorKey = const Value.absent(),
                 Value<bool> isUserEdited = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
               }) => ChecklistItemsCompanion.insert(
@@ -16287,6 +16368,7 @@ class $$ChecklistItemsTableTableManager
                 isBlocking: isBlocking,
                 contactId: contactId,
                 isGenerated: isGenerated,
+                generatorKey: generatorKey,
                 isUserEdited: isUserEdited,
                 sortOrder: sortOrder,
               ),

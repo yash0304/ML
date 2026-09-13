@@ -312,6 +312,14 @@ class ChecklistItems extends Table {
 
   BoolColumn get isGenerated => boolean().withDefault(const Constant(true))();
 
+  /// The generator rule that produced this item, stable across renames.
+  ///
+  /// Matching a generated item by its LABEL looked fine until someone renamed
+  /// one: the generator then found no row for its rule and inserted a second
+  /// copy alongside the user's. Null for items the user wrote themselves and
+  /// for blocking items, which are keyed by stop.
+  TextColumn get generatorKey => text().nullable()();
+
   /// Set the moment a user edits a generated item, so regeneration cannot
   /// silently discard their change.
   BoolColumn get isUserEdited => boolean().withDefault(const Constant(false))();

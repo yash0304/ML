@@ -51,10 +51,22 @@ class MoneySummary {
 }
 
 Stream<MoneySummary> watchMoneySummary(AppDatabase db, int tripId) {
-  final expenses = db.select(db.expenses)
-    ..where((e) => e.tripId.equals(tripId));
+  // Names the real dependency set. A Drift stream only fires for the tables
+  // its own query touches, so watching `expenses` alone left the screen stale
+  // whenever a traveller was added or a split edited — invisible until #31
+  // made either possible. Same bug the trip summary had at #16.
+  final tick = db
+      .customSelect(
+        'SELECT 1',
+        readsFrom: {db.expenses, db.expenseSplits, db.travellers},
+      )
+      .watch();
 
-  return expenses.watch().asyncMap((rows) async {
+  return tick.asyncMap((_) async {
+    final rows = await (db.select(
+      db.expenses,
+    )..where((e) => e.tripId.equals(tripId))).get();
+
     final travellers = await (db.select(
       db.travellers,
     )..where((t) => t.tripId.equals(tripId))).get();
