@@ -18,6 +18,17 @@ class SettingsScreen extends StatelessWidget {
   final Future<void> Function(int tripId) onClearCache;
   final VoidCallback onCallHistory;
 
+  /// The map provider's key, as typed on this phone. Empty means none.
+  final Stream<String>? mapKey;
+  final Future<void> Function(String)? onMapKey;
+
+  /// True when the build itself carries a key. Then a typed one is a
+  /// replacement rather than the only way in, and the copy has to say so.
+  final bool hasBuildKey;
+
+  /// Named so the section can say whose key it wants.
+  final String mapProviderLabel;
+
   const SettingsScreen({
     super.key,
     required this.themeMode,
@@ -27,6 +38,10 @@ class SettingsScreen extends StatelessWidget {
     required this.caches,
     required this.onClearCache,
     required this.onCallHistory,
+    this.mapKey,
+    this.onMapKey,
+    this.hasBuildKey = false,
+    this.mapProviderLabel = 'MapTiler',
   });
 
   @override
@@ -169,6 +184,23 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
+
+          if (mapKey != null && onMapKey != null) ...[
+            const StencilLabel('Map key'),
+            StreamBuilder<String>(
+              stream: mapKey,
+              builder: (context, snap) => _MapKeyField(
+                // Keyed on what is stored, so the field is rebuilt from
+                // scratch when the saved key changes underneath it rather
+                // than holding a stale draft.
+                key: ValueKey(snap.data ?? ''),
+                saved: snap.data ?? '',
+                provider: mapProviderLabel,
+                hasBuildKey: hasBuildKey,
+                onSave: onMapKey!,
+              ),
+            ),
+          ],
 
           const StencilLabel('Downloaded'),
           StreamBuilder<List<CacheSummary>>(
@@ -419,6 +451,152 @@ class _HistoryRow extends StatelessWidget {
               color: c.muted,
               fontSize: 11.5,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Where the map key is typed in.
+///
+/// This exists because the build-time route was not enough: an APK produced by
+/// CI with no secret configured has no way of being given a key, which is
+/// exactly the position the first user of this app was in.
+class _MapKeyField extends StatefulWidget {
+  final String saved;
+  final String provider;
+  final bool hasBuildKey;
+  final Future<void> Function(String) onSave;
+
+  const _MapKeyField({
+    super.key,
+    required this.saved,
+    required this.provider,
+    required this.hasBuildKey,
+    required this.onSave,
+  });
+
+  @override
+  State<_MapKeyField> createState() => _MapKeyFieldState();
+}
+
+class _MapKeyFieldState extends State<_MapKeyField> {
+  late final _controller = TextEditingController(text: widget.saved);
+  bool _hidden = true;
+  bool _justSaved = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool get _changed => _controller.text.trim() != widget.saved;
+
+  Future<void> _save() async {
+    Haptics.light();
+    await widget.onSave(_controller.text.trim());
+    if (mounted) setState(() => _justSaved = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    final active = widget.saved.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  obscureText: _hidden && active,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  onChanged: (_) => setState(() => _justSaved = false),
+                  style: AppTokens.numberStyle.copyWith(color: c.ink),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: 'Paste your ${widget.provider} key',
+                    hintStyle: AppTokens.captionStyle.copyWith(color: c.muted),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: c.rule),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: c.signal),
+                    ),
+                  ),
+                ),
+              ),
+              if (active)
+                IconButton(
+                  onPressed: () => setState(() => _hidden = !_hidden),
+                  color: c.muted,
+                  icon: Icon(
+                    _hidden ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    size: 18,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppTokens.s8),
+          Row(
+            children: [
+              PressScale(
+                onTap: _changed ? _save : null,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTokens.s16,
+                    vertical: AppTokens.s8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _changed ? c.signal : Colors.transparent,
+                    border: Border.all(color: _changed ? c.ink : c.rule),
+                    borderRadius: BorderRadius.circular(AppTokens.radiusSoft),
+                  ),
+                  child: Text(
+                    // Uppercase, like every other stencil control in the app.
+                    'SAVE',
+                    style: AppTokens.stencilStyle.copyWith(
+                      fontSize: 10.5,
+                      color: _changed ? c.paper : c.muted,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppTokens.s12),
+              Expanded(
+                child: Text(
+                  _justSaved && !_changed
+                      ? 'Saved. Download the map from More → Map.'
+                      : active
+                      ? 'A key is set. Maps can download.'
+                      : widget.hasBuildKey
+                      ? 'This build already carries a key. Anything typed '
+                            'here replaces it.'
+                      : 'No key yet, so maps stay off.',
+                  style: AppTokens.captionStyle.copyWith(
+                    color: active || widget.hasBuildKey
+                        ? c.muted
+                        : c.cautionMark,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTokens.s8),
+          Text(
+            // Said plainly, because "API key" means nothing to most people and
+            // a key pasted into the wrong app is a real cost.
+            'A free ${widget.provider} account gives you one. It stays on this '
+            'phone, in this app, and is only ever sent to ${widget.provider} '
+            'while a map is downloading — never on the road.',
+            style: AppTokens.captionStyle.copyWith(color: c.muted),
           ),
         ],
       ),

@@ -6,11 +6,20 @@
 // Swapping to Stadia, Thunderforest or a self-hosted server later is a new
 // implementation of this interface and one line in `activeTileProvider`.
 //
-// THE API KEY NEVER ENTERS THE REPOSITORY. It arrives through
-// `String.fromEnvironment`, which Flutter fills from `--dart-define` at build
-// time: a gitignored JSON file locally, a GitHub secret in CI, and nothing at
-// all when neither is present — in which case the map disables itself and says
-// so, because a blank grey rectangle is indistinguishable from a bug.
+// THE API KEY NEVER ENTERS THE REPOSITORY. There are two ways in and the
+// repository is neither of them:
+//
+//   1. Typed into Settings on the phone, stored in the app's own database.
+//      This is the one that works for a build somebody else produced, which
+//      turned out to be the case that mattered — an APK off CI with no secret
+//      configured has no way to be given a key otherwise.
+//   2. `--dart-define=MAPTILER_KEY=…` at build time, read here through
+//      `String.fromEnvironment`: a gitignored JSON file locally, a GitHub
+//      secret in CI.
+//
+// The typed one wins when both are present. With neither, the map disables
+// itself and says so, because a blank grey rectangle is indistinguishable
+// from a bug.
 
 /// A raster tile source.
 abstract class MapTileProvider {
@@ -59,7 +68,7 @@ class TileProviderNotConfigured implements Exception {
 /// history forever. The control that actually matters is restricting the key
 /// to this app's package name in the MapTiler dashboard.
 class MapTilerRaster implements MapTileProvider {
-  /// Supplied at build time. Empty when nobody passed one.
+  /// Typed into Settings, or supplied at build time. Empty when neither.
   final String apiKey;
 
   /// MapTiler's style id. `outdoor-v2` carries terrain shading and trails,
@@ -68,9 +77,12 @@ class MapTilerRaster implements MapTileProvider {
   final String style;
 
   const MapTilerRaster({
-    this.apiKey = const String.fromEnvironment('MAPTILER_KEY'),
+    this.apiKey = buildTimeKey,
     this.style = 'outdoor-v2',
   });
+
+  /// What `--dart-define` left in the binary, or the empty string.
+  static const buildTimeKey = String.fromEnvironment('MAPTILER_KEY');
 
   @override
   String get id => 'maptiler-$style';
@@ -83,8 +95,8 @@ class MapTilerRaster implements MapTileProvider {
 
   @override
   String get configurationHint =>
-      'No MapTiler key in this build, so maps are off. '
-      'Build with --dart-define=MAPTILER_KEY=… to switch them on.';
+      'No MapTiler key yet, so maps are off. Settings → Map key takes one; '
+      'maptiler.com gives you a free one.';
 
   @override
   String get attribution => '© MapTiler © OpenStreetMap contributors';
@@ -103,9 +115,7 @@ class MapTilerRaster implements MapTileProvider {
   @override
   String urlFor(int z, int x, int y) {
     if (!isConfigured) {
-      throw const TileProviderNotConfigured(
-        'No MapTiler key in this build.',
-      );
+      throw const TileProviderNotConfigured('No MapTiler key.');
     }
     return 'https://api.maptiler.com/maps/$style/$z/$x/$y@2x.png?key=$apiKey';
   }
@@ -136,5 +146,21 @@ class NoTileProvider implements MapTileProvider {
       throw const TileProviderNotConfigured('No map provider is configured.');
 }
 
-/// THE ONE LINE THAT PICKS A PROVIDER. Everything else in the app reads this.
+/// THE ONE LINE THAT PICKS A PROVIDER. Everything else in the app goes
+/// through [tileProviderFor].
+///
+/// The build-time-only view of it, which is what a test sees and what the app
+/// falls back to when nothing has been typed into Settings.
 const MapTileProvider activeTileProvider = MapTilerRaster();
+
+/// The provider to actually use, given whatever key Settings is holding.
+///
+/// The typed key wins over the build-time one. The cache id does not depend on
+/// the key, so tiles already on disk are still found after the key changes —
+/// which matters, because a key can be rotated and a downloaded trip must
+/// survive that.
+MapTileProvider tileProviderFor(String? typedKey) {
+  final key = (typedKey ?? '').trim();
+  if (key.isNotEmpty) return MapTilerRaster(apiKey: key);
+  return activeTileProvider;
+}

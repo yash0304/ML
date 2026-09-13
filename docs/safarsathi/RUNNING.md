@@ -28,6 +28,21 @@ Maps need a key. **It is never committed.** A build without one still runs —
 the map screens disable themselves and say so, which is the designed
 behaviour, not a failure.
 
+There are three ways to supply one and the repository is none of them.
+
+### On the phone, in the app — the one most people want
+
+**Settings → Map key.** Paste the key, tap Save, then More → Map to download.
+
+This is the only route that works on an APK somebody else built. It needs no
+secret, no rebuild and no access to CI; the key is stored in the app's own
+database on that phone and is sent to MapTiler only while a map is actually
+downloading. A key typed here **overrides** one baked in at build time, so it
+is also how you rotate a key without producing a new build.
+
+Tiles already on disk survive a key change: the on-disk cache is keyed on the
+provider and style, never on the key.
+
 ### On your own machine
 
 Create `safarsathi/maptiler.json`, which is gitignored:
@@ -54,9 +69,10 @@ build log rather than only on the phone.
 
 ### Restrict the key
 
-`--dart-define` bakes the value into the binary, as every mobile map SDK does.
-It is not a secret from whoever holds the APK; what this avoids is the key
-living in git history forever.
+Whether it is baked in by `--dart-define` or typed into Settings, the key ends
+up on the phone, as it does with every mobile map SDK. It is not a secret from
+whoever holds the handset; what these routes avoid is the key living in git
+history forever.
 
 **The control that actually matters is in the MapTiler dashboard: restrict the
 key to this app's package name.** Do that now rather than later.

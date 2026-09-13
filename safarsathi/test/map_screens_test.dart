@@ -60,7 +60,8 @@ void main() {
       );
 
       expect(find.text('Maps are off in this build'), findsOneWidget);
-      expect(find.textContaining('MAPTILER_KEY'), findsOneWidget);
+      // The hint has to name a place the user can actually go.
+      expect(find.textContaining('Settings → Map key'), findsOneWidget);
     });
 
     testWidgets('no tiles downloaded says what to do about it', (tester) async {
@@ -201,7 +202,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No map provider'), findsOneWidget);
-      expect(find.textContaining('MAPTILER_KEY'), findsOneWidget);
+      // The hint has to name a place the user can actually go.
+      expect(find.textContaining('Settings → Map key'), findsOneWidget);
     });
 
     testWidgets('LEGS WITHOUT COORDINATES ARE NAMED, NOT SKIPPED SILENTLY', (

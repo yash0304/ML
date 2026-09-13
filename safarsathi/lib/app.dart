@@ -425,9 +425,14 @@ class _HomeState extends State<_Home> {
     final store = _tiles;
     if (store == null) return;
 
+    // Resolved here, at the moment the screen opens, rather than held in a
+    // field: the key can be typed into Settings and used without restarting.
+    final provider = tileProviderFor(await _settings.readMapTilerKey());
+    if (!context.mounted) return;
+
     final map = MapDownload(
       db: widget.db,
-      downloader: TileDownloader(store: store, provider: activeTileProvider),
+      downloader: TileDownloader(store: store, provider: provider),
     );
     final sync = TripSync(
       db: widget.db,
@@ -451,22 +456,22 @@ class _HomeState extends State<_Home> {
     final store = _tiles;
     if (store == null) return;
 
+    final provider = tileProviderFor(await _settings.readMapTilerKey());
+    if (!context.mounted) return;
+
     final download = MapDownload(
       db: widget.db,
-      downloader: TileDownloader(
-        store: store,
-        provider: activeTileProvider,
-      ),
+      downloader: TileDownloader(store: store, provider: provider),
     );
 
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => MapDownloadScreen(
-          provider: activeTileProvider,
+          provider: provider,
           estimate: () => download.estimate(tripId),
           download: () => download.download(tripId),
-          usage: store.watchUsage(activeTileProvider.id),
-          onClear: () => store.clear(activeTileProvider.id),
+          usage: store.watchUsage(provider.id),
+          onClear: () => store.clear(provider.id),
         ),
       ),
     );
@@ -527,6 +532,10 @@ class _HomeState extends State<_Home> {
             onCorridorKm: _settings.setCorridorKm,
             caches: watchCacheSummaries(widget.db),
             onClearCache: (id) => clearTripCache(widget.db, id),
+            mapKey: _settings.watchMapTilerKey(),
+            onMapKey: _settings.setMapTilerKey,
+            hasBuildKey: MapTilerRaster.buildTimeKey.isNotEmpty,
+            mapProviderLabel: activeTileProvider.label,
             onCallHistory: () => Navigator.of(settingsContext).push(
               MaterialPageRoute<void>(
                 builder: (_) => CallHistoryScreen(

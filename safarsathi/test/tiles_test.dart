@@ -113,7 +113,9 @@ void main() {
       const provider = MapTilerRaster(apiKey: '');
 
       expect(provider.isConfigured, isFalse);
-      expect(provider.configurationHint, contains('MAPTILER_KEY'));
+      // The hint has to name the thing missing AND where to fix it.
+      expect(provider.configurationHint, contains('MapTiler key'));
+      expect(provider.configurationHint, contains('Settings'));
       expect(
         () => provider.urlFor(12, 3093, 1746),
         throwsA(isA<TileProviderNotConfigured>()),
@@ -157,6 +159,29 @@ void main() {
       // Nothing passes --dart-define here, so the app's own provider must be
       // unconfigured. If this ever fails, a key reached a tracked file.
       expect(activeTileProvider.isConfigured, isFalse);
+      expect(MapTilerRaster.buildTimeKey, isEmpty);
+    });
+
+    test('A KEY TYPED ON THE PHONE CONFIGURES THE PROVIDER', () {
+      // The whole point of the runtime path: an APK built with no secret can
+      // still be given a key by the person holding it.
+      expect(tileProviderFor(null).isConfigured, isFalse);
+      expect(tileProviderFor('').isConfigured, isFalse);
+      expect(tileProviderFor('   ').isConfigured, isFalse);
+
+      final typed = tileProviderFor('  abc123  ');
+      expect(typed.isConfigured, isTrue);
+      expect(typed.urlFor(9, 1, 2), contains('key=abc123'));
+    });
+
+    test('the cache id does not move when the key does', () {
+      // A rotated key must not orphan a downloaded trip.
+      expect(tileProviderFor('one').id, tileProviderFor('two').id);
+      expect(tileProviderFor('one').id, activeTileProvider.id);
+    });
+
+    test('the hint sends the user somewhere they can act', () {
+      expect(activeTileProvider.configurationHint, contains('Settings'));
     });
   });
 
@@ -371,7 +396,7 @@ void main() {
           isA<TileDownloadException>().having(
             (e) => e.message,
             'message',
-            contains('MAPTILER_KEY'),
+            contains('MapTiler key'),
           ),
         ),
       );

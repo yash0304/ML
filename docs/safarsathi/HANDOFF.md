@@ -6,39 +6,29 @@
 ## Where we are
 
 - **Issues #1–#9, #11–#29, #31, #32, #35, #50–#55 are done except for the
-  device check.** Analyses clean, **661 tests** in about fifty seconds.
+  device check.** Analyses clean, **669 tests** in about fifty seconds.
 - Backlog position: 38 / 56 done.
 - Every screen SCREENS.md specifies now exists. What remains is polish,
   background services, and one thing that cannot be done from this container.
 
-## THE LIVE PROBLEM: Yash cannot enter the MapTiler key
+## The MapTiler key — fixed, and Yash needs to do one thing
 
-**This is the next thing to fix.** Yash reported on 13 Sep, with a screenshot
-of Settings, that there is nowhere in the app to put his MapTiler key, so map
-download does nothing and Settings reads "Nothing downloaded".
+Yash reported on 13 Sep, with a screenshot of Settings, that there was nowhere
+in the app to put his MapTiler key, so map download did nothing. He was right:
+the key was **build-time only**, and `--dart-define` cannot help someone who
+did not produce the build.
 
-He is right, and it is a real gap. The key is currently **build-time only** —
-`String.fromEnvironment('MAPTILER_KEY')`, supplied by `--dart-define`. Locally
-that comes from a gitignored `maptiler.json`; in CI from a GitHub Actions
-secret named `MAPTILER_KEY` which **has not been added to the repository**. An
-APK built without it runs fine and disables the map with a sentence, which is
-exactly what he is seeing.
+**There is now a field: Settings → Map key.** Paste, Save, then More → Map to
+download. It is stored in the app's own database, it overrides any key baked
+in at build time, and tiles already on disk survive a key change because the
+cache id never depended on the key.
 
-Two ways out, and they are not exclusive:
+**What Yash still has to do:** paste the key into that field on the phone,
+and — separately, and importantly — restrict the key to this app's package
+name in the MapTiler dashboard. Optionally add `MAPTILER_KEY` as a repository
+secret so CI builds ship with maps already on; the workflow already reads it.
 
-1. **The zero-code one:** Yash adds `MAPTILER_KEY` under the repository's
-   Settings → Secrets and variables → Actions → New repository secret, then
-   re-runs the APK workflow. The workflow already reads it and already prints
-   whether maps ended up enabled.
-2. **The one he actually expected:** a field in Settings where the key is
-   pasted at runtime and stored in `AppSettings`. This also honours the
-   original constraint — the key never touches the repository — and it works
-   for any build, including ones he did not produce. `MapTilerRaster` already
-   takes `apiKey` as a constructor argument, so the provider abstraction is
-   ready for it; what is not ready is `activeTileProvider`, which is a
-   `const` resolved at compile time. That constant is the thing to change.
-
-Do not paste a key into any file. He has it; he has never shared it, correctly.
+Do not paste a key into any file. He has it and has never shared it, correctly.
 
 ## Blocked on nothing else — but #36 could not be done here
 
@@ -70,11 +60,12 @@ caution boundary at three days; #26 shipped seven. The bands are now fresh
 under a day, ageing one to three, stale at three and over, and the wording
 moved with them. Logged in DECISIONS.md.
 
-## The map, and its key
+## The map
 
 **MapTiler**, chosen by Yash, behind a `MapTileProvider` interface. Nothing
 outside `features/map/data/tile_provider.dart` names it; swapping to Stadia is
-a new implementation and one line in `activeTileProvider`.
+a new implementation and one line there. `tileProviderFor(typedKey)` is what
+the app calls — the key comes from Settings, falling back to the build.
 
 The tile cache is **written here, not FMTC** — FMTC stores tiles in ObjectBox,
 a second native database engine beside SQLite. Tiles are files under
@@ -116,12 +107,11 @@ milestone rail that broke into disconnected segments at every row boundary.
 
 The three fonts loading, haptics firing, whether `tel:` with an empty path
 opens the Android dialer, the night palette at 2am, and — still — **no map
-tile has ever actually been fetched.** Every test fakes the HTTP. That last
-one is now blocked on the key problem above.
+tile has ever actually been fetched.** Every test fakes the HTTP. That one is
+now unblocked — it needs Yash to paste his key and press download.
 
 ## What is left
 
-- **The key problem above.** First.
 - **#10** multi-add for contacts.
 - **#41–#49**, nine small visual polish issues.
 - **#36**, needs a browser Yash controls.

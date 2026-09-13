@@ -5,7 +5,7 @@
 // Stored in the database rather than shared preferences, so there is still
 // exactly one place this app keeps state and exactly one thing to back up.
 //
-// EVERY OPTION IS A THING THAT CAN BE WRONG. There are three.
+// EVERY OPTION IS A THING THAT CAN BE WRONG. There are four.
 
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +21,16 @@ class SettingKeys {
 
   /// Default corridor half-width in kilometres, for new legs.
   static const corridorKm = 'corridorKm';
+
+  /// The map provider's API key, typed in on the phone.
+  ///
+  /// It lives in the app's own database rather than in the build, because an
+  /// APK produced by somebody else's CI has no other way of being given one.
+  /// It is not a password: it identifies the account to MapTiler and is
+  /// visible to anyone holding the phone, exactly as it is in every mobile
+  /// map SDK. The control that matters is restricting the key to this app's
+  /// package name in the MapTiler dashboard.
+  static const mapTilerKey = 'mapTilerKey';
 }
 
 ThemeMode themeModeFromName(String? name) => switch (name) {
@@ -68,6 +78,15 @@ class SettingsRepository {
 
   Future<void> setCorridorKm(double km) =>
       write(SettingKeys.corridorKm, km.toString());
+
+  Stream<String> watchMapTilerKey() =>
+      watch(SettingKeys.mapTilerKey).map((v) => v?.trim() ?? '');
+
+  Future<String> readMapTilerKey() async =>
+      (await read(SettingKeys.mapTilerKey))?.trim() ?? '';
+
+  Future<void> setMapTilerKey(String key) =>
+      write(SettingKeys.mapTilerKey, key.trim());
 }
 
 /// What one trip is holding, for the cache screen.

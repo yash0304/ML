@@ -5,6 +5,12 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-13 — [MAP] **The MapTiler key can be typed into Settings and stored in the app's database, and a typed key overrides the build-time one.** (The build-time-only route was not enough and the gap was real: Yash had a key and an APK off CI with no repository secret configured, and therefore nowhere to put it — maps were simply off with no way in. `--dart-define` cannot help someone who did not produce the build. The key still never enters the repository, which was the actual constraint; it now has two ways in rather than one. It is not a password — it identifies the account to MapTiler and is visible to whoever holds the phone, exactly as in every mobile map SDK — so the control that matters is still restricting it to the app's package name in the MapTiler dashboard.)
+
+2026-09-13 — [MAP] The tile cache id depends on provider and style, never on the key. (A key can be rotated; a downloaded trip must survive that. Tiles already on disk are still found after the key changes.)
+
+2026-09-13 — [MAP] The provider is resolved when the map or sync screen opens, not held in a field. (So a key typed into Settings works immediately, without restarting the app — which is the first thing anyone tries after saving one.)
+
 2026-09-13 — [WEATHER] **The staleness caution boundary is three days, not seven. #26 shipped seven and that is corrected here.** (SCREENS.md §10 has always said "under three days it is muted; past three days it turns caution". Seven was laxer than the app's own specification, and wrong on the facts for the trip it was built for: an October forecast for Meghalaya is a different season after five days. Bands are now fresh under a day, ageing one to three, stale at three and over, and the wording moved with them — "Over a week old" became "More than three days old". A stale forecast that looks current is the failure mode the whole screen exists to prevent, so the laxer number was the one thing it could not afford.)
 
 2026-09-13 — [TRIPS] Editing activity tags on the stop screen calls `regeneratePackList`, and the screen says out loud that it does. (The chips are editable *because* they drive the checklist. A row of chips that silently rebuilds a list elsewhere is a surprise; a row of chips that claims to and does not is a lie. Hand edits survive because #29 keys generated items on `generatorKey` rather than on the label.)

@@ -1091,6 +1091,9 @@ void main() {
         onCorridorKm: (_) async {},
         onClearCache: (_) async {},
         onCallHistory: () {},
+        // Empty, which is the state the first user was actually in.
+        mapKey: Stream.value(''),
+        onMapKey: (_) async {},
         caches: Stream.value(const [
           CacheSummary(
             tripId: 1,

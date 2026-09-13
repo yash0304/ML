@@ -357,6 +357,9 @@ void main() {
       List<CacheSummary> caches = const [],
       Future<void> Function(ThemeMode)? onThemeMode,
       Future<void> Function(int)? onClear,
+      String? mapKey,
+      Future<void> Function(String)? onMapKey,
+      bool hasBuildKey = false,
     }) => wrap(
       SettingsScreen(
         themeMode: Stream.value(mode),
@@ -366,6 +369,9 @@ void main() {
         caches: Stream.value(caches),
         onClearCache: onClear ?? (_) async {},
         onCallHistory: () {},
+        mapKey: mapKey == null ? null : Stream.value(mapKey),
+        onMapKey: mapKey == null ? null : (onMapKey ?? (_) async {}),
+        hasBuildKey: hasBuildKey,
       ),
     );
 
@@ -462,6 +468,78 @@ void main() {
       // dialog's own wording.
       expect(find.textContaining('Removes 42 places'), findsOneWidget);
       expect(find.textContaining('need WiFi to get them back'), findsOneWidget);
+    });
+
+    testWidgets('NO KEY SAYS SO, IN CAUTION', (tester) async {
+      useTallSurface(tester);
+      await tester.pumpWidget(screen(mapKey: ''));
+      await tester.pump();
+
+      // The state the first user of this app was actually in, and the app
+      // said nothing about it anywhere he could see.
+      expect(find.text('Map key'.toUpperCase()), findsOneWidget);
+      expect(find.text('No key yet, so maps stay off.'), findsOneWidget);
+    });
+
+    testWidgets('typing a key and saving hands it over trimmed', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      String? saved;
+      await tester.pumpWidget(
+        screen(mapKey: '', onMapKey: (k) async => saved = k),
+      );
+      await tester.pump();
+
+      await tester.enterText(find.byType(TextField), '  a-real-looking-key  ');
+      await tester.pump();
+      await tester.tap(find.text('SAVE'));
+      await tester.pump();
+
+      expect(saved, 'a-real-looking-key');
+    });
+
+    testWidgets('SAVE DOES NOTHING UNTIL SOMETHING CHANGES', (tester) async {
+      useTallSurface(tester);
+      var calls = 0;
+      await tester.pumpWidget(
+        screen(mapKey: 'already-set', onMapKey: (_) async => calls++),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('SAVE'));
+      await tester.pump();
+      expect(calls, 0);
+      expect(find.text('A key is set. Maps can download.'), findsOneWidget);
+    });
+
+    testWidgets('a build that carries a key says a typed one replaces it', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      await tester.pumpWidget(screen(mapKey: '', hasBuildKey: true));
+      await tester.pump();
+
+      expect(
+        find.textContaining('This build already carries a key'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a stored key is hidden until asked for', (tester) async {
+      useTallSurface(tester);
+      await tester.pumpWidget(screen(mapKey: 'secret-looking'));
+      await tester.pump();
+
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.obscureText, isTrue);
+
+      await tester.tap(find.byIcon(Icons.visibility_outlined));
+      await tester.pump();
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).obscureText,
+        isFalse,
+      );
     });
 
     testWidgets('call history says a copy counts', (tester) async {

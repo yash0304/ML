@@ -115,3 +115,34 @@ keystroke in the form.
 - No per-stop tile figure, for the reason above.
 - No editing of transport in place; the leg form (#18) already exists and is
   one tap away.
+
+---
+
+## Afterwards: the map key
+
+Shipped in the same round, out of order, because it turned out to be blocking
+the first user rather than a future one.
+
+The MapTiler key had exactly one way in — `--dart-define` at build time, from a
+gitignored file locally or a GitHub secret in CI. Neither is available to
+somebody holding an APK that CI produced without the secret configured, which
+is precisely where Yash was: he had a key, the app had nowhere to put it, and
+the map screens correctly said maps were off while offering no way to turn them
+on.
+
+**Settings → Map key** now takes one. It is stored in `AppSettings` like every
+other setting, it overrides the build-time key when both exist, and the map and
+sync screens resolve the provider when they open rather than holding one in a
+field — so a key saved in Settings works without restarting.
+
+Two things this deliberately does not change:
+
+- **The key still never enters the repository.** That was the actual
+  constraint, and it holds. A test still asserts the test build carries no key.
+- **The cache id still does not depend on the key.** A rotated key must not
+  orphan a downloaded trip.
+
+The key is not a password. It identifies the account to MapTiler and is visible
+to whoever holds the phone, as it is in every mobile map SDK. The control that
+matters is restricting it to the app's package name in the MapTiler dashboard,
+and RUNNING.md says so twice.
