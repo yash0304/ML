@@ -21,6 +21,48 @@ flutter doctor
 flutter doctor --android-licenses     # accept them all
 ```
 
+
+## The MapTiler key
+
+Maps need a key. **It is never committed.** A build without one still runs —
+the map screens disable themselves and say so, which is the designed
+behaviour, not a failure.
+
+### On your own machine
+
+Create `safarsathi/maptiler.json`, which is gitignored:
+
+```json
+{ "MAPTILER_KEY": "your key" }
+```
+
+Then:
+
+```
+flutter run --dart-define-from-file=maptiler.json
+flutter build apk --release --dart-define-from-file=maptiler.json
+```
+
+`maptiler.example.json` is committed as a template. Copy it, do not edit it.
+
+### In CI
+
+Add a repository secret named `MAPTILER_KEY` under **Settings → Secrets and
+variables → Actions**. The workflow passes it through `--dart-define` and
+prints whether maps ended up enabled, so a missing secret is visible in the
+build log rather than only on the phone.
+
+### Restrict the key
+
+`--dart-define` bakes the value into the binary, as every mobile map SDK does.
+It is not a secret from whoever holds the APK; what this avoids is the key
+living in git history forever.
+
+**The control that actually matters is in the MapTiler dashboard: restrict the
+key to this app's package name.** Do that now rather than later.
+
+---
+
 ## Get the code
 
 The project lives in the `ml` repo for now, on the working branch, in the

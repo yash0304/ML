@@ -9572,6 +9572,439 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   }
 }
 
+class $MapTilesTable extends MapTiles with TableInfo<$MapTilesTable, MapTile> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MapTilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _providerMeta = const VerificationMeta(
+    'provider',
+  );
+  @override
+  late final GeneratedColumn<String> provider = GeneratedColumn<String>(
+    'provider',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _zMeta = const VerificationMeta('z');
+  @override
+  late final GeneratedColumn<int> z = GeneratedColumn<int>(
+    'z',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _xMeta = const VerificationMeta('x');
+  @override
+  late final GeneratedColumn<int> x = GeneratedColumn<int>(
+    'x',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _yMeta = const VerificationMeta('y');
+  @override
+  late final GeneratedColumn<int> y = GeneratedColumn<int>(
+    'y',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bytesMeta = const VerificationMeta('bytes');
+  @override
+  late final GeneratedColumn<int> bytes = GeneratedColumn<int>(
+    'bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    provider,
+    z,
+    x,
+    y,
+    bytes,
+    fetchedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'map_tiles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MapTile> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('provider')) {
+      context.handle(
+        _providerMeta,
+        provider.isAcceptableOrUnknown(data['provider']!, _providerMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_providerMeta);
+    }
+    if (data.containsKey('z')) {
+      context.handle(_zMeta, z.isAcceptableOrUnknown(data['z']!, _zMeta));
+    } else if (isInserting) {
+      context.missing(_zMeta);
+    }
+    if (data.containsKey('x')) {
+      context.handle(_xMeta, x.isAcceptableOrUnknown(data['x']!, _xMeta));
+    } else if (isInserting) {
+      context.missing(_xMeta);
+    }
+    if (data.containsKey('y')) {
+      context.handle(_yMeta, y.isAcceptableOrUnknown(data['y']!, _yMeta));
+    } else if (isInserting) {
+      context.missing(_yMeta);
+    }
+    if (data.containsKey('bytes')) {
+      context.handle(
+        _bytesMeta,
+        bytes.isAcceptableOrUnknown(data['bytes']!, _bytesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bytesMeta);
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {provider, z, x, y},
+  ];
+  @override
+  MapTile map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MapTile(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      provider: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider'],
+      )!,
+      z: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}z'],
+      )!,
+      x: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}x'],
+      )!,
+      y: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}y'],
+      )!,
+      bytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}bytes'],
+      )!,
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+    );
+  }
+
+  @override
+  $MapTilesTable createAlias(String alias) {
+    return $MapTilesTable(attachedDatabase, alias);
+  }
+}
+
+class MapTile extends DataClass implements Insertable<MapTile> {
+  final int id;
+
+  /// Which provider served it. Two providers' tiles must never be mistaken
+  /// for each other, so this is part of the identity and part of the path.
+  final String provider;
+  final int z;
+  final int x;
+  final int y;
+  final int bytes;
+  final DateTime fetchedAt;
+  const MapTile({
+    required this.id,
+    required this.provider,
+    required this.z,
+    required this.x,
+    required this.y,
+    required this.bytes,
+    required this.fetchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['provider'] = Variable<String>(provider);
+    map['z'] = Variable<int>(z);
+    map['x'] = Variable<int>(x);
+    map['y'] = Variable<int>(y);
+    map['bytes'] = Variable<int>(bytes);
+    map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    return map;
+  }
+
+  MapTilesCompanion toCompanion(bool nullToAbsent) {
+    return MapTilesCompanion(
+      id: Value(id),
+      provider: Value(provider),
+      z: Value(z),
+      x: Value(x),
+      y: Value(y),
+      bytes: Value(bytes),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory MapTile.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MapTile(
+      id: serializer.fromJson<int>(json['id']),
+      provider: serializer.fromJson<String>(json['provider']),
+      z: serializer.fromJson<int>(json['z']),
+      x: serializer.fromJson<int>(json['x']),
+      y: serializer.fromJson<int>(json['y']),
+      bytes: serializer.fromJson<int>(json['bytes']),
+      fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'provider': serializer.toJson<String>(provider),
+      'z': serializer.toJson<int>(z),
+      'x': serializer.toJson<int>(x),
+      'y': serializer.toJson<int>(y),
+      'bytes': serializer.toJson<int>(bytes),
+      'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+    };
+  }
+
+  MapTile copyWith({
+    int? id,
+    String? provider,
+    int? z,
+    int? x,
+    int? y,
+    int? bytes,
+    DateTime? fetchedAt,
+  }) => MapTile(
+    id: id ?? this.id,
+    provider: provider ?? this.provider,
+    z: z ?? this.z,
+    x: x ?? this.x,
+    y: y ?? this.y,
+    bytes: bytes ?? this.bytes,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
+  MapTile copyWithCompanion(MapTilesCompanion data) {
+    return MapTile(
+      id: data.id.present ? data.id.value : this.id,
+      provider: data.provider.present ? data.provider.value : this.provider,
+      z: data.z.present ? data.z.value : this.z,
+      x: data.x.present ? data.x.value : this.x,
+      y: data.y.present ? data.y.value : this.y,
+      bytes: data.bytes.present ? data.bytes.value : this.bytes,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MapTile(')
+          ..write('id: $id, ')
+          ..write('provider: $provider, ')
+          ..write('z: $z, ')
+          ..write('x: $x, ')
+          ..write('y: $y, ')
+          ..write('bytes: $bytes, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, provider, z, x, y, bytes, fetchedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MapTile &&
+          other.id == this.id &&
+          other.provider == this.provider &&
+          other.z == this.z &&
+          other.x == this.x &&
+          other.y == this.y &&
+          other.bytes == this.bytes &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class MapTilesCompanion extends UpdateCompanion<MapTile> {
+  final Value<int> id;
+  final Value<String> provider;
+  final Value<int> z;
+  final Value<int> x;
+  final Value<int> y;
+  final Value<int> bytes;
+  final Value<DateTime> fetchedAt;
+  const MapTilesCompanion({
+    this.id = const Value.absent(),
+    this.provider = const Value.absent(),
+    this.z = const Value.absent(),
+    this.x = const Value.absent(),
+    this.y = const Value.absent(),
+    this.bytes = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+  });
+  MapTilesCompanion.insert({
+    this.id = const Value.absent(),
+    required String provider,
+    required int z,
+    required int x,
+    required int y,
+    required int bytes,
+    this.fetchedAt = const Value.absent(),
+  }) : provider = Value(provider),
+       z = Value(z),
+       x = Value(x),
+       y = Value(y),
+       bytes = Value(bytes);
+  static Insertable<MapTile> custom({
+    Expression<int>? id,
+    Expression<String>? provider,
+    Expression<int>? z,
+    Expression<int>? x,
+    Expression<int>? y,
+    Expression<int>? bytes,
+    Expression<DateTime>? fetchedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (provider != null) 'provider': provider,
+      if (z != null) 'z': z,
+      if (x != null) 'x': x,
+      if (y != null) 'y': y,
+      if (bytes != null) 'bytes': bytes,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+    });
+  }
+
+  MapTilesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? provider,
+    Value<int>? z,
+    Value<int>? x,
+    Value<int>? y,
+    Value<int>? bytes,
+    Value<DateTime>? fetchedAt,
+  }) {
+    return MapTilesCompanion(
+      id: id ?? this.id,
+      provider: provider ?? this.provider,
+      z: z ?? this.z,
+      x: x ?? this.x,
+      y: y ?? this.y,
+      bytes: bytes ?? this.bytes,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (provider.present) {
+      map['provider'] = Variable<String>(provider.value);
+    }
+    if (z.present) {
+      map['z'] = Variable<int>(z.value);
+    }
+    if (x.present) {
+      map['x'] = Variable<int>(x.value);
+    }
+    if (y.present) {
+      map['y'] = Variable<int>(y.value);
+    }
+    if (bytes.present) {
+      map['bytes'] = Variable<int>(bytes.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MapTilesCompanion(')
+          ..write('id: $id, ')
+          ..write('provider: $provider, ')
+          ..write('z: $z, ')
+          ..write('x: $x, ')
+          ..write('y: $y, ')
+          ..write('bytes: $bytes, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -9599,6 +10032,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
+  late final $MapTilesTable mapTiles = $MapTilesTable(this);
   late final ContactsDao contactsDao = ContactsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -9622,6 +10056,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     timelineEntries,
     trustedContacts,
     appSettings,
+    mapTiles,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -19681,6 +20116,241 @@ typedef $$AppSettingsTableProcessedTableManager =
       AppSetting,
       PrefetchHooks Function()
     >;
+typedef $$MapTilesTableCreateCompanionBuilder =
+    MapTilesCompanion Function({
+      Value<int> id,
+      required String provider,
+      required int z,
+      required int x,
+      required int y,
+      required int bytes,
+      Value<DateTime> fetchedAt,
+    });
+typedef $$MapTilesTableUpdateCompanionBuilder =
+    MapTilesCompanion Function({
+      Value<int> id,
+      Value<String> provider,
+      Value<int> z,
+      Value<int> x,
+      Value<int> y,
+      Value<int> bytes,
+      Value<DateTime> fetchedAt,
+    });
+
+class $$MapTilesTableFilterComposer
+    extends Composer<_$AppDatabase, $MapTilesTable> {
+  $$MapTilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get provider => $composableBuilder(
+    column: $table.provider,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get z => $composableBuilder(
+    column: $table.z,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get x => $composableBuilder(
+    column: $table.x,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get y => $composableBuilder(
+    column: $table.y,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MapTilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MapTilesTable> {
+  $$MapTilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get provider => $composableBuilder(
+    column: $table.provider,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get z => $composableBuilder(
+    column: $table.z,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get x => $composableBuilder(
+    column: $table.x,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get y => $composableBuilder(
+    column: $table.y,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MapTilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MapTilesTable> {
+  $$MapTilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get provider =>
+      $composableBuilder(column: $table.provider, builder: (column) => column);
+
+  GeneratedColumn<int> get z =>
+      $composableBuilder(column: $table.z, builder: (column) => column);
+
+  GeneratedColumn<int> get x =>
+      $composableBuilder(column: $table.x, builder: (column) => column);
+
+  GeneratedColumn<int> get y =>
+      $composableBuilder(column: $table.y, builder: (column) => column);
+
+  GeneratedColumn<int> get bytes =>
+      $composableBuilder(column: $table.bytes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+}
+
+class $$MapTilesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MapTilesTable,
+          MapTile,
+          $$MapTilesTableFilterComposer,
+          $$MapTilesTableOrderingComposer,
+          $$MapTilesTableAnnotationComposer,
+          $$MapTilesTableCreateCompanionBuilder,
+          $$MapTilesTableUpdateCompanionBuilder,
+          (MapTile, BaseReferences<_$AppDatabase, $MapTilesTable, MapTile>),
+          MapTile,
+          PrefetchHooks Function()
+        > {
+  $$MapTilesTableTableManager(_$AppDatabase db, $MapTilesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MapTilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MapTilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MapTilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> provider = const Value.absent(),
+                Value<int> z = const Value.absent(),
+                Value<int> x = const Value.absent(),
+                Value<int> y = const Value.absent(),
+                Value<int> bytes = const Value.absent(),
+                Value<DateTime> fetchedAt = const Value.absent(),
+              }) => MapTilesCompanion(
+                id: id,
+                provider: provider,
+                z: z,
+                x: x,
+                y: y,
+                bytes: bytes,
+                fetchedAt: fetchedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String provider,
+                required int z,
+                required int x,
+                required int y,
+                required int bytes,
+                Value<DateTime> fetchedAt = const Value.absent(),
+              }) => MapTilesCompanion.insert(
+                id: id,
+                provider: provider,
+                z: z,
+                x: x,
+                y: y,
+                bytes: bytes,
+                fetchedAt: fetchedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$MapTilesTable, MapTile>(table),
+                  BaseReferences<_$AppDatabase, $MapTilesTable, MapTile>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MapTilesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MapTilesTable,
+      MapTile,
+      $$MapTilesTableFilterComposer,
+      $$MapTilesTableOrderingComposer,
+      $$MapTilesTableAnnotationComposer,
+      $$MapTilesTableCreateCompanionBuilder,
+      $$MapTilesTableUpdateCompanionBuilder,
+      (MapTile, BaseReferences<_$AppDatabase, $MapTilesTable, MapTile>),
+      MapTile,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -19717,4 +20387,6 @@ class $AppDatabaseManager {
       $$TrustedContactsTableTableManager(_db, _db.trustedContacts);
   $$AppSettingsTableTableManager get appSettings =>
       $$AppSettingsTableTableManager(_db, _db.appSettings);
+  $$MapTilesTableTableManager get mapTiles =>
+      $$MapTilesTableTableManager(_db, _db.mapTiles);
 }

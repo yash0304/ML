@@ -278,7 +278,7 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   bbox, compute each POI's distance from the route.
   *Depends on #21, #22.*
 
-- [ ] **#24 Map tile caching** — L — *split before starting*
+- [x] **#24 Map tile caching** — L — *MapTiler behind a provider interface; tile cache written rather than FMTC; key via --dart-define*
   `flutter_map` + FMTC. Region download at a defined zoom range.
   **Use MapTiler or Stadia, not the standard OSM tile server** — see
   PROJECT_RUNDOWN §6. Needs an API key and a size estimate shown to the

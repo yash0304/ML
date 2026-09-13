@@ -1,0 +1,4 @@
+{
+  "_comment": "Copy this to maptiler.json, which is gitignored, and put your own key in it. Build with: flutter run --dart-define-from-file=maptiler.json",
+  "MAPTILER_KEY": "put-your-maptiler-key-here"
+}

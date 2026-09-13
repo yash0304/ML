@@ -37,6 +37,7 @@ part 'app_database.g.dart';
     TimelineEntries,
     TrustedContacts,
     AppSettings,
+    MapTiles,
   ],
   daos: [ContactsDao],
 )
@@ -45,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openOnDevice());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -71,6 +72,11 @@ class AppDatabase extends _$AppDatabase {
         // v3 adds the AppSettings key-value table (#35). Nothing reads it
         // before it exists, so an empty table is a complete migration.
         await m.createTable(appSettings);
+      }
+      if (from < 4) {
+        // v4 adds the MapTiles index (#24). The tiles themselves are files;
+        // an empty index simply means nothing has been downloaded yet.
+        await m.createTable(mapTiles);
       }
     },
 

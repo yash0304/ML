@@ -19,6 +19,7 @@ class MoreScreen extends StatelessWidget {
   final VoidCallback onChecklist;
   final VoidCallback onTravellers;
   final VoidCallback onWeather;
+  final VoidCallback onMap;
   final VoidCallback onSettings;
   final VoidCallback onImport;
   final VoidCallback onHistory;
@@ -36,6 +37,7 @@ class MoreScreen extends StatelessWidget {
     required this.onChecklist,
     required this.onTravellers,
     required this.onWeather,
+    required this.onMap,
     required this.onSettings,
     required this.onImport,
     required this.onHistory,
@@ -93,6 +95,14 @@ class MoreScreen extends StatelessWidget {
               title: 'Who is on this trip',
               subtitle: 'Names only. No accounts, nothing sent anywhere.',
               onTap: onTravellers,
+            ),
+            _Item(
+              icon: Icons.map_outlined,
+              title: 'Offline map',
+              subtitle:
+                  'Download the map for this trip on WiFi. After that it '
+                  'works with no signal at all.',
+              onTap: onMap,
             ),
             _Item(
               icon: Icons.cloud_outlined,
@@ -173,10 +183,9 @@ class MoreScreen extends StatelessWidget {
                 horizontal: AppTokens.gutter,
               ),
               child: Text(
-                'The map itself and the route-discovery screen (#24, #25, '
-                '#27, #28) — the corridor data is built and waiting on a tile '
-                'provider. The GPS timeline (#30). Trusted-contact check-ins '
-                '(#33, #34).\n\n'
+                'The sync orchestrator that downloads everything in one go '
+                '(#25), and the route-discovery screen (#27, #28). The GPS '
+                'timeline (#30). Trusted-contact check-ins (#33, #34).\n\n'
                 'This app makes no network call at any point. The release '
                 'build does not even ask for permission to.',
                 style: AppTokens.captionStyle.copyWith(color: c.muted),

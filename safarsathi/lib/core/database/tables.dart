@@ -476,3 +476,32 @@ class AppSettings extends Table {
   @override
   Set<Column<Object>> get primaryKey => {key};
 }
+
+/// What map tiles are on this phone — issue #24.
+///
+/// The tiles themselves are files under the app's documents directory; this
+/// indexes them so the cache screen can state a real number rather than
+/// walking a directory tree, and so a re-download knows what to skip.
+///
+/// Deliberately NOT flutter_map_tile_caching, which stores tiles in ObjectBox
+/// — a second native database engine beside SQLite. A cache is not worth
+/// another build to break and another migration story. See DECISIONS.md.
+class MapTiles extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Which provider served it. Two providers' tiles must never be mistaken
+  /// for each other, so this is part of the identity and part of the path.
+  TextColumn get provider => text()();
+
+  IntColumn get z => integer()();
+  IntColumn get x => integer()();
+  IntColumn get y => integer()();
+
+  IntColumn get bytes => integer()();
+  DateTimeColumn get fetchedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => [
+    {provider, z, x, y},
+  ];
+}

@@ -5,6 +5,28 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-13 — [MAP] **MapTiler is the tile provider.** Chosen by Yash, who holds the account. (Resolves the open question that had blocked #24 since the milestone was written. The standard OSM tile server was never an option: its usage policy forbids the bulk downloading that is the entire feature.)
+
+2026-09-13 — [MAP] The provider sits behind a `MapTileProvider` interface and nothing outside `tile_provider.dart` names MapTiler. Attribution is part of the interface, not an afterthought. (Swapping to Stadia later is a new implementation and one line. Attribution is in the interface because every provider's terms require it and a map rendering without it is a licence violation — a new implementation should not be able to compile without supplying one.)
+
+2026-09-13 — [MAP] The API key arrives through `String.fromEnvironment`, filled by `--dart-define`: a gitignored `maptiler.json` locally, a GitHub Actions secret in CI, and nothing at all otherwise. **A build with no key runs, disables the map, and says so.** (A blank grey rectangle is indistinguishable from a bug. The key is a compile-time constant so it is baked into the binary, as with every mobile map SDK — that is not a secret from whoever holds the APK. What this protects is the key never entering git history. The control that actually matters is restricting the key to the app's package name in the MapTiler dashboard, and that is written into the docs rather than assumed.)
+
+2026-09-13 — [MAP] **Not flutter_map_tile_caching.** The tile cache is written here instead. (FMTC stores tiles in ObjectBox — a second native database engine beside SQLite. This app's stated invariant is that SQLite is the only source of truth; a cache is not worth another native build to break and another migration story. Slippy-map arithmetic is forty lines, tiles are files on disk, and the index is one Drift table. The same trade this project already took for Levenshtein, the polyline codec and `combineLatest2`.)
+
+2026-09-13 — [MAP] **The rendering path has no HTTP client at all.** Not a fallback, not a timeout, not a retry. A tile that was not downloaded renders as a transparent pixel. (The absence IS the guarantee. Any code path that could reach the network is one that will, on a mountain road, with no signal, while the user waits.)
+
+2026-09-13 — [MAP] Zoom 12 to 15, and the tile count is shown before anything downloads. (Tile count grows as 4^z: the same corridor at zoom 18 is over a hundred times the tiles of zoom 14, for detail nobody reads at a dhaba. The estimate says it is an estimate, because a wrong guess about size on a metered connection is not forgiven.)
+
+2026-09-13 — [MAP] Downloads are serial with a small delay, and resumable by construction — a tile already on disk is skipped. A rejected key or a rate-limit stops the whole run; any other single-tile failure does not. (A hundred parallel requests is how a free tier gets blocked. A key problem affects every remaining tile, so continuing would be thousands of guaranteed failures against someone else's quota; a missing tile is just ocean.)
+
+2026-09-13 — [MAP] A trip's tiles are deduplicated across legs before counting or downloading. (Adjacent legs share the terrain around the stop they meet at, so counting per box charges the user twice. Using one box around the whole trip would be worse still — for a loop it is mostly ground nobody drives through.)
+
+2026-09-13 — [MAP] Clearing the tile cache deletes the FILES, not only the index. (Clearing the index alone would leave hundreds of megabytes on the phone reporting as zero, which is the worst possible answer to "clear the cache".)
+
+2026-09-13 — [SCHEMA] schemaVersion goes to 4, adding the `MapTiles` index. Its unique key is (provider, z, x, y). (Two providers' tiles must never be mistaken for each other and the same tile must never be counted twice. Found while writing it: `insertOnConflictUpdate` defaults to conflicting on the PRIMARY key, which an autoIncrement insert never supplies — so re-writing a tile threw a constraint error instead of updating. The conflict target is now the unique key, explicitly.)
+
+2026-09-13 — [MAP] `MapDownloadScreen` converts its usage stream to broadcast before subscribing. (The usage row lives in a ListView, whose children are disposed and rebuilt freely; a single-subscription stream throws on the second subscribe. Drift's own streams are broadcast so this never bit in production, but a screen that only works with one kind of stream is a trap for the next caller.)
+
 2026-09-13 — [SCHEMA] schemaVersion goes to 3, adding the `AppSettings` key-value table. Migration steps now run in ascending version order, and a comment says why. (The v2 and v3 steps happen to be independent, but a step written as `from < 3` above one written as `from < 2` would silently misbehave the moment a later step assumed an earlier one's column — and only on the phones that had been sitting on the older version. Caught by reading, before it could matter.)
 
 2026-09-13 — [SETTINGS] Settings live in the database, not in shared preferences. (So there is still exactly one place this app keeps state and exactly one thing to back up. There are three keys, and every option is a thing that can be wrong.)

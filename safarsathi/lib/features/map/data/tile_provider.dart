@@ -1,0 +1,140 @@
+// lib/features/map/data/tile_provider.dart
+//
+// What any raster tile source has to supply — issue #24.
+//
+// MapTiler is what this app uses today. NOTHING OUTSIDE THIS FILE NAMES IT.
+// Swapping to Stadia, Thunderforest or a self-hosted server later is a new
+// implementation of this interface and one line in `activeTileProvider`.
+//
+// THE API KEY NEVER ENTERS THE REPOSITORY. It arrives through
+// `String.fromEnvironment`, which Flutter fills from `--dart-define` at build
+// time: a gitignored JSON file locally, a GitHub secret in CI, and nothing at
+// all when neither is present — in which case the map disables itself and says
+// so, because a blank grey rectangle is indistinguishable from a bug.
+
+/// A raster tile source.
+abstract class MapTileProvider {
+  /// Stable key used in the on-disk cache path and the tile index, so two
+  /// providers' tiles can never be mistaken for each other.
+  String get id;
+
+  /// Shown to the user wherever the source is named.
+  String get label;
+
+  /// True when the provider has everything it needs to serve a tile. False
+  /// means no key.
+  bool get isConfigured;
+
+  /// Why it is not configured, in words a person can act on.
+  String get configurationHint;
+
+  /// LEGALLY REQUIRED, on every map, by every provider's terms. Part of the
+  /// interface rather than an afterthought, so a new implementation cannot
+  /// forget it: a map rendering without attribution is a licence violation,
+  /// not a styling choice.
+  String get attribution;
+
+  int get tileSize;
+  int get minZoom;
+  int get maxZoom;
+
+  /// The URL for one tile. Throws when unconfigured rather than returning a
+  /// URL that will 403 — a failure at the point of the mistake beats a
+  /// thousand failed requests.
+  String urlFor(int z, int x, int y);
+}
+
+class TileProviderNotConfigured implements Exception {
+  final String message;
+  const TileProviderNotConfigured(this.message);
+  @override
+  String toString() => message;
+}
+
+/// MapTiler's raster tiles.
+///
+/// The key is a compile-time constant, so it ends up in the binary. That is
+/// what every mobile map SDK does and it is not a secret from whoever holds
+/// the APK; what this protects against is the key sitting in a public git
+/// history forever. The control that actually matters is restricting the key
+/// to this app's package name in the MapTiler dashboard.
+class MapTilerRaster implements MapTileProvider {
+  /// Supplied at build time. Empty when nobody passed one.
+  final String apiKey;
+
+  /// MapTiler's style id. `outdoor-v2` carries terrain shading and trails,
+  /// which is the right map for a road trip through hills; `streets-v2` is
+  /// the flatter city alternative.
+  final String style;
+
+  const MapTilerRaster({
+    this.apiKey = const String.fromEnvironment('MAPTILER_KEY'),
+    this.style = 'outdoor-v2',
+  });
+
+  @override
+  String get id => 'maptiler-$style';
+
+  @override
+  String get label => 'MapTiler';
+
+  @override
+  bool get isConfigured => apiKey.isNotEmpty;
+
+  @override
+  String get configurationHint =>
+      'No MapTiler key in this build, so maps are off. '
+      'Build with --dart-define=MAPTILER_KEY=… to switch them on.';
+
+  @override
+  String get attribution => '© MapTiler © OpenStreetMap contributors';
+
+  @override
+  int get tileSize => 512;
+
+  /// 1 to 20 is what MapTiler serves. What this app actually downloads is a
+  /// much narrower band; see `TileDownloader`.
+  @override
+  int get minZoom => 1;
+
+  @override
+  int get maxZoom => 20;
+
+  @override
+  String urlFor(int z, int x, int y) {
+    if (!isConfigured) {
+      throw const TileProviderNotConfigured(
+        'No MapTiler key in this build.',
+      );
+    }
+    return 'https://api.maptiler.com/maps/$style/$z/$x/$y@2x.png?key=$apiKey';
+  }
+}
+
+/// A provider that serves nothing, for tests and for a build with no key.
+class NoTileProvider implements MapTileProvider {
+  const NoTileProvider();
+
+  @override
+  String get id => 'none';
+  @override
+  String get label => 'No map provider';
+  @override
+  bool get isConfigured => false;
+  @override
+  String get configurationHint => 'No map provider is configured.';
+  @override
+  String get attribution => '';
+  @override
+  int get tileSize => 256;
+  @override
+  int get minZoom => 0;
+  @override
+  int get maxZoom => 0;
+  @override
+  String urlFor(int z, int x, int y) =>
+      throw const TileProviderNotConfigured('No map provider is configured.');
+}
+
+/// THE ONE LINE THAT PICKS A PROVIDER. Everything else in the app reads this.
+const MapTileProvider activeTileProvider = MapTilerRaster();

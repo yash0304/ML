@@ -30,6 +30,16 @@ dependencies:
   # offline absolutely, and every sync surface says what it is fetching.
   http: ^1.5.0
 
+  # Map rendering. Pure Dart — no platform channels, so no Gradle surface.
+  # Tile CACHING is ours (features/map/data), deliberately not FMTC: that
+  # stores tiles in ObjectBox, a second native database engine beside SQLite.
+  # See DECISIONS.md.
+  flutter_map: ^8.2.2
+
+  # flutter_map's coordinate type. Declared directly rather than relied on
+  # transitively, so a flutter_map upgrade cannot silently move it.
+  latlong2: ^0.9.1
+
   # E.164 normalisation. Pure Dart, no platform channel, works offline.
   # The backlog originally named libphonenumber_plugin, which wraps the
   # native library over a channel — see DECISIONS.md.

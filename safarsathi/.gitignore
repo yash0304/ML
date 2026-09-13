@@ -26,3 +26,15 @@ ios/Flutter/flutter_export_environment.sh
 # Golden-image diffs, written when a golden test fails. Reproducible from a
 # test run; never part of the record.
 test/failures/
+
+# THE MAPTILER KEY NEVER ENTERS THE REPOSITORY.
+#
+# Create maptiler.json beside pubspec.yaml, holding:
+#   { "MAPTILER_KEY": "your key" }
+# then build with:
+#   flutter run --dart-define-from-file=maptiler.json
+#
+# CI passes the same value from a GitHub Actions secret. A build with neither
+# still runs — the map disables itself and says so. See maptiler.example.json.
+maptiler.json
+*.maptiler.json

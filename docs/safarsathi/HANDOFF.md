@@ -1,25 +1,38 @@
-# HANDOFF — SafarSathi — 2026-09-13 (after stop coordinates, #26 and #35)
+# HANDOFF — SafarSathi — 2026-09-13 (after #24, the offline map)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1–#9, #11–#23, #26, #29, #31, #32, #35, #50, #53, #54, #55 are
+- **Issues #1–#9, #11–#24, #26, #29, #31, #32, #35, #50, #53, #54, #55 are
   done except for the device check.** The project analyses clean and passes
-  **516 tests** in about thirty seconds on Flutter 3.47.3 / Dart 3.13.3.
-- Backlog position: 31 / 55 done.
-- **The database is at schemaVersion 3.** v2 added `ChecklistItems.
-  generatorKey`; v3 added the `AppSettings` table. Steps run in ascending
-  order and each one is additive; none is ever edited.
-- **The offline claim is narrower than it was.** The release manifest declares
-  `INTERNET`. The app is offline *while you are moving*, not offline
-  absolutely. Read the comment at the top of
-  `android/app/src/main/AndroidManifest.xml` before touching anything
-  network-shaped.
-- Yash has installed a build and says the app looks OK. The four
-  hardware-only questions below are therefore probably fine, but none has been
-  confirmed in words yet.
+  **577 tests** in about forty seconds on Flutter 3.47.3 / Dart 3.13.3.
+- Backlog position: 32 / 55 done. **Nothing is blocked any more.**
+- **The database is at schemaVersion 4.** v2 `ChecklistItems.generatorKey`,
+  v3 `AppSettings`, v4 `MapTiles`. Steps run in ascending order, each additive,
+  none ever edited.
+- The app is offline *while you are moving*, not offline absolutely. Read the
+  comment at the top of `android/app/src/main/AndroidManifest.xml`.
+
+## The map, and its key
+
+**MapTiler**, chosen by Yash, behind a `MapTileProvider` interface. Nothing
+outside `features/map/data/tile_provider.dart` names it; swapping to Stadia is
+a new implementation and one line in `activeTileProvider`.
+
+**The key is never committed.** `String.fromEnvironment('MAPTILER_KEY')`,
+filled from `--dart-define`: a gitignored `maptiler.json` locally, a GitHub
+Actions secret in CI. A build with no key runs and disables the map with a
+sentence. See RUNNING.md.
+
+The tile cache is **written here, not FMTC** — FMTC stores tiles in ObjectBox,
+a second native database engine beside SQLite. Tiles are files under
+`<documents>/tiles/<provider>/<z>/<x>/<y>.png`, indexed in the `MapTiles`
+table.
+
+**`OfflineTileProvider` has no HTTP client at all.** A tile that was not
+downloaded renders as a transparent pixel. That absence is the guarantee.
 
 ## BLOCKED: the tile provider
 
@@ -94,7 +107,7 @@ settle, and what to do when each fails.
 flutter test --update-goldens test/golden_test.dart
 ```
 
-Writes `test/goldens/*.png` — twenty-four images now: the diary in both themes, empty
+Writes `test/goldens/*.png` — twenty-six images now: the diary in both themes, empty
 and mid-copy; the entry form; an entry unconfirmed and confirmed; the
 emergency screen; the trip screen; the money screen. Rendered from the real
 widget tree with the bundled fonts and the SDK icon font loaded.
@@ -248,6 +261,22 @@ real Tier-1 codes with their government sources.
 | Call history shows copies as actions | widget test |
 | `app_settings` has `key` as its primary key | test against PRAGMA |
 | A setting upserts rather than duplicating | test |
+| Tile maths matches a hand-worked coordinate | test |
+| **Latitude clamps at the Mercator limit** | test |
+| Tile count grows as 4^z | test |
+| Counting matches generating | test |
+| **No key disables the map and says why** | test + widget test |
+| **No real key is compiled into the test build** | test |
+| Attribution is on every drawn map | widget test |
+| A missing tile is null, never an error | test |
+| Two providers cannot see each other's tiles | test |
+| **Clearing removes the files, not just the index** | test |
+| The estimate is shown and fetches nothing | test + widget test |
+| **A second download fetches nothing** | test |
+| A rejected key stops the run; a missing tile does not | test |
+| Adjacent legs do not double-count shared terrain | test |
+| Legs without coordinates are named, not skipped | widget test |
+| `map_tiles` identity is unique per provider | test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -323,23 +352,22 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**Still: ask Yash for the tile provider.** #24 cannot start without it and he
-has to create an account either way. MapTiler or Stadia; the OSM standard tile
-server is not an option.
-
-Everything else that could be done without it now has been. What remains,
-in order of usefulness:
+**Nothing is blocked. Two things are worth more than the rest.**
 
 1. **#36, verify the four flagged numbers** (1930, 1078, 1033, 104) against
-   government sources. Small, and it is the SOS tab — the screen the whole
-   trust system exists to protect. This is the highest-value thing left that
-   is not blocked.
-2. **#51 and #52**, the stop and leg detail screens.
-3. **#10**, the multi-add screen for contacts.
-4. **#41–#49**, the visual polish pass. Mostly small.
+   government sources, and seed the ones that check out. Small, and it is the
+   SOS tab — the screen the whole trust system exists to protect. This is the
+   highest-value issue left in the backlog.
+2. **#25, the sync orchestrator.** Everything it needs now exists: routes,
+   places, weather and tiles all download per leg. What is missing is the one
+   screen that does all four together with per-leg progress. Right now the
+   user has to visit three separate screens and know to.
 
-**#30 (GPS timeline) and #33/#34 (check-in escalation) are large and involve
-background services.** Neither should be started before October.
+Then #27 and #28 (the discovery screen and POI detail), which finally show
+the corridor data to a person, and #51/#52 (stop and leg detail).
+
+**#30 (GPS timeline) and #33/#34 (check-in escalation) involve background
+services.** Neither should be started before October.
 
 Still owed on hardware, none of it confirmed in words yet:
 
@@ -348,9 +376,9 @@ Still owed on hardware, none of it confirmed in words yet:
 3. Does `tel:` with an empty path open the Android dialer, or error?
 4. Is the night palette pleasant at 2am, as opposed to merely compliant?
 
-**Two new hardware risks in this build:** a second schema migration, and the
-first release build that can reach the network. If it crashes on launch,
-uninstall and reinstall rather than adding a destructive fallback.
+**New in this build:** a third schema migration, the first real map, and the
+first build where a wrong key produces a visible message rather than a crash.
+Test the map with the key AND check what a wrong key does.
 
 ## Note on the environment
 

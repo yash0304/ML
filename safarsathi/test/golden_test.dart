@@ -40,6 +40,11 @@ import 'package:safarsathi/features/settings/data/settings.dart';
 import 'package:safarsathi/features/settings/presentation/settings_screen.dart';
 import 'package:safarsathi/features/weather/data/weather_sync.dart';
 import 'package:safarsathi/features/weather/presentation/weather_screen.dart';
+import 'package:safarsathi/features/map/data/map_download.dart';
+import 'package:safarsathi/features/map/data/tile_downloader.dart';
+import 'package:safarsathi/features/map/data/tile_provider.dart';
+import 'package:safarsathi/features/map/presentation/map_download_screen.dart';
+
 import 'package:safarsathi/features/import/data/column_mapping.dart';
 import 'package:safarsathi/features/import/data/import_commit.dart';
 import 'package:safarsathi/features/import/data/import_validation.dart';
@@ -670,6 +675,7 @@ void main() {
         onTravellers: () {},
         onWeather: () {},
         onSettings: () {},
+        onMap: () {},
         onImport: () {},
         onHistory: () {},
         onTemplate: () {},
@@ -1126,6 +1132,55 @@ void main() {
             phoneRaw: '+91 90000 00002',
           ),
         ]),
+      ),
+    );
+  });
+
+  // ---------------------------------------------------------------------
+  // Offline map (#24)
+  // ---------------------------------------------------------------------
+
+  // NO DATABASE IN THIS TEST. The first draft opened one and closed it in a
+  // tearDown, which is the trap this project recorded at #6: a widget test
+  // cannot close a Drift database — close() awaits work the fake clock never
+  // advances, and the test hangs until the runner gives up ten minutes later.
+  // The screen takes callbacks and a stream, so it never needed one.
+  testWidgets('map download', (tester) async {
+    await shootScreen(
+      tester,
+      'map_download',
+      MapDownloadScreen(
+        provider: const MapTilerRaster(apiKey: 'golden-not-a-real-key'),
+        estimate: () async => const MapEstimate(
+          legCount: 4,
+          legsWithoutCoordinates: 1,
+          tileCount: 1284,
+          alreadyHave: 412,
+        ),
+        download: () => const Stream<TileProgress>.empty(),
+        usage: Stream.value((count: 412, bytes: 9 * 1024 * 1024)),
+        onClear: () async {},
+      ),
+    );
+  });
+
+  testWidgets('map download — no key', (tester) async {
+    // The state a build without a key lands in. It must read as a decision,
+    // not as a broken screen.
+    await shootScreen(
+      tester,
+      'map_no_key',
+      MapDownloadScreen(
+        provider: const MapTilerRaster(apiKey: ''),
+        estimate: () async => const MapEstimate(
+          legCount: 4,
+          legsWithoutCoordinates: 0,
+          tileCount: 1284,
+          alreadyHave: 0,
+        ),
+        download: () => const Stream<TileProgress>.empty(),
+        usage: Stream.value((count: 0, bytes: 0)),
+        onClear: () async {},
       ),
     );
   });

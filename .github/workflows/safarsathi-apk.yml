@@ -52,8 +52,32 @@ jobs:
       - run: flutter analyze
       - run: flutter test
 
+      # THE KEY COMES FROM A SECRET, NEVER FROM A TRACKED FILE.
+      #
+      # Set MAPTILER_KEY under Settings → Secrets and variables → Actions.
+      # Without it the build still succeeds: the map disables itself and says
+      # so on screen, which is the designed behaviour rather than a failure.
+      #
+      # `--dart-define` bakes the value into the binary, as every mobile map
+      # SDK does. That is not a secret from whoever holds the APK; what it
+      # avoids is the key living in git history forever. Restricting the key
+      # to this app's package name in the MapTiler dashboard is the control
+      # that actually matters.
       - name: Build release APK
-        run: flutter build apk --release
+        env:
+          MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
+        run: flutter build apk --release --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+
+      - name: Report whether maps are enabled in this build
+        env:
+          MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
+        run: |
+          if [ -n "$MAPTILER_KEY" ]; then
+            echo "Maps ENABLED — a MapTiler key was supplied."
+          else
+            echo "Maps DISABLED — no MAPTILER_KEY secret is set."
+            echo "The app will run and say so on its map screens."
+          fi
 
       - name: Size
         run: ls -lh build/app/outputs/flutter-apk/

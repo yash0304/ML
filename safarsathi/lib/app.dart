@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:path_provider/path_provider.dart';
 import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:phone_numbers_parser/phone_numbers_parser.dart' show IsoCode;
 
@@ -23,6 +26,11 @@ import 'features/import/presentation/import_history_screen.dart';
 import 'features/import/presentation/more_screen.dart';
 import 'features/discovery/data/geo.dart';
 import 'features/discovery/data/geocoder.dart';
+import 'features/map/data/map_download.dart';
+import 'features/map/data/tile_downloader.dart';
+import 'features/map/data/tile_provider.dart';
+import 'features/map/data/tile_store.dart';
+import 'features/map/presentation/map_download_screen.dart';
 import 'features/money/data/expense_editor.dart';
 import 'features/money/data/money_summary.dart';
 import 'features/money/presentation/expense_form_screen.dart';
@@ -109,6 +117,11 @@ class _HomeState extends State<_Home> {
   late final SettingsRepository _settings = SettingsRepository(widget.db);
   late final WeatherSync _weather = WeatherSync(db: widget.db);
   late final Geocoder _geocoder = Geocoder();
+
+  /// Where downloaded tiles live. Resolved once at startup, because
+  /// `getApplicationDocumentsDirectory` is a platform call and the map screen
+  /// should not await one every time it rebuilds.
+  TileStore? _tiles;
   late final Future<void> _ready = _bootstrap();
 
   Future<void> _bootstrap() async {
@@ -116,6 +129,12 @@ class _HomeState extends State<_Home> {
     // build opens on the "no trip" screen and offers to make one.
     await ensureDemoTrip(widget.db);
     await ensureActiveTrip(widget.db);
+
+    final documents = await getApplicationDocumentsDirectory();
+    _tiles = TileStore(
+      db: widget.db,
+      root: Directory('${documents.path}/tiles'),
+    );
   }
 
   // -- trips ---------------------------------------------------------------
@@ -236,6 +255,31 @@ class _HomeState extends State<_Home> {
       ),
     ),
   );
+
+  Future<void> _openMap(BuildContext context, int tripId) async {
+    final store = _tiles;
+    if (store == null) return;
+
+    final download = MapDownload(
+      db: widget.db,
+      downloader: TileDownloader(
+        store: store,
+        provider: activeTileProvider,
+      ),
+    );
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MapDownloadScreen(
+          provider: activeTileProvider,
+          estimate: () => download.estimate(tripId),
+          download: () => download.download(tripId),
+          usage: store.watchUsage(activeTileProvider.id),
+          onClear: () => store.clear(activeTileProvider.id),
+        ),
+      ),
+    );
+  }
 
   Future<void> _openWeather(BuildContext context, int tripId) =>
       Navigator.of(context).push(
@@ -551,6 +595,7 @@ class _HomeState extends State<_Home> {
             onChecklist: () => _openChecklist(context, trip.tripId),
             onTravellers: () => _openTravellers(context, trip.tripId),
             onWeather: () => _openWeather(context, trip.tripId),
+            onMap: () => _openMap(context, trip.tripId),
             onSettings: () => _openSettings(context, trip.tripId),
             onImport: () async {
               await ImportFlow(db: db, tripId: trip.tripId).start(context);

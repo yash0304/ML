@@ -43,7 +43,7 @@ void main() {
 
   test('every table exists', () async {
     final names = await tableNames();
-    expect(names, hasLength(17));
+    expect(names, hasLength(18));
     for (final expected in [
       'trips',
       'stops',
@@ -63,6 +63,8 @@ void main() {
       'trusted_contacts',
       // Added at v3 for #35.
       'app_settings',
+      // Added at v4 for #24.
+      'map_tiles',
     ]) {
       expect(names, contains(expected));
     }
@@ -295,7 +297,7 @@ void main() {
       // then they fail only on the phones that skipped a version.
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
-      expect(db.schemaVersion, 3);
+      expect(db.schemaVersion, 4);
     });
 
     test('v3 created app_settings with its key as the primary key', () async {
@@ -329,5 +331,34 @@ void main() {
       expect(rows.length, 1);
       expect(rows.single.value, 'day');
     });
+  });
+
+  test('v4 created map_tiles with its identity unique, not just its id',
+      () async {
+    // Two providers' tiles must never be mistaken for each other, and the
+    // same tile must never be counted twice.
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await db.customStatement(
+      "INSERT INTO map_tiles (provider, z, x, y, bytes) "
+      "VALUES ('maptiler', 12, 1, 1, 100)",
+    );
+
+    await expectLater(
+      db.customStatement(
+        "INSERT INTO map_tiles (provider, z, x, y, bytes) "
+        "VALUES ('maptiler', 12, 1, 1, 200)",
+      ),
+      throwsA(anything),
+      reason: 'the same tile twice',
+    );
+
+    // A different provider, same coordinates, is a different tile.
+    await db.customStatement(
+      "INSERT INTO map_tiles (provider, z, x, y, bytes) "
+      "VALUES ('stadia', 12, 1, 1, 100)",
+    );
+    expect((await db.select(db.mapTiles).get()).length, 2);
   });
 }
