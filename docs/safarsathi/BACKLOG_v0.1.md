@@ -285,7 +285,7 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   user before download.
   *Depends on #23.*
 
-- [ ] **#25 Sync orchestrator** — L — *split before starting*
+- [x] **#25 Sync orchestrator** — L — *one press, per-item progress, failures listed; no Riverpod — see DECISIONS.md*
   "Download all" across every leg, per-leg progress, resumable on failure,
   `lastSyncedAt` per leg, re-sync while still online. This is the screen
   that likely justifies introducing Riverpod.

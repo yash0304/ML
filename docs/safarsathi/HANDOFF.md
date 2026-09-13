@@ -1,19 +1,30 @@
-# HANDOFF — SafarSathi — 2026-09-13 (after #24, the offline map)
+# HANDOFF — SafarSathi — 2026-09-13 (after #25, the sync orchestrator)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1–#9, #11–#24, #26, #29, #31, #32, #35, #50, #53, #54, #55 are
-  done except for the device check.** The project analyses clean and passes
-  **577 tests** in about forty seconds on Flutter 3.47.3 / Dart 3.13.3.
-- Backlog position: 32 / 55 done. **Nothing is blocked any more.**
-- **The database is at schemaVersion 4.** v2 `ChecklistItems.generatorKey`,
-  v3 `AppSettings`, v4 `MapTiles`. Steps run in ascending order, each additive,
-  none ever edited.
-- The app is offline *while you are moving*, not offline absolutely. Read the
-  comment at the top of `android/app/src/main/AndroidManifest.xml`.
+- **Issues #1–#9, #11–#26, #29, #31, #32, #35, #50, #53, #54, #55 are done
+  except for the device check.** Analyses clean, **605 tests** in about fifty
+  seconds on Flutter 3.47.3 / Dart 3.13.3.
+- Backlog position: 34 / 56 done.
+- **One press downloads everything.** More → "Download everything" runs every
+  leg's route and places, every stop's weather, and the whole map, with
+  per-item progress and a list of anything that failed.
+- Database at **schemaVersion 4**. Steps ascend, each additive, none edited.
+
+## Blocked on nothing — but #36 could not be done here
+
+**#36, verifying 1930, 1078, 1033 and 104, was attempted and abandoned.** This
+container's egress proxy blocks `.gov.in` entirely: `cybercrime.gov.in`,
+`ndma.gov.in` and `www.ndma.gov.in` all refused.
+
+The project rule is absolute — no emergency number ships without a
+government-domain source recorded in `sourceNote`. A search-engine summary is
+not that. **Those four numbers remain unseeded and must stay unseeded until
+someone reads a `.gov.in` page directly.** Yash can do it from a browser in
+five minutes; a future session on a different network may be able to.
 
 ## The map, and its key
 
@@ -107,7 +118,7 @@ settle, and what to do when each fails.
 flutter test --update-goldens test/golden_test.dart
 ```
 
-Writes `test/goldens/*.png` — twenty-six images now: the diary in both themes, empty
+Writes `test/goldens/*.png` — twenty-eight images now: the diary in both themes, empty
 and mid-copy; the entry form; an entry unconfirmed and confirmed; the
 emergency screen; the trip screen; the money screen. Rendered from the real
 widget tree with the bundled fonts and the SDK icon font loaded.
@@ -277,6 +288,17 @@ real Tier-1 codes with their government sources.
 | Adjacent legs do not double-count shared terrain | test |
 | Legs without coordinates are named, not skipped | widget test |
 | `map_tiles` identity is unique per provider | test |
+| One corridor task per leg, one weather per stop | test |
+| **Route and places are one task, not two** | test |
+| Every corridor runs before the map | test |
+| **One failure does not stop the run** | test |
+| A failure carries the task it belongs to | test |
+| **Re-running fetches only what is missing** | test |
+| Progress names the item being worked on | widget test |
+| Failures are listed with their reason | widget test |
+| Skipped legs and stops are named | widget test |
+| Counts read as singular for one | widget test |
+| No failure renders in emergency red | widget test |
 
 **Not verified, and not verifiable without a phone:**
 
@@ -352,22 +374,24 @@ Each of these was silent and would have cost a session later:
 
 ## Next action (this line starts the next session)
 
-**Nothing is blocked. Two things are worth more than the rest.**
+**#27 and #28, the discovery screen and POI detail.** The corridor data has
+been downloaded since #21–#23 and no screen has ever shown it to a person.
+That is the last big gap between what the app knows and what it tells you: a
+list of what is coming up along the current leg, ordered by distance along the
+route, each with "in 12 km".
 
-1. **#36, verify the four flagged numbers** (1930, 1078, 1033, 104) against
-   government sources, and seed the ones that check out. Small, and it is the
-   SOS tab — the screen the whole trust system exists to protect. This is the
-   highest-value issue left in the backlog.
-2. **#25, the sync orchestrator.** Everything it needs now exists: routes,
-   places, weather and tiles all download per leg. What is missing is the one
-   screen that does all four together with per-leg progress. Right now the
-   user has to visit three separate screens and know to.
+Both specs are written: SCREENS.md §5 and the backlog entries. #28 must render
+an OSM phone number **with its unverified marker**, and saving one lands it as
+`userEntered` — the tier rules already enforce that in `CorridorSync`, but the
+screen has to say it.
 
-Then #27 and #28 (the discovery screen and POI detail), which finally show
-the corridor data to a person, and #51/#52 (stop and leg detail).
+After that, #51 and #52 (stop and leg detail), then #10 (multi-add), then the
+visual polish pass #41–#49.
+
+**#36 needs a browser Yash controls.** See the section above.
 
 **#30 (GPS timeline) and #33/#34 (check-in escalation) involve background
-services.** Neither should be started before October.
+services.** Neither before October.
 
 Still owed on hardware, none of it confirmed in words yet:
 
@@ -376,9 +400,9 @@ Still owed on hardware, none of it confirmed in words yet:
 3. Does `tel:` with an empty path open the Android dialer, or error?
 4. Is the night palette pleasant at 2am, as opposed to merely compliant?
 
-**New in this build:** a third schema migration, the first real map, and the
-first build where a wrong key produces a visible message rather than a crash.
-Test the map with the key AND check what a wrong key does.
+**Also unverified:** no map tile has ever actually been fetched. Every test
+fakes the HTTP. The first real download is the first proof the MapTiler URL
+shape and key are right.
 
 ## Note on the environment
 

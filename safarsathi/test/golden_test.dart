@@ -44,6 +44,8 @@ import 'package:safarsathi/features/map/data/map_download.dart';
 import 'package:safarsathi/features/map/data/tile_downloader.dart';
 import 'package:safarsathi/features/map/data/tile_provider.dart';
 import 'package:safarsathi/features/map/presentation/map_download_screen.dart';
+import 'package:safarsathi/features/sync/data/trip_sync.dart';
+import 'package:safarsathi/features/sync/presentation/sync_screen.dart';
 
 import 'package:safarsathi/features/import/data/column_mapping.dart';
 import 'package:safarsathi/features/import/data/import_commit.dart';
@@ -676,6 +678,7 @@ void main() {
         onWeather: () {},
         onSettings: () {},
         onMap: () {},
+        onSync: () {},
         onImport: () {},
         onHistory: () {},
         onTemplate: () {},
@@ -1182,6 +1185,98 @@ void main() {
         usage: Stream.value((count: 0, bytes: 0)),
         onClear: () async {},
       ),
+    );
+  });
+
+  // ---------------------------------------------------------------------
+  // The sync orchestrator (#25)
+  // ---------------------------------------------------------------------
+
+  testWidgets('sync', (tester) async {
+    await shootScreen(
+      tester,
+      'sync',
+      SyncScreen(
+        estimateSize: () async => 'about 24 MB, nearly all of it map',
+        run: () => const Stream<SyncProgress>.empty(),
+        plan: () async => TripSyncPlan(
+          legsWithoutCoordinates: 1,
+          stopsWithoutCoordinates: 0,
+          tasks: [
+            for (final leg in const [
+              'Shillong → Cherrapunji',
+              'Cherrapunji → Shillong',
+              'Shillong → Dawki',
+            ])
+              SyncTask(kind: SyncKind.corridor, subject: leg, legId: 1),
+            for (final stop in const [
+              'Shillong',
+              'Cherrapunji',
+              'Dawki',
+              'Mawlynnong',
+            ])
+              SyncTask(kind: SyncKind.weather, subject: stop, stopId: 1),
+            const SyncTask(kind: SyncKind.tiles, subject: 'whole trip'),
+          ],
+        ),
+      ),
+    );
+  });
+
+  testWidgets('sync — partly failed', (tester) async {
+    // What a run looks like when Overpass was busy: everything else went
+    // through and the screen says which piece did not.
+    //
+    // This one taps the button rather than using shootScreen, because the
+    // failure list only exists after a run — a golden of the untapped screen
+    // would show nothing it claims to.
+    tester.view.physicalSize = const Size(840, 1780);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.reset);
+
+    const failed = SyncTask(
+      kind: SyncKind.corridor,
+      subject: 'Shillong → Cherrapunji',
+      legId: 1,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: AppTokens.light,
+        home: SyncScreen(
+          estimateSize: () async => 'the maps are already here',
+          plan: () async => const TripSyncPlan(
+            legsWithoutCoordinates: 0,
+            stopsWithoutCoordinates: 0,
+            tasks: [
+              failed,
+              SyncTask(kind: SyncKind.weather, subject: 'Shillong', stopId: 1),
+              SyncTask(kind: SyncKind.tiles, subject: 'whole trip'),
+            ],
+          ),
+          run: () => Stream.fromIterable(const [
+            SyncProgress(
+              done: 3,
+              total: 3,
+              failures: [
+                SyncFailure(
+                  failed,
+                  'OpenStreetMap is busy right now. Try again in a minute.',
+                ),
+              ],
+            ),
+          ]),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('Download everything'));
+    await tester.pumpAndSettle();
+
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/sync_failed.png'),
     );
   });
 }

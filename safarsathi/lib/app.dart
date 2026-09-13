@@ -24,6 +24,7 @@ import 'features/import/data/import_commit.dart';
 import 'features/import/presentation/import_flow.dart';
 import 'features/import/presentation/import_history_screen.dart';
 import 'features/import/presentation/more_screen.dart';
+import 'features/discovery/data/corridor_sync.dart';
 import 'features/discovery/data/geo.dart';
 import 'features/discovery/data/geocoder.dart';
 import 'features/map/data/map_download.dart';
@@ -40,6 +41,8 @@ import 'features/trips/data/readiness.dart';
 import 'features/trips/data/trip_editor.dart';
 import 'features/trips/data/trip_summary.dart';
 import 'features/settings/data/settings.dart';
+import 'features/sync/data/trip_sync.dart';
+import 'features/sync/presentation/sync_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'features/trips/presentation/itinerary_screen.dart';
 import 'features/trips/presentation/place_picker_sheet.dart';
@@ -255,6 +258,36 @@ class _HomeState extends State<_Home> {
       ),
     ),
   );
+
+  /// Everything a trip needs, in one press (#25).
+  ///
+  /// The other three screens still exist for anyone who wants one piece; this
+  /// is the one that means you cannot leave having forgotten a step.
+  Future<void> _openSync(BuildContext context, int tripId) async {
+    final store = _tiles;
+    if (store == null) return;
+
+    final map = MapDownload(
+      db: widget.db,
+      downloader: TileDownloader(store: store, provider: activeTileProvider),
+    );
+    final sync = TripSync(
+      db: widget.db,
+      corridor: CorridorSync(db: widget.db),
+      weather: _weather,
+      map: map,
+    );
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SyncScreen(
+          plan: () => sync.plan(tripId),
+          run: () => sync.run(tripId),
+          estimateSize: () => estimateSyncSize(map, tripId),
+        ),
+      ),
+    );
+  }
 
   Future<void> _openMap(BuildContext context, int tripId) async {
     final store = _tiles;
@@ -596,6 +629,7 @@ class _HomeState extends State<_Home> {
             onTravellers: () => _openTravellers(context, trip.tripId),
             onWeather: () => _openWeather(context, trip.tripId),
             onMap: () => _openMap(context, trip.tripId),
+            onSync: () => _openSync(context, trip.tripId),
             onSettings: () => _openSettings(context, trip.tripId),
             onImport: () async {
               await ImportFlow(db: db, tripId: trip.tripId).start(context);

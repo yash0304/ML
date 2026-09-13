@@ -5,6 +5,22 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-13 — [ARCH] **Riverpod is not being introduced, and the backlog line saying #25 would justify it is superseded.** (What the sync screen holds is a plan and an index into it, for the lifetime of one route — a `StatefulWidget` over a stream does that. A state-management library here would mean a dependency, a second way of doing things beside the `StreamBuilder` every other screen uses, and a migration decision for the twelve screens already working without one. Revisit if a later feature needs genuinely shared cross-screen state; superseded, not forgotten.)
+
+2026-09-13 — [SYNC] Route and places are ONE task, not two. (`CorridorSync.syncLeg` routes the leg and queries its box in a single call and writes both in one transaction. Two progress rows would report progress corresponding to no work — the first draft did exactly that, with a no-op branch to make the second row "succeed".)
+
+2026-09-13 — [SYNC] Every leg's corridor runs before the map does. (Tiles derive their box from the route polyline; with no polyline the box falls back to the straight line between stops, which in the Meghalaya hills is a different valley. Tiles are also last because they are by far the largest download, and failing there should not cost the small useful things.)
+
+2026-09-13 — [SYNC] **One failure does not stop the run.** Each task is independent; a failure is recorded, stepped over, and listed afterwards with its reason. (Deliberately different from the tile downloader, where a rejected key aborts everything because it affects every remaining tile. Here Overpass being busy must not cost the map, and a stop outside the forecast range must not cost the route. A sync that silently does 60% is worse than one that says which 40% is missing.)
+
+2026-09-13 — [SYNC] Resumability is by construction, not by a cursor. (Every underlying step already skips work already done: tiles check the disk, routes and places overwrite cheaply, weather replaces. Re-running the whole plan costs only the missing parts, and it cannot get out of step with what is actually on disk the way a stored position can.)
+
+2026-09-13 — [SYNC] Progress names the item, not only a percentage. ("Route and what is along it · Shillong → Cherrapunji" is something a person can wait through. "43%" is not.)
+
+2026-09-13 — [SYNC] Only the tiles are size-estimated, and the estimate says so. (A route is a few kilobytes, a place list tens, a forecast less. Itemising three negligible things is noise; "about 24 MB, nearly all of it map" is the true shape of the download.)
+
+2026-09-13 — [UI] Counts on the sync screen are pluralised. ("1 legs" on the last screen someone sees before leaving reads as sloppiness, and a one-leg trip is common. Caught by rendering the golden.)
+
 2026-09-13 — [MAP] **MapTiler is the tile provider.** Chosen by Yash, who holds the account. (Resolves the open question that had blocked #24 since the milestone was written. The standard OSM tile server was never an option: its usage policy forbids the bulk downloading that is the entire feature.)
 
 2026-09-13 — [MAP] The provider sits behind a `MapTileProvider` interface and nothing outside `tile_provider.dart` names MapTiler. Attribution is part of the interface, not an afterthought. (Swapping to Stadia later is a new implementation and one line. Attribution is in the interface because every provider's terms require it and a map rendering without it is a licence violation — a new implementation should not be able to compile without supplying one.)

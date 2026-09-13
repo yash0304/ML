@@ -20,6 +20,7 @@ class MoreScreen extends StatelessWidget {
   final VoidCallback onTravellers;
   final VoidCallback onWeather;
   final VoidCallback onMap;
+  final VoidCallback onSync;
   final VoidCallback onSettings;
   final VoidCallback onImport;
   final VoidCallback onHistory;
@@ -38,6 +39,7 @@ class MoreScreen extends StatelessWidget {
     required this.onTravellers,
     required this.onWeather,
     required this.onMap,
+    required this.onSync,
     required this.onSettings,
     required this.onImport,
     required this.onHistory,
@@ -64,6 +66,16 @@ class MoreScreen extends StatelessWidget {
                 'More',
                 style: AppTokens.titleStyle.copyWith(color: c.ink),
               ),
+            ),
+            const StencilLabel('Before you leave'),
+            _Item(
+              icon: Icons.download_for_offline_outlined,
+              title: 'Download everything',
+              subtitle:
+                  'Routes, places, map and forecast for the whole trip, in '
+                  'one go, on WiFi. Then the app never asks the network '
+                  'again.',
+              onTap: onSync,
             ),
             const StencilLabel('Trip'),
             _Item(
@@ -183,9 +195,9 @@ class MoreScreen extends StatelessWidget {
                 horizontal: AppTokens.gutter,
               ),
               child: Text(
-                'The sync orchestrator that downloads everything in one go '
-                '(#25), and the route-discovery screen (#27, #28). The GPS '
-                'timeline (#30). Trusted-contact check-ins (#33, #34).\n\n'
+                'The route-discovery screen that shows what is along each '
+                'leg (#27, #28). The GPS timeline (#30). Trusted-contact '
+                'check-ins (#33, #34).\n\n'
                 'This app makes no network call at any point. The release '
                 'build does not even ask for permission to.',
                 style: AppTokens.captionStyle.copyWith(color: c.muted),
