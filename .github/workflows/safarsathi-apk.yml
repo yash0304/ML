@@ -5,9 +5,12 @@
 # runners already have one, which makes this the shortest path from a commit
 # to something you can put on a phone.
 #
-# The APK is signed with Android's debug keys — the Flutter template's default
-# — so it installs on any phone that allows unknown sources. It is a test
-# build, not a release.
+# SIGNING. If the ANDROID_KEYSTORE_BASE64 secret is set, the APK is signed
+# with that key every time, so each new build installs over the last one and
+# the database survives. Without it the build falls back to debug keys, which
+# a CI runner regenerates at random on every run — and Android then refuses
+# the upgrade, so the only way to install is to uninstall first and lose
+# everything in the app. The step below says which happened.
 
 name: SafarSathi APK
 
@@ -63,6 +66,34 @@ jobs:
       # avoids is the key living in git history forever. Restricting the key
       # to this app's package name in the MapTiler dashboard is the control
       # that actually matters.
+      # THE KEYSTORE COMES FROM A SECRET, NEVER FROM A TRACKED FILE.
+      #
+      # Four secrets: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+      # ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD. RUNNING.md has the keytool
+      # command that produces them.
+      - name: Restore signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          # Guarded in the shell rather than with a step-level `if`: the
+          # secrets context is not dependably available to `if` expressions,
+          # and a silently-skipped signing step is the exact failure this
+          # whole change exists to stop.
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "No ANDROID_KEYSTORE_BASE64 secret. Falling back to debug signing."
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/safarsathi.jks"
+          cat > android/key.properties <<PROPS
+          storeFile=$RUNNER_TEMP/safarsathi.jks
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          PROPS
+
       - name: Build release APK
         env:
           MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
@@ -77,6 +108,18 @@ jobs:
           else
             echo "Maps DISABLED — no MAPTILER_KEY secret is set."
             echo "The app will run and say so on its map screens."
+          fi
+
+      - name: Report how this build was signed
+        run: |
+          if [ -f android/key.properties ]; then
+            echo "Signed with the RELEASE key. This installs over the"
+            echo "previous build and keeps everything already in the app."
+          else
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret, so this APK is"
+            echo "::warning::signed with throwaway debug keys. Installing it"
+            echo "::warning::requires uninstalling the current app first,"
+            echo "::warning::which WIPES the database. See RUNNING.md."
           fi
 
       - name: Size

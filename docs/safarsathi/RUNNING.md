@@ -22,6 +22,67 @@ flutter doctor --android-licenses     # accept them all
 ```
 
 
+## The signing key — read this before installing a second build
+
+**Android refuses to upgrade an app whose signing key changed.** It says
+"App not installed as package conflicts with an existing package", and the
+only way through is to uninstall the current copy — **which deletes the
+database: every contact, every expense, the whole trip.**
+
+Until 13 Sep this project signed release builds with `signingConfigs.debug`,
+the Flutter template's default. On your own machine that is harmless, because
+the debug keystore is generated once and reused. On a CI runner there is no
+debug keystore, so Gradle **makes a new random one on every run** — which
+meant every APK this project ever produced was signed differently from the
+last, and each one could only be installed by throwing away the data in the
+one before it.
+
+### Make the key once
+
+```
+keytool -genkey -v -keystore safarsathi.jks -keyalg RSA -keysize 2048 \
+        -validity 10000 -alias safarsathi
+```
+
+Keep `safarsathi.jks` somewhere you will still have it in five years. **If it
+is lost, no future build can ever upgrade an installed copy again** — the only
+way back is an uninstall, and the data goes with it. It is gitignored, along
+with `android/key.properties` and anything else ending `.jks` or `.keystore`.
+
+### Locally
+
+Create `safarsathi/android/key.properties`:
+
+```
+storeFile=/absolute/path/to/safarsathi.jks
+storePassword=…
+keyAlias=safarsathi
+keyPassword=…
+```
+
+Builds without that file still work. They fall back to debug signing and warn
+in the Gradle log, so a contributor without the keystore is not blocked.
+
+### In CI
+
+Four repository secrets, under **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | `base64 -w0 safarsathi.jks` |
+| `ANDROID_KEYSTORE_PASSWORD` | the store password |
+| `ANDROID_KEY_ALIAS` | `safarsathi` |
+| `ANDROID_KEY_PASSWORD` | the key password |
+
+The workflow prints which signing it used, so a missing secret is visible in
+the build log rather than only on the phone.
+
+### One last uninstall
+
+The build that first carries the real key is signed differently from whatever
+is on the phone now, so **that one installs over nothing** — uninstall first.
+Every build after it goes over the top and keeps the data.
+
 ## The MapTiler key
 
 Maps need a key. **It is never committed.** A build without one still runs —

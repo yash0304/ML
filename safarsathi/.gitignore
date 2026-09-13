@@ -38,3 +38,12 @@ test/failures/
 # still runs — the map disables itself and says so. See maptiler.example.json.
 maptiler.json
 *.maptiler.json
+
+# THE SIGNING KEY NEVER ENTERS THE REPOSITORY EITHER.
+#
+# Without a stable key, every CI build is signed differently and every install
+# demands an uninstall first — which wipes the database. With one, updates go
+# over the top and the data stays. See RUNNING.md.
+android/key.properties
+*.jks
+*.keystore

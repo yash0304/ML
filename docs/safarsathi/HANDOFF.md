@@ -1,4 +1,4 @@
-# HANDOFF — SafarSathi — 2026-09-13 (after the first real-device sync)
+# HANDOFF — SafarSathi — 2026-09-13 (signing, and the first real-device sync)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
@@ -42,6 +42,36 @@ The project rule is absolute — no emergency number ships without a
 government-domain source recorded in `sourceNote`. A search-engine summary is
 not that. **Those four numbers remain unseeded and must stay unseeded until
 someone reads a `.gov.in` page directly.**
+
+## THE SIGNING BUG — the worst one found so far
+
+**Every APK this project has ever produced was signed with a different key,
+and installing each one required uninstalling the last, which wipes the
+database.** Yash hit the wall on the sixth build: "App not installed as
+package conflicts with an existing package."
+
+Cause: `android/app/build.gradle.kts` used `signingConfigs.debug` for release
+— the Flutter template's default. Harmless on a developer machine, where the
+debug keystore is made once and reused. On a CI runner there is none, so
+Gradle generates a fresh random one every run.
+
+Fixed: a real keystore, supplied through four repository secrets, with a
+documented fallback to debug signing (with warnings, in Gradle and in the
+workflow log) when no key is present.
+
+**What Yash must do, once:** create the keystore with the keytool command in
+RUNNING.md, add the four secrets, and keep the `.jks` file somewhere
+permanent. If it is ever lost, no future build can upgrade an installed copy
+again.
+
+**The build that first carries the real key still needs one final uninstall**,
+because it is signed differently from whatever is on the phone now. Every
+build after that goes over the top.
+
+**The gap this exposed, and it is not fixed:** the app has no export or
+backup. Its whole value is a phone directory typed by hand before a trip, its
+only copy lives on one handset, and reinstalling has been silently destroying
+it. Worth building before October; not in the backlog yet.
 
 ## THE FIRST RUN ON A REAL PHONE, AND WHAT IT FOUND
 

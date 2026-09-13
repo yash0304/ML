@@ -1,3 +1,29 @@
+import java.io.FileInputStream
+import java.util.Properties
+
+// THE SIGNING KEY DECIDES WHETHER AN UPDATE INSTALLS AT ALL.
+//
+// Until this was here, the release build was signed with `signingConfigs.debug`
+// — the Flutter template's default. On a developer's own machine that is
+// merely untidy: the debug keystore is generated once and reused, so upgrades
+// work. On a CI runner there is no `~/.android/debug.keystore`, so Gradle
+// makes a NEW RANDOM ONE on every single run, and Android refuses to upgrade
+// an app whose signature changed. Every build produced a package that could
+// only be installed by first uninstalling the last one, which wipes the
+// database — every contact, every expense, the whole trip.
+//
+// `android/key.properties` is gitignored and holds the real key. Without it
+// the build still works and still falls back to debug signing, because a
+// contributor without the keystore should not be blocked; the log says which
+// one was used. See docs/safarsathi/RUNNING.md.
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        load(FileInputStream(keystorePropertiesFile))
+    }
+}
+val hasReleaseKey = keystorePropertiesFile.exists()
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -29,11 +55,31 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKey) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (hasReleaseKey) {
+                signingConfigs.getByName("release")
+            } else {
+                // Upgrades will not install over a build signed with a
+                // different key. Fine locally, not fine from CI.
+                logger.warn(
+                    "SafarSathi: no android/key.properties, so this release " +
+                        "APK is signed with debug keys. Installing it over " +
+                        "an existing copy will fail with a package conflict."
+                )
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
