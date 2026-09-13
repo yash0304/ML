@@ -165,6 +165,35 @@ Stream<List<CacheSummary>> watchCacheSummaries(AppDatabase db) {
   });
 }
 
+/// One sentence about what this trip has downloaded — issue #46.
+///
+/// This is what over-scroll in the diary reveals instead of a pull-to-refresh
+/// spinner. The spinner would be a lie: the app makes no network call on the
+/// road. The honest answer to "is this up to date" is a date and a count.
+Stream<String> watchCacheStamp(AppDatabase db, int tripId) =>
+    watchCacheSummaries(db).map((all) {
+      final trip = all.where((s) => s.tripId == tripId).firstOrNull;
+      if (trip == null) return '';
+
+      final at = trip.lastSyncedAt;
+      if (at == null || trip.isEmpty) {
+        return 'Nothing downloaded for this trip yet. '
+            'More → Download while you have WiFi.';
+      }
+
+      final parts = <String>[
+        if (trip.routedLegCount > 0)
+          '${trip.routedLegCount} of ${trip.legCount} '
+              '${trip.legCount == 1 ? 'road' : 'roads'}',
+        if (trip.poiCount > 0) '${trip.poiCount} places',
+        if (trip.weatherDayCount > 0) '${trip.weatherDayCount} forecast days',
+      ];
+
+      return 'Cached ${at.day.toString().padLeft(2, '0')}/'
+          '${at.month.toString().padLeft(2, '0')}/${at.year}'
+          '${parts.isEmpty ? '' : ' · ${parts.join(' · ')}'}';
+    });
+
 /// Drops everything downloaded for a trip, leaving everything typed.
 ///
 /// The distinction is the whole point: contacts, expenses, the itinerary and

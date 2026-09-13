@@ -328,22 +328,44 @@ class _StampBadgeState extends State<StampBadge>
     final c = AppTokens.of(context);
     final ink = widget.inkColor ?? c.signal;
 
-    return Semantics(
-      label: widget.label,
-      child: AnimatedBuilder(
-        animation: _ctl,
-        builder: (context, child) {
-          final t = Curves.elasticOut.transform(_ctl.value);
-          // -8deg settling to -3deg, ink bleeding in to 0.85.
-          final degrees = -8 + 5 * t;
-          return Opacity(
+    // The Semantics sits INSIDE the builder's child, not around the whole
+    // badge: the builder drops that child entirely before the stamp lands,
+    // and a label left outside would survive the drop and announce
+    // "Confirmed" on a contact nobody confirmed.
+    return AnimatedBuilder(
+      animation: _ctl,
+      builder: (context, child) {
+        // Not merely invisible: gone. A stamp at zero opacity would still
+        // announce "Confirmed" to a screen reader on a contact nobody has
+        // confirmed, which is the same lie the amber dot was making in the
+        // other direction.
+        if (_ctl.value == 0) return const SizedBox.shrink();
+
+        final t = Curves.elasticOut.transform(_ctl.value);
+        // -8deg settling to -3deg, ink bleeding in to 0.85.
+        final degrees = -8 + 5 * t;
+        // THE STAMP OWNS ITS OWN SPACE, growing with the landing.
+        //
+        // Callers must mount this unconditionally and let `landed` drive
+        // it — `if (confirmed) StampBadge(landed: confirmed)` looks right
+        // and can never animate, because the widget only ever exists in
+        // the landed state and so never sees the false -> true transition
+        // that fires the stamp and the haptic. (DIALER_RETRO_PATCH.md
+        // edit 8 spells it exactly that way; it is wrong.) Collapsing to
+        // zero width here is what makes unconditional mounting free.
+        return Align(
+          widthFactor: _ctl.value,
+          child: Opacity(
             opacity: (_ctl.value * 0.85).clamp(0.0, 0.85).toDouble(),
             child: Transform.rotate(
               angle: degrees * math.pi / 180,
               child: Transform.scale(scale: 0.9 + 0.1 * t, child: child),
             ),
-          );
-        },
+          ),
+        );
+      },
+      child: Semantics(
+        label: widget.label,
         child: Container(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTokens.s8,

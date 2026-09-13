@@ -184,6 +184,34 @@ void main() {
       expect(find.byType(HazardStripe), findsNothing);
     });
 
+    testWidgets('THE DIARY GAINING A STAMP DID NOT LEAK ONE IN HERE', (
+      tester,
+    ) async {
+      // #44 put a confirmation stamp on every diary row. This surface takes
+      // confirmed local contacts too, and the whole point of #48 is that a
+      // decoration added anywhere else never arrives here by accident.
+      await pumpEmergency(
+        tester,
+        helplines: [line('112', 'All emergencies', '112.gov.in')],
+        locals: [localContact(confirmed: true), localContact(id: 9)],
+      );
+
+      expect(find.byType(StampBadge), findsNothing);
+      expect(find.text('CONFIRMED'), findsNothing);
+    });
+
+    testWidgets('NOTHING SWIPES ON THIS SCREEN EITHER', (tester) async {
+      // #45 gave diary rows swipe actions. A hidden gesture on the screen
+      // somebody reaches for in an emergency is the wrong kind of clever.
+      await pumpEmergency(
+        tester,
+        helplines: [line('112', 'All emergencies', '112.gov.in')],
+        locals: [localContact()],
+      );
+
+      expect(find.byType(Dismissible), findsNothing);
+    });
+
     testWidgets('the missing state list is explained, not silently absent', (
       tester,
     ) async {

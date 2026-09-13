@@ -764,6 +764,9 @@ class _HomeState extends State<_Home> {
             onOpenDialer: actions.openDialer,
             onAdd: () => _openForm(context, trip),
             onOpen: (contact) => _openEntry(context, trip, contact, actions),
+            onTogglePin: (contact, pinned) =>
+                dao.togglePin(contact.id, pinned),
+            cacheStamp: watchCacheStamp(db, trip.tripId),
           ),
         ),
         ShellDestination(

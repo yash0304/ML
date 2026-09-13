@@ -30,12 +30,21 @@ class DiaryEntry extends StatelessWidget {
   final VoidCallback? onCopy;
   final VoidCallback? onOpen;
 
+  /// Swipe right — issue #45. The same action as the row tap, reachable
+  /// without aiming at anything.
+  final VoidCallback? onSwipeCall;
+
+  /// Swipe left — issue #45.
+  final VoidCallback? onTogglePin;
+
   const DiaryEntry({
     super.key,
     required this.contact,
     required this.lineNumber,
     this.onCopy,
     this.onOpen,
+    this.onSwipeCall,
+    this.onTogglePin,
   });
 
   @override
@@ -44,7 +53,7 @@ class DiaryEntry extends StatelessWidget {
     final trusted = ContactTier.parse(contact.tier).isTrusted;
     final meta = _meta();
 
-    return PressScale(
+    final row = PressScale(
       onTap: onCopy,
       onLongPress: onOpen,
       child: DecoratedBox(
@@ -95,7 +104,22 @@ class DiaryEntry extends StatelessWidget {
                           // The whole point of the tier system. Unconfirmed
                           // numbers carry a caution mark; confirmed ones
                           // carry nothing.
-                          if (!trusted) const _TrustDot(),
+                          //
+                          // CROSS-FADED rather than swapped: the dot leaving
+                          // and the stamp landing are one event, and a single
+                          // frame's swap reads as a glitch (#44).
+                          //
+                          // A SWITCHER, NOT AN OPACITY. Fading the dot to
+                          // zero would leave it in the tree, and its
+                          // "Not confirmed yet" semantics would still be
+                          // announced on a contact that has been confirmed —
+                          // an invisible lie is still a lie.
+                          AnimatedSwitcher(
+                            duration: Motion.d(context, Motion.quick),
+                            child: trusted
+                                ? const SizedBox.shrink()
+                                : const _TrustDot(),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 1),
@@ -123,11 +147,35 @@ class DiaryEntry extends StatelessWidget {
                   ),
                 ),
               ),
+              // THE STAMP LANDS ONCE, on the false -> true transition, and
+              // is silent and still on every later build.
+              //
+              // Mounted unconditionally, collapsed to zero width until it
+              // lands: a badge built only when already confirmed can never
+              // see the transition it exists to animate. The ValueKey on each
+              // row is the other half — without it, list-element reuse fires
+              // the stamp and the haptic while somebody is only scrolling.
+              Align(
+                alignment: Alignment.centerRight,
+                child: StampBadge(
+                  label: 'Confirmed',
+                  landed: contact.callConfirmed,
+                ),
+              ),
               _CopyAffordance(onTap: onCopy),
             ],
           ),
         ),
       ),
+    );
+
+    if (onSwipeCall == null && onTogglePin == null) return row;
+
+    return _SwipeRow(
+      contact: contact,
+      onCall: onSwipeCall,
+      onTogglePin: onTogglePin,
+      child: row,
     );
   }
 
@@ -138,6 +186,126 @@ class DiaryEntry extends StatelessWidget {
       ContactCategory.labels[contact.category] ?? contact.category,
     ];
     return parts.isEmpty ? null : parts.join(' · ');
+  }
+}
+
+/// Swipe right to call, swipe left to pin — issue #45.
+///
+/// `confirmDismiss` returns false on both sides, so the row performs its
+/// action and springs back. NOTHING IS EVER REMOVED BY A GESTURE: losing a
+/// phone number by accident, on a road, offline, is not recoverable in the
+/// way that matters.
+class _SwipeRow extends StatefulWidget {
+  final Contact contact;
+  final VoidCallback? onCall;
+  final VoidCallback? onTogglePin;
+  final Widget child;
+
+  const _SwipeRow({
+    required this.contact,
+    required this.child,
+    this.onCall,
+    this.onTogglePin,
+  });
+
+  @override
+  State<_SwipeRow> createState() => _SwipeRowState();
+}
+
+class _SwipeRowState extends State<_SwipeRow> {
+  /// The threshold Dismissible itself uses, mirrored so the haptic fires at
+  /// the same moment the action becomes committed rather than earlier.
+  static const _threshold = 0.35;
+
+  bool _buzzed = false;
+
+  void _onUpdate(DismissUpdateDetails d) {
+    final past = d.progress >= _threshold;
+    if (past == _buzzed) return;
+    // Once on the way in, once on the way back out — the edge is the event,
+    // not the pixels either side of it.
+    if (past) Haptics.light();
+    _buzzed = past;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    final pinned = widget.contact.isPinned;
+
+    return Dismissible(
+      key: ValueKey('swipe-${widget.contact.id}'),
+      direction: widget.onCall != null && widget.onTogglePin != null
+          ? DismissDirection.horizontal
+          : widget.onCall != null
+          ? DismissDirection.startToEnd
+          : DismissDirection.endToStart,
+      dismissThresholds: const {
+        DismissDirection.startToEnd: _threshold,
+        DismissDirection.endToStart: _threshold,
+      },
+      onUpdate: _onUpdate,
+      background: _SwipePanel(
+        colour: c.signal,
+        ink: c.paper,
+        icon: Icons.phone,
+        label: 'Call',
+        alignment: Alignment.centerLeft,
+      ),
+      secondaryBackground: _SwipePanel(
+        colour: c.stone,
+        ink: c.ink,
+        icon: pinned ? Icons.push_pin_outlined : Icons.push_pin,
+        label: pinned ? 'Unpin' : 'Pin',
+        alignment: Alignment.centerRight,
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          widget.onCall?.call();
+        } else {
+          widget.onTogglePin?.call();
+        }
+        // Always false. The action has happened; the row stays.
+        return false;
+      },
+      child: widget.child,
+    );
+  }
+}
+
+class _SwipePanel extends StatelessWidget {
+  final Color colour;
+  final Color ink;
+  final IconData icon;
+  final String label;
+  final Alignment alignment;
+
+  const _SwipePanel({
+    required this.colour,
+    required this.ink,
+    required this.icon,
+    required this.label,
+    required this.alignment,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: colour,
+      padding: const EdgeInsets.symmetric(horizontal: AppTokens.s16),
+      alignment: alignment,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: ink),
+          const SizedBox(width: AppTokens.s8),
+          Text(
+            label.toUpperCase(),
+            style: AppTokens.stencilStyle.copyWith(fontSize: 10, color: ink),
+          ),
+        ],
+      ),
+    );
   }
 }
 

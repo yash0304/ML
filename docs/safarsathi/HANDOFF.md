@@ -1,15 +1,17 @@
-# HANDOFF — SafarSathi — 2026-09-13 (after #51 and #52, the detail screens)
+# HANDOFF — SafarSathi — 2026-09-13 (after the polish pass, #41–#49)
 
 > Overwrite this file at the end of every session. It must let a cold model
 > (any model) resume in under 2 minutes.
 
 ## Where we are
 
-- **Issues #1–#9, #11–#29, #31, #32, #35, #50–#55 are done except for the
-  device check.** Analyses clean, **669 tests** in about fifty seconds.
-- Backlog position: 38 / 56 done.
-- Every screen SCREENS.md specifies now exists. What remains is polish,
-  background services, and one thing that cannot be done from this container.
+- **Issues #1–#9, #11–#29, #31, #32, #35, #41–#46, #48–#55 are done except
+  for the device check.** Analyses clean, **698 tests** in about fifty
+  seconds.
+- Backlog position: 46 / 56 done.
+- Every screen SCREENS.md specifies exists, and the retro pass over them is
+  finished. What remains is #10, one audit, background services, and one
+  thing that cannot be done from this container.
 
 ## The MapTiler key — fixed, and Yash needs to do one thing
 
@@ -40,6 +42,34 @@ The project rule is absolute — no emergency number ships without a
 government-domain source recorded in `sourceNote`. A search-engine summary is
 not that. **Those four numbers remain unseeded and must stay unseeded until
 someone reads a `.gov.in` page directly.**
+
+## What the polish pass added
+
+Most of the retro idiom had landed as the screens were written. Three things
+never had, and all three were interactions, which is why they slipped — a
+static golden cannot see a missing gesture. See `ISSUE_44_46_Diary.md`.
+
+- **#44** the confirmation stamp now lands on a diary row, once, on the
+  `false → true` transition.
+- **#45** swipe right to call, left to pin, both springing back.
+- **#46** over-scroll reveals when the trip was last downloaded.
+
+**Two real bugs came out of it, both worth knowing about.**
+
+`DIALER_RETRO_PATCH.md` edit 8 says `if (confirmed) StampBadge(landed:
+confirmed)`. That can never animate — the widget only exists in the landed
+state, so it never sees the transition it exists to animate. `StampBadge` now
+collapses to zero width instead and is mounted unconditionally.
+
+The over-scroll stamp first read `metrics.pixels`, which works on iOS and
+does nothing on Android: clamping physics never lets pixels go negative. It
+reads `OverscrollNotification` now.
+
+**#41, #42, #43, #48 and #49 were built along the way and never ticked.**
+Each now carries the verification the backlog asked for — reduce-motion
+collapsing durations while haptics survive, the perforation path at four
+widths, and #48 extended to prove the new stamp and swipe did not leak onto
+the emergency tab.
 
 ## What #51 and #52 added
 
@@ -112,7 +142,10 @@ now unblocked — it needs Yash to paste his key and press download.
 
 ## What is left
 
-- **#10** multi-add for contacts.
-- **#41–#49**, nine small visual polish issues.
+- **#10** multi-add for contacts — the last unbuilt feature before October.
+- **#47** night theme audit. Deliberately NOT ticked: the numbers check out
+  (grain drops to 2%, the emergency red has no glow) and both themes render
+  in tests, but the backlog asks for contrast checked *on a real device* and
+  nobody has done that. Do not tick it from a container.
 - **#36**, needs a browser Yash controls.
 - **#30, #33, #34** background services — not before October.

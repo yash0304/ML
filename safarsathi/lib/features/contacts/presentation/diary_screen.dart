@@ -11,6 +11,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 import '../../../core/database/app_database.dart';
@@ -47,6 +48,14 @@ class DiaryScreen extends StatefulWidget {
   final void Function(Contact)? onOpen;
   final VoidCallback? onAdd;
 
+  /// Swipe left to pin — issue #45.
+  final Future<void> Function(Contact, bool pinned)? onTogglePin;
+
+  /// What over-scroll reveals — issue #46. A sentence about when this trip
+  /// was last downloaded. Null when the screen has nothing to say, in which
+  /// case over-scroll does nothing at all rather than showing an empty card.
+  final Stream<String>? cacheStamp;
+
   /// Opens already narrowed to [currentStopId]. The tab wants the whole trip;
   /// the stop screen's "diary entries" chevron (#51) means *these* entries,
   /// and arriving at an unfiltered list would quietly answer a different
@@ -65,6 +74,8 @@ class DiaryScreen extends StatefulWidget {
     this.onOpenDialer,
     this.onOpen,
     this.onAdd,
+    this.onTogglePin,
+    this.cacheStamp,
     this.startStopScoped = false,
   });
 
@@ -84,10 +95,52 @@ class _DiaryScreenState extends State<DiaryScreen> {
   String? _toastMessage;
   Timer? _toastTimer;
 
+  /// How far past the top the list has been dragged, 0 to 1 — issue #46.
+  ///
+  /// PULL-TO-REFRESH WOULD BE A LIE HERE. The app makes no network call on
+  /// the road, so a spinner would promise the one thing it is built never to
+  /// do. The same gesture answers the question the person actually has.
+  final _overscroll = ValueNotifier<double>(0);
+
+  /// How many logical pixels past the top the list has been dragged.
+  double _drag = 0;
+
+  /// How far a drag has to go to reveal the stamp completely.
+  static const _revealAt = 72.0;
+
+  bool _onScroll(ScrollNotification n) {
+    if (n.metrics.axis != Axis.vertical) return false;
+
+    if (n is ScrollStartNotification) {
+      _drag = 0;
+    } else if (n is OverscrollNotification) {
+      // ANDROID. Clamping physics never lets `pixels` go negative — it emits
+      // the excess here instead and paints a glow. Reading `pixels` alone
+      // would have made this feature work on iOS and do nothing at all on
+      // the phone this app is actually for.
+      if (n.overscroll < 0) _drag += -n.overscroll;
+    } else if (n is ScrollUpdateNotification) {
+      final past = n.metrics.minScrollExtent - n.metrics.pixels;
+      if (past > 0) {
+        // iOS. Bouncing physics reports the same thing as negative pixels.
+        _drag = past;
+      } else if (_drag > 0) {
+        // Dragging back up takes the reveal away again.
+        _drag = (_drag - (n.scrollDelta ?? 0).abs()).clamp(0.0, _revealAt);
+      }
+    } else if (n is ScrollEndNotification) {
+      _drag = 0;
+    }
+
+    _overscroll.value = (_drag / _revealAt).clamp(0.0, 1.0);
+    return false;
+  }
+
   @override
   void dispose() {
     _toastTimer?.cancel();
     _searchController.dispose();
+    _overscroll.dispose();
     super.dispose();
   }
 
@@ -171,7 +224,18 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   _buildAppBar(c),
                   _buildSearch(c),
                   ReadinessBanner(unconfirmedCount: widget.unconfirmedCount),
-                  Expanded(child: _buildPages(c)),
+                  if (widget.cacheStamp != null)
+                    _CacheStamp(
+                      key: _CacheStamp.findKey,
+                      label: widget.cacheStamp!,
+                      reveal: _overscroll,
+                    ),
+                  Expanded(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: _onScroll,
+                      child: _buildPages(c),
+                    ),
+                  ),
                 ],
               ),
               if (_toastNumber != null || _toastMessage != null)
@@ -323,21 +387,34 @@ class _DiaryScreenState extends State<DiaryScreen> {
                 );
               }
               return ListView.builder(
+                // Always scrollable so a short list can still be dragged
+                // past the top to see what is cached (#46).
+                physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.only(bottom: 96),
                 itemCount: items.length + 1,
                 itemBuilder: (context, i) {
                   if (i == items.length) {
                     return _PageFooter(count: items.length);
                   }
+                  final contact = items[i];
                   return DiaryEntry(
-                    contact: items[i],
+                    // WITHOUT THIS KEY the list recycles a confirmed row's
+                    // element onto an unconfirmed contact, StampBadge reads
+                    // that as a confirmation, and a stamp animates and a
+                    // haptic fires while somebody is merely scrolling (#44).
+                    key: ValueKey(contact.id),
+                    contact: contact,
                     lineNumber: i + 1,
-                    onCopy: widget.onCopy == null
-                        ? null
-                        : () => _copy(items[i]),
+                    onCopy: widget.onCopy == null ? null : () => _copy(contact),
                     onOpen: widget.onOpen == null
                         ? null
-                        : () => widget.onOpen!(items[i]),
+                        : () => widget.onOpen!(contact),
+                    onSwipeCall: widget.onCopy == null
+                        ? null
+                        : () => _copy(contact),
+                    onTogglePin: widget.onTogglePin == null
+                        ? null
+                        : () => widget.onTogglePin!(contact, !contact.isPinned),
                   );
                 },
               );
@@ -353,6 +430,66 @@ class _DiaryScreenState extends State<DiaryScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// What over-scroll reveals — issue #46.
+///
+/// It occupies no height until dragged: the row collapses to zero, so the
+/// list sits where it always did and nothing shifts on an ordinary scroll.
+class _CacheStamp extends StatelessWidget {
+  /// The class is private, so tests find it by key rather than by type.
+  static const findKey = ValueKey('diary-cache-stamp');
+
+  final Stream<String> label;
+  final ValueListenable<double> reveal;
+
+  const _CacheStamp({
+    super.key,
+    required this.label,
+    required this.reveal,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+
+    return StreamBuilder<String>(
+      stream: label,
+      builder: (context, snap) {
+        final text = snap.data;
+        if (text == null || text.isEmpty) return const SizedBox.shrink();
+
+        return ValueListenableBuilder<double>(
+          valueListenable: reveal,
+          builder: (context, t, child) => ClipRect(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              heightFactor: t,
+              child: Opacity(opacity: t, child: child),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTokens.gutter,
+              vertical: AppTokens.s8,
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.cloud_off_outlined, size: 14, color: c.muted),
+                const SizedBox(width: AppTokens.s8),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: AppTokens.captionStyle.copyWith(color: c.muted),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

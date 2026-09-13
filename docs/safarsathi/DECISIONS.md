@@ -5,6 +5,18 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-13 — [UI] **`StampBadge` is mounted unconditionally and collapses to zero width until it lands; DIALER_RETRO_PATCH.md edit 8, which mounts it only when already confirmed, is wrong and superseded.** (`if (confirmed) StampBadge(landed: confirmed)` reads correctly and can never animate: the widget only ever exists in the landed state, so it never sees the false → true transition that fires the stamp and the haptic. The patch document has spelled it that way since before there was code. The badge now owns its own space via `Align(widthFactor:)`, which is what makes unconditional mounting free.)
+
+2026-09-13 — [UI] Every diary row carries `ValueKey(contact.id)`. (`ListView` recycles elements. Without a key a confirmed row's element gets handed an unconfirmed contact and back, `StampBadge` reads that as a confirmation, and the phone stamps and buzzes at somebody who is only scrolling. Pinned by a test that flings a list of thirty rows and asserts the haptic channel stayed silent.)
+
+2026-09-13 — [UI] Both trust markers leave the tree rather than fading to zero opacity. (An invisible widget still has semantics. A dot at opacity 0 keeps announcing "Not confirmed yet" on a confirmed contact, and a stamp at opacity 0 announces "Confirmed" on one nobody has confirmed. Same lie, both directions.)
+
+2026-09-13 — [UI] Swipe never dismisses: `confirmDismiss` returns false on both sides and the row springs back. (Losing a phone number by accident, on a road, offline, is not recoverable in the way that matters. Swipe adds reach; the whole-row tap keeps the commonest action needing no aiming, per 2026-09-11.)
+
+2026-09-13 — [UI] The over-scroll cache stamp reads `OverscrollNotification`, not `metrics.pixels`. (Android's clamping physics never lets `pixels` go negative — it reports the excess through the notification and paints a glow. Reading pixels alone would have shipped a feature that worked in iOS simulators and did nothing at all on the phone this app is for.)
+
+2026-09-13 — [UI] Over-scroll shows what is cached instead of a pull-to-refresh spinner. (The spinner would promise the one thing the app is built never to do. A date and a count is the honest answer to what somebody pulling down actually wants to know.)
+
 2026-09-13 — [MAP] **The MapTiler key can be typed into Settings and stored in the app's database, and a typed key overrides the build-time one.** (The build-time-only route was not enough and the gap was real: Yash had a key and an APK off CI with no repository secret configured, and therefore nowhere to put it — maps were simply off with no way in. `--dart-define` cannot help someone who did not produce the build. The key still never enters the repository, which was the actual constraint; it now has two ways in rather than one. It is not a password — it identifies the account to MapTiler and is visible to whoever holds the phone, exactly as in every mobile map SDK — so the control that matters is still restricting it to the app's package name in the MapTiler dashboard.)
 
 2026-09-13 — [MAP] The tile cache id depends on provider and style, never on the key. (A key can be rotated; a downloaded trip must survive that. Tiles already on disk are still found after the key changes.)

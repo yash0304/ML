@@ -93,7 +93,7 @@ the code is what makes an issue resumable mid-way by a fresh chat.
 
 ---
 
-- [ ] **#49 Category thumb index** — S
+- [x] **#49 Category thumb index** — S — *built at #6, covered by diary_widgets_test*
   The vertical index down the right edge of the diary. Selected tab filled.
   Needs a query returning only the categories the trip actually uses —
   eleven do not fit an edge.
@@ -131,38 +131,38 @@ Sequenced here on purpose: after the dialer exists and renders, before bulk
 import multiplies the number of screens that would have to be retrofitted.
 Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
 
-- [ ] **#41 Motion + haptics core** — S
+- [x] **#41 Motion + haptics core** — S — *built as the screens needed it; reduce-motion collapse and haptic survival now pinned by test*
   `motion.dart`: durations, curves, the spring, `Motion.d()` reduce-motion
   collapse, the `Haptics` facade, and `PressScale`.
   Verify: every tappable scales and buzzes; turning on reduce-motion zeroes
   the animations and leaves the haptics working.
   *Depends on #3.*
 
-- [ ] **#42 Retro primitives** — M
+- [x] **#42 Retro primitives** — M — *all seven; perforation path tested at four widths including one narrower than a single notch*
   `retro.dart`: `StencilLabel`, `TicketCard` with the perforation clipper,
   `MilestoneMarker`, `StampBadge`, `HazardStripe`, `GrainOverlay`,
   `RollingDigits`. Widget tests for the perforation path at three widths.
   Verify: a gallery screen renders all seven in both themes.
   *Depends on #41.*
 
-- [ ] **#43 Dialer retro pass** — M
+- [x] **#43 Dialer retro pass** — M — *all eleven edits; edit 8 as written cannot animate and was corrected — see ISSUE_44_46_Diary.md*
   Work `DIALER_RETRO_PATCH.md` top to bottom, all eleven edits.
   Verify: its acceptance list, every line.
   *Depends on #6, #42.*
 
-- [ ] **#44 Confirmation stamp interaction** — S
+- [x] **#44 Confirmation stamp interaction** — S — *the stamp owns its own space; rows keyed on contact id so scrolling never fires it*
   The stamp lands once on the `false → true` transition, haptic at contact,
   amber dot cross-fades out, readiness count rolls down.
   Verify: confirm a contact and watch all four happen in one 380ms beat;
   scroll past it afterwards and nothing animates or buzzes.
   *Depends on #9, #43.*
 
-- [ ] **#45 Row swipe actions** — S
+- [x] **#45 Row swipe actions** — S — *confirmDismiss always false; nothing is ever removed by a gesture*
   Right to call, left to pin, both springing back rather than dismissing.
   Haptic on threshold crossing. Whole-row tap still dials.
   *Depends on #43.*
 
-- [ ] **#46 Over-scroll cache stamp** — S
+- [x] **#46 Over-scroll cache stamp** — S — *real `lastSyncedAt` now; handles Android clamping physics, not just iOS bouncing*
   Replaces pull-to-refresh, which would be a lie in an offline app. Shows
   `lastSyncedAt` and cache size.
   *Depends on #42. Real data arrives with #25; until then show the seeded
@@ -174,7 +174,7 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   emergency red gets no glow treatment.
   *Depends on #43.*
 
-- [ ] **#48 Safety-surface exemption test** — S
+- [x] **#48 Safety-surface exemption test** — S — *now also proves #44's stamp and #45's swipe did not leak in*
   **Golden test that fails if the emergency tab ever grows ephemera.**
   Asserts the emergency subtree contains no `StampBadge`, `TicketCard`,
   `MilestoneMarker` or `GrainOverlay`, and that the trust dot renders with
