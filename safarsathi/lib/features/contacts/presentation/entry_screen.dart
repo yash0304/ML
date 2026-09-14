@@ -35,6 +35,11 @@ class EntryScreen extends StatefulWidget {
 
   final void Function(Contact)? onEdit;
 
+  /// Reads the time a confirmation happened. Injectable because a golden that
+  /// confirms a contact would otherwise bake today's date into the image and
+  /// fail on every later day — which it duly did.
+  final DateTime Function() clock;
+
   const EntryScreen({
     super.key,
     required this.contact,
@@ -45,6 +50,7 @@ class EntryScreen extends StatefulWidget {
     this.onChat,
     this.onConfirm,
     this.onEdit,
+    this.clock = DateTime.now,
   });
 
   @override
@@ -102,7 +108,7 @@ class _EntryScreenState extends State<EntryScreen> {
     setState(() {
       _working = false;
       _confirmed = next;
-      _confirmedAt = next ? DateTime.now() : null;
+      _confirmedAt = next ? widget.clock() : null;
     });
   }
 

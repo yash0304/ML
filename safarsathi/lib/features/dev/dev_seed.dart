@@ -212,20 +212,24 @@ Future<DemoTrip> createDemoTrip(AppDatabase db) async {
   );
 
   // --- Money -------------------------------------------------------------
-  final people = <int>[];
-  for (final entry in {'You': true, 'Ankit': false, 'Priya': false}.entries) {
-    people.add(
-      await db
-          .into(db.travellers)
-          .insert(
-            TravellersCompanion.insert(
-              tripId: tripId,
-              name: entry.key,
-              isSelf: Value(entry.value),
-            ),
+  //
+  // ONE TRAVELLER, AND THAT IS YOU. The demo used to seed two companions so
+  // the settle-up had something to settle, which meant anybody opening the
+  // app for the first time found two strangers in their ledger and had to
+  // work out they were not real. Adding a traveller is one tap on
+  // Money → Travellers, and doing it yourself is a better way to learn the
+  // screen than finding it pre-filled.
+  final people = <int>[
+    await db
+        .into(db.travellers)
+        .insert(
+          TravellersCompanion.insert(
+            tripId: tripId,
+            name: 'You',
+            isSelf: const Value(true),
           ),
-    );
-  }
+        ),
+  ];
 
   Future<void> spend(String what, int amountMinor, int paidBy, int day) async {
     final id = await db
@@ -254,10 +258,11 @@ Future<DemoTrip> createDemoTrip(AppDatabase db) async {
     }
   }
 
+  // All paid by you, because you are the only one here.
   await spend('Taxi · Shillong to Cherrapunji', 320011, 0, 2);
   await spend('Homestay · 2 nights', 440000, 0, 3);
-  await spend('Cave guide', 150000, 2, 3);
-  await spend('Dinner at Sohra', 86000, 1, 2);
+  await spend('Cave guide', 150000, 0, 3);
+  await spend('Dinner at Sohra', 86000, 0, 2);
   await spend('Fuel', 210000, 0, 2);
 
   return DemoTrip(

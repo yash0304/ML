@@ -352,6 +352,9 @@ void main() {
         debugShowCheckedModeBanner: false,
         theme: AppTokens.light,
         home: EntryScreen(
+          // Frozen, so confirming in this test does not stamp the image with
+          // the day it was rendered.
+          clock: () => DateTime(2026, 9, 28),
           contact: contact,
           stopName: 'Shillong · nights 1 and 4',
           onCopy: (c) async => c.phoneRaw,
