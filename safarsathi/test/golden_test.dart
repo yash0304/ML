@@ -476,6 +476,10 @@ void main() {
       'trip',
       TripScreen(
         unconfirmedCount: Stream.value(4),
+        // The two shortcuts the app now opens on. Wired here so the golden
+        // covers the section rather than the null case.
+        onViewMap: () {},
+        onLegs: () {},
         trip: Stream.value(
           TripSummary(
             name: 'Meghalaya · demo',
@@ -686,13 +690,11 @@ void main() {
         contactCount: Stream.value(23),
         onTrips: () {},
         onItinerary: () {},
-        onLegs: () {},
         onChecklist: () {},
         onTravellers: () {},
         onWeather: () {},
         onSettings: () {},
         onMap: () {},
-        onViewMap: () {},
         onSync: () {},
         onImport: () {},
         onMultiAdd: () {},

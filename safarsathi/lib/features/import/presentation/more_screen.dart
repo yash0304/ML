@@ -15,14 +15,11 @@ import '../../../core/widgets/retro.dart';
 class MoreScreen extends StatelessWidget {
   final VoidCallback onTrips;
   final VoidCallback onItinerary;
-  final VoidCallback onLegs;
   final VoidCallback onChecklist;
   final VoidCallback onTravellers;
   final VoidCallback onWeather;
   final VoidCallback onMap;
 
-  /// Looking at the downloaded map, as opposed to downloading it.
-  final VoidCallback onViewMap;
   final VoidCallback onSync;
   final VoidCallback onSettings;
   final VoidCallback onImport;
@@ -39,12 +36,10 @@ class MoreScreen extends StatelessWidget {
     super.key,
     required this.onTrips,
     required this.onItinerary,
-    required this.onLegs,
     required this.onChecklist,
     required this.onTravellers,
     required this.onWeather,
     required this.onMap,
-    required this.onViewMap,
     required this.onSync,
     required this.onSettings,
     required this.onImport,
@@ -117,14 +112,6 @@ class MoreScreen extends StatelessWidget {
               onTap: onTravellers,
             ),
             _Item(
-              icon: Icons.map_outlined,
-              title: 'The map',
-              subtitle:
-                  'What you downloaded, drawn. Works with no signal, and goes '
-                  'blank outside what you fetched rather than pretending.',
-              onTap: onViewMap,
-            ),
-            _Item(
               icon: Icons.download_for_offline_outlined,
               title: 'Download the map',
               subtitle:
@@ -139,14 +126,6 @@ class MoreScreen extends StatelessWidget {
                   'A forecast downloaded once and frozen. The app always '
                   'says how old it is.',
               onTap: onWeather,
-            ),
-            _Item(
-              icon: Icons.directions_bus_outlined,
-              title: 'Getting between stops',
-              subtitle:
-                  'How you are travelling each leg, and when. Typed, not '
-                  'looked up.',
-              onTap: onLegs,
             ),
             const StencilLabel('Contacts'),
             _Item(

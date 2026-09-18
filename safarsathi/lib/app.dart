@@ -786,6 +786,19 @@ class _HomeState extends State<_Home> {
     return AppShell(
       destinations: [
         ShellDestination(
+          label: 'Trip',
+          icon: Icons.route_outlined,
+          screen: TripScreen(
+            trip: watchTripSummary(db, trip.tripId),
+            unconfirmedCount: unconfirmed,
+            readiness: watchReadiness(db, trip.tripId),
+            onEditItinerary: () =>
+                _openItinerary(context, trip.tripId, trip.name),
+            onViewMap: () => _viewMap(context, trip.tripId),
+            onLegs: () => _openLegs(context, trip.tripId),
+          ),
+        ),
+        ShellDestination(
           label: 'Diary',
           icon: Icons.menu_book_outlined,
           screen: DiaryScreen(
@@ -803,17 +816,6 @@ class _HomeState extends State<_Home> {
             onTogglePin: (contact, pinned) =>
                 dao.togglePin(contact.id, pinned),
             cacheStamp: watchCacheStamp(db, trip.tripId),
-          ),
-        ),
-        ShellDestination(
-          label: 'Trip',
-          icon: Icons.route_outlined,
-          screen: TripScreen(
-            trip: watchTripSummary(db, trip.tripId),
-            unconfirmedCount: unconfirmed,
-            readiness: watchReadiness(db, trip.tripId),
-            onEditItinerary: () =>
-                _openItinerary(context, trip.tripId, trip.name),
           ),
         ),
         ShellDestination(
@@ -847,12 +849,10 @@ class _HomeState extends State<_Home> {
             contactCount: dao.watchContactCount(trip.tripId),
             onTrips: () => _openTrips(context),
             onItinerary: () => _openItinerary(context, trip.tripId, trip.name),
-            onLegs: () => _openLegs(context, trip.tripId),
             onChecklist: () => _openChecklist(context, trip.tripId),
             onTravellers: () => _openTravellers(context, trip.tripId),
             onWeather: () => _openWeather(context, trip.tripId),
             onMap: () => _openMap(context, trip.tripId),
-            onViewMap: () => _viewMap(context, trip.tripId),
             onSync: () => _openSync(context, trip.tripId),
             onSettings: () => _openSettings(context, trip.tripId),
             onMultiAdd: () => _openMultiAdd(context, trip.tripId),

@@ -28,12 +28,21 @@ class TripScreen extends StatelessWidget {
   /// Opens the itinerary editor (#16).
   final VoidCallback? onEditItinerary;
 
+  /// The downloaded map, drawn. Was four taps away behind More, which is
+  /// three too many for the thing the app exists to do.
+  final VoidCallback? onViewMap;
+
+  /// The legs, and the places found along each one.
+  final VoidCallback? onLegs;
+
   const TripScreen({
     super.key,
     required this.trip,
     required this.unconfirmedCount,
     this.readiness,
     this.onEditItinerary,
+    this.onViewMap,
+    this.onLegs,
   });
 
   /// The section rule, with a way into the editor when one is wired.
@@ -80,6 +89,25 @@ class TripScreen extends StatelessWidget {
                   if (data.nextLeg != null) ...[
                     const StencilLabel('Next leg'),
                     _nextLeg(c, data.nextLeg!),
+                  ],
+                  if (onViewMap != null || onLegs != null) ...[
+                    const StencilLabel('On the road'),
+                    if (onViewMap != null)
+                      _Shortcut(
+                        icon: Icons.map_outlined,
+                        title: 'The map',
+                        subtitle: 'What you downloaded, drawn. No signal '
+                            'needed.',
+                        onTap: onViewMap!,
+                      ),
+                    if (onLegs != null)
+                      _Shortcut(
+                        icon: Icons.directions_bus_outlined,
+                        title: 'Getting between stops',
+                        subtitle: 'Each leg, how you are travelling it, and '
+                            'what is along the way.',
+                        onTap: onLegs!,
+                      ),
                   ],
                   const SizedBox(height: AppTokens.s16),
                   if (readiness != null)
@@ -324,6 +352,66 @@ class _Field extends StatelessWidget {
         const SizedBox(height: 2),
         Text(value, style: AppTokens.numberStyle.copyWith(color: c.ink)),
       ],
+    );
+  }
+}
+
+/// A way into another screen, from the one the app opens on.
+///
+/// Deliberately the same shape as the rows on More: the two lists are the
+/// same kind of thing, and only their placement says which is reached often.
+class _Shortcut extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _Shortcut({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppTokens.gutter,
+          AppTokens.s12,
+          AppTokens.gutter,
+          AppTokens.s12,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 20, color: c.muted),
+            const SizedBox(width: AppTokens.s12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTokens.titleStyle.copyWith(
+                      fontSize: 15,
+                      color: c.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: AppTokens.captionStyle.copyWith(color: c.muted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
