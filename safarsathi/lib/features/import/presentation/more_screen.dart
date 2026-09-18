@@ -20,6 +20,9 @@ class MoreScreen extends StatelessWidget {
   final VoidCallback onTravellers;
   final VoidCallback onWeather;
   final VoidCallback onMap;
+
+  /// Looking at the downloaded map, as opposed to downloading it.
+  final VoidCallback onViewMap;
   final VoidCallback onSync;
   final VoidCallback onSettings;
   final VoidCallback onImport;
@@ -41,6 +44,7 @@ class MoreScreen extends StatelessWidget {
     required this.onTravellers,
     required this.onWeather,
     required this.onMap,
+    required this.onViewMap,
     required this.onSync,
     required this.onSettings,
     required this.onImport,
@@ -114,10 +118,18 @@ class MoreScreen extends StatelessWidget {
             ),
             _Item(
               icon: Icons.map_outlined,
-              title: 'Offline map',
+              title: 'The map',
               subtitle:
-                  'Download the map for this trip on WiFi. After that it '
-                  'works with no signal at all.',
+                  'What you downloaded, drawn. Works with no signal, and goes '
+                  'blank outside what you fetched rather than pretending.',
+              onTap: onViewMap,
+            ),
+            _Item(
+              icon: Icons.download_for_offline_outlined,
+              title: 'Download the map',
+              subtitle:
+                  'Fetch the tiles for this trip on WiFi, and see how much '
+                  'room they take.',
               onTap: onMap,
             ),
             _Item(

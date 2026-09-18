@@ -179,6 +179,12 @@ To split with people: Money → **Who is on this trip** → add their names
 (first names only — no accounts, nothing is sent anywhere). Then the app works
 out the fewest payments needed to settle up at the end.
 
+**To look at the map**
+
+More → **The map.** It draws what you downloaded, with your stops and route
+on it. Pan outside the area you fetched and it goes blank — that is the honest
+answer, not a bug.
+
 **To check the weather**
 
 More → **Weather.** It shows what you downloaded, **and when you downloaded

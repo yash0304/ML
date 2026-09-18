@@ -5,6 +5,10 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-18 — [MAP] **There is now a screen that shows the downloaded map: More → The map.** (`TripMap` was built at #24, tested, and wired to nothing. The app could fetch 346 MB of tiles, count them accurately on the cache screen, and offer no way whatsoever to look at them — Yash asked where the offline map was and the honest answer was "nowhere". A download nobody can see is not an offline map, it is a directory. The old "Offline map" entry is now "Download the map", and "The map" sits above it, because the two are different jobs and one of them was missing.)
+
+2026-09-18 — [MAP] The map screen states what it does at the edge of what was downloaded. ("Pan outside what you downloaded and it goes blank, which is the honest answer." A grey rectangle with no explanation is indistinguishable from a broken map, and this app's whole claim is that you can tell the difference.)
+
 2026-09-18 — [BACKUP] **The full backup is written and read as a stream, never assembled in memory, and it leaves the phone by a share sheet rather than the save dialog.** (`FilePicker.saveFile` takes the whole file as a `Uint8List`; a 350 MB tile cache passed that way is how a backup becomes a crash on the phone that most needed one. `ZipFileEncoder` writes entry by entry to disk, `InputFileStream` reads it back the same way, and `share_plus` hands the finished file over by path. Tiles are STORED, not deflated — they are already-compressed PNG and WebP, so deflating spends minutes of phone CPU to save nothing.)
 
 2026-09-18 — [BACKUP] After a full restore the tile index is rebuilt by walking the directory, not trusted from the archive. (A truncated or partly-extracted archive would otherwise leave the cache screen reporting thousands of tiles over a directory that does not have them — the worst possible answer to "what have I got offline".)

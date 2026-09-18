@@ -692,6 +692,7 @@ void main() {
         onWeather: () {},
         onSettings: () {},
         onMap: () {},
+        onViewMap: () {},
         onSync: () {},
         onImport: () {},
         onMultiAdd: () {},

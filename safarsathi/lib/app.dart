@@ -45,6 +45,7 @@ import 'features/map/data/tile_downloader.dart';
 import 'features/map/data/tile_provider.dart';
 import 'features/map/data/tile_store.dart';
 import 'features/map/presentation/map_download_screen.dart';
+import 'features/map/presentation/trip_map_screen.dart';
 import 'features/money/data/expense_editor.dart';
 import 'features/money/data/money_summary.dart';
 import 'features/money/presentation/expense_form_screen.dart';
@@ -462,6 +463,31 @@ class _HomeState extends State<_Home> {
     );
   }
 
+  /// Looking at the downloaded map.
+  ///
+  /// Separate from the download screen on purpose: until now the only map
+  /// surface in the app was the one that fetches tiles and counts them, so
+  /// there was no way to see what had been fetched.
+  Future<void> _viewMap(BuildContext context, int tripId) async {
+    final store = _tiles;
+    if (store == null) return;
+
+    final provider = tileProviderFor(await _settings.readMapTilerKey());
+    if (!context.mounted) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (mapContext) => TripMapScreen(
+          provider: provider,
+          store: store,
+          load: () =>
+              readTripMap(widget.db, tripId, providerId: provider.id),
+          onDownload: () => _openMap(mapContext, tripId),
+        ),
+      ),
+    );
+  }
+
   Future<void> _openMap(BuildContext context, int tripId) async {
     final store = _tiles;
     if (store == null) return;
@@ -826,6 +852,7 @@ class _HomeState extends State<_Home> {
             onTravellers: () => _openTravellers(context, trip.tripId),
             onWeather: () => _openWeather(context, trip.tripId),
             onMap: () => _openMap(context, trip.tripId),
+            onViewMap: () => _viewMap(context, trip.tripId),
             onSync: () => _openSync(context, trip.tripId),
             onSettings: () => _openSettings(context, trip.tripId),
             onMultiAdd: () => _openMultiAdd(context, trip.tripId),
