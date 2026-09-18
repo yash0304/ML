@@ -113,7 +113,13 @@ class TripMap extends StatelessWidget {
                   store: store,
                   providerId: provider.id,
                 ),
-                tileDimension: provider.tileSize,
+                // THE GRID SIZE, NOT THE IMAGE SIZE. This read tileSize
+                // (512, the pixels in a retina tile) and flutter_map divides
+                // the map's 256-based pixel bounds by it to pick x and y —
+                // so every index came out halved and the layer asked for z12
+                // tiles by z11 numbers. Nothing downloaded was ever at those
+                // coordinates, so a complete 204 MB map drew as blank paper.
+                tileDimension: provider.gridSize,
                 // Outside this band flutter_map scales the nearest tile it
                 // has instead of asking for a level nothing was downloaded
                 // for. Blurry beats blank: past 15 it is soft but readable,

@@ -43,7 +43,28 @@ abstract class MapTileProvider {
   /// not a styling choice.
   String get attribution;
 
+  /// How many pixels across the fetched image is.
+  ///
+  /// NOT the same thing as [gridSize], and conflating the two is what made a
+  /// complete download render blank. See [gridSize].
   int get tileSize;
+
+  /// How much of the slippy grid one tile covers, in logical pixels.
+  ///
+  /// THIS IS 256 FOR THE STANDARD XYZ SCHEME AND HAS NOTHING TO DO WITH HOW
+  /// MANY PIXELS THE IMAGE HAS. A retina tile is 512 pixels of detail over
+  /// the same 256-pixel square of ground; the extra pixels are density, not
+  /// coverage.
+  ///
+  /// The renderer divides the map's pixel bounds by this to work out which
+  /// x and y to ask for. Handing it the image size instead halves every
+  /// index, so it asks for z12 tiles using z11 numbering — coordinates
+  /// pointing at ground nobody downloaded, which renders as nothing while
+  /// routes and markers, positioned by the projection rather than by tiles,
+  /// keep drawing correctly. That combination reads as a styling bug and
+  /// cost a day.
+  int get gridSize;
+
   int get minZoom;
   int get maxZoom;
 
@@ -121,8 +142,15 @@ class MapTilerRaster implements MapTileProvider {
   @override
   String get attribution => '© MapTiler © OpenStreetMap contributors';
 
+  /// `@2x` in the URL asks MapTiler for the retina rendering: the same tile,
+  /// twice the pixels.
   @override
   int get tileSize => 512;
+
+  /// Still 256. The `@2x` tiles cover exactly the same ground as the plain
+  /// ones — they are the standard XYZ grid at double density.
+  @override
+  int get gridSize => 256;
 
   /// 1 to 20 is what MapTiler serves. What this app actually downloads is a
   /// much narrower band; see `TileDownloader`.
@@ -158,6 +186,8 @@ class NoTileProvider implements MapTileProvider {
   String get attribution => '';
   @override
   int get tileSize => 256;
+  @override
+  int get gridSize => 256;
   @override
   int get minZoom => 0;
   @override
