@@ -22,6 +22,21 @@ flutter doctor --android-licenses     # accept them all
 ```
 
 
+## Getting the APK onto a phone
+
+**https://github.com/yash0304/ML/releases/download/latest-apk/safarsathi.apk**
+
+That link always points at the newest build and never changes. Open it on the
+phone and install.
+
+The Actions artifact still exists, but it is a zip that has to be found inside
+a workflow run and extracted — which is a poor way to move a file onto a
+handset. The release is the same APK, one tap.
+
+The release notes on each build say two things worth reading before you
+install: whether it was signed with the real key (if not, installing needs the
+current app uninstalled, which deletes the database) and whether maps are on.
+
 ## The signing key — read this before installing a second build
 
 **Android refuses to upgrade an app whose signing key changed.** It says

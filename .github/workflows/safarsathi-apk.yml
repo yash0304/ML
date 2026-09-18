@@ -23,6 +23,10 @@ on:
       - '.github/workflows/safarsathi-apk.yml'
   workflow_dispatch:
 
+# The release step below writes to the repository.
+permissions:
+  contents: write
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -131,3 +135,40 @@ jobs:
           path: safarsathi/build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 30
+
+      # A ONE-TAP DOWNLOAD, because the artifact above is not one.
+      #
+      # An Actions artifact requires signing in, finding the run, downloading a
+      # zip and extracting it — all of that on a phone, which is where the APK
+      # actually has to end up. A release asset is a single link straight to
+      # the .apk, and `latest-apk` always points at the newest build, so the
+      # link never changes.
+      #
+      # The release is deleted and recreated rather than updated: a rolling tag
+      # that still carries last week's asset is worse than no link at all.
+      - name: Publish it as a one-tap download
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk safarsathi.apk
+
+          if [ -f android/key.properties ]; then
+            SIGNED="Signed with the release key — installs over the previous build and keeps your data."
+          else
+            SIGNED="⚠️ Signed with throwaway debug keys. Installing needs the current app uninstalled first, which WIPES the database — save a backup first (More → Backup and restore)."
+          fi
+          if [ -n "${{ secrets.MAPTILER_KEY }}" ]; then
+            MAPS="Maps enabled."
+          else
+            MAPS="Maps off — no MAPTILER_KEY secret. Paste a key into Settings → Map key on the phone to switch them on."
+          fi
+
+          gh release delete latest-apk --yes --cleanup-tag || true
+          gh release create latest-apk safarsathi.apk \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "SafarSathi — latest build" \
+            --notes "$(printf '%s\n\n%s\n\n%s\n\nBuilt from `%s`.' \
+              "$(git log -1 --pretty=%s)" "$SIGNED" "$MAPS" "${GITHUB_SHA:0:7}")"
+
+          echo "Download: https://github.com/$GITHUB_REPOSITORY/releases/download/latest-apk/safarsathi.apk"
