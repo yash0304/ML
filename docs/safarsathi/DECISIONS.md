@@ -5,6 +5,12 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-18 — [UI] A leg with no kilometres now says which of its two stops has no location, rather than showing an empty space. (From the phone: five legs, and the two touching Sohrra were blank. Both were blocked on the same thing — that stop had never been located — and the screen said neither which stop nor that it mattered. "Not downloaded yet" and "Sohrra has no location yet" need different things done about them, so they read differently: the second is in caution, because only the user can clear it.)
+
+2026-09-18 — [BRAND] The launcher icon is rail, road and air on one line, and it does NOT use the app's green. (The mark is seen beside thirty other icons on a home screen, so it is allowed to shout where the app itself stays quiet: violet falling to magenta across the diagonal, marks in the app's own paper so the two still belong together. The merge is the line itself — sleepers on the left half make it a railway, the clean right half makes it a road, and the plane lifts off the end. Drawn by `tool/make_icon.py` at 4x and downsampled, so it is reproducible and every density comes from one source rather than five hand-edited files.)
+
+2026-09-18 — [BRAND] The home-screen label is "SafarSathi", not "safarsathi". (The Flutter template lowercases it from the project directory name.)
+
 2026-09-14 — [DEMO] The demo trip seeds one traveller — you — and no companions. (It used to seed Ankit and Priya so the settle-up had something to settle, which meant anybody opening the app for the first time found two strangers in their ledger and had to work out they were not real. Adding a traveller is one tap on Money → Travellers, and doing it yourself is a better way to learn that screen than finding it pre-filled.)
 
 2026-09-14 — [TEST] `EntryScreen` takes an injectable clock. (Confirming a contact stamped `DateTime.now()` into the golden image, so `entry_confirmed.png` failed on every day after the one it was rendered on. A golden that depends on the calendar is a golden that cries wolf, and the project already froze time this way on the stop screen.)

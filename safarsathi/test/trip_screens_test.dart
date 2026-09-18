@@ -319,6 +319,77 @@ void main() {
       expect(find.text('BOOKED'), findsOneWidget);
     });
 
+    testWidgets('A LEG WITH NO KILOMETRES SAYS WHY, RATHER THAN NOTHING', (
+      tester,
+    ) async {
+      // From the phone, 18 Sep: five legs, and the two touching Sohrra showed
+      // an empty space where the distance goes. Both were blocked on the same
+      // thing — that stop had no coordinates — and the screen said neither
+      // which stop nor that it mattered.
+      await tester.pumpWidget(
+        wrap(
+          LegListScreen(
+            legs: Stream.value(const [
+              LegRow(
+                id: 1,
+                fromName: 'Kongthong',
+                toName: 'Sohrra',
+                isBooked: false,
+                stopsWithoutLocation: ['Sohrra'],
+              ),
+              LegRow(
+                id: 2,
+                fromName: 'Shillong',
+                toName: 'Guwahati',
+                isBooked: false,
+                distanceKm: 105,
+              ),
+              LegRow(
+                id: 3,
+                fromName: 'Guwahati',
+                toName: 'Shillong',
+                isBooked: false,
+              ),
+            ]),
+            onOpen: (_) {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Names the stop, because that is the thing to go and fix.
+      expect(find.text('Sohrra has no location yet'), findsOneWidget);
+      // A located leg that simply has not been fetched reads differently:
+      // one needs a download, the other needs you.
+      expect(find.text('Not downloaded yet'), findsOneWidget);
+      // And a leg that did download still just shows its distance.
+      expect(find.text('105 km'), findsOneWidget);
+    });
+
+    testWidgets('both ends missing names both', (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          LegListScreen(
+            legs: Stream.value(const [
+              LegRow(
+                id: 1,
+                fromName: 'Kongthong',
+                toName: 'Sohrra',
+                isBooked: false,
+                stopsWithoutLocation: ['Kongthong', 'Sohrra'],
+              ),
+            ]),
+            onOpen: (_) {},
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(
+        find.text('Kongthong and Sohrra have no location yet'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('legs cannot be added here, and it says why', (tester) async {
       await tester.pumpWidget(
         wrap(LegListScreen(legs: Stream.value(const []), onOpen: (_) {})),

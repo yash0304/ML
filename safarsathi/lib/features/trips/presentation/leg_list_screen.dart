@@ -22,6 +22,14 @@ class LegRow {
   final bool isBooked;
   final double? distanceKm;
 
+  /// Stops on this leg that have no coordinates yet, by name.
+  ///
+  /// A leg cannot be routed without both ends, so this is the difference
+  /// between "nobody has downloaded this yet" and "nothing can download it
+  /// until you do something". The row said neither and simply showed a blank
+  /// space where the kilometres go.
+  final List<String> stopsWithoutLocation;
+
   const LegRow({
     required this.id,
     this.poiCount = 0,
@@ -31,7 +39,20 @@ class LegRow {
     this.mode,
     this.plannedDeparture,
     this.distanceKm,
+    this.stopsWithoutLocation = const [],
   });
+
+  bool get canBeRouted => stopsWithoutLocation.isEmpty;
+  bool get isDownloaded => distanceKm != null;
+
+  /// What this leg is waiting for, or null when it is waiting for nothing.
+  String? get blockedBy {
+    if (canBeRouted) return isDownloaded ? null : 'Not downloaded yet';
+    final missing = stopsWithoutLocation;
+    return missing.length == 1
+        ? '${missing.single} has no location yet'
+        : '${missing.join(' and ')} have no location yet';
+  }
 }
 
 /// Reads from both tables, because a leg's label is two stop names.
@@ -51,6 +72,10 @@ Stream<List<LegRow>> watchLegSummaries(AppDatabase db, int tripId) {
       db.stops,
     )..where((s) => s.tripId.equals(tripId))).get();
     final byId = {for (final s in stops) s.id: s.name};
+    // A leg needs BOTH ends located before anything can be fetched for it.
+    final located = {
+      for (final s in stops) s.id: s.lat != null && s.lon != null,
+    };
 
     final pois = await (db.select(
       db.pois,
@@ -73,6 +98,10 @@ Stream<List<LegRow>> watchLegSummaries(AppDatabase db, int tripId) {
           plannedDeparture: l.plannedDeparture,
           isBooked: l.isBooked,
           distanceKm: l.distanceKm,
+          stopsWithoutLocation: [
+            for (final id in {l.fromStopId, l.toStopId})
+              if (located[id] == false) byId[id] ?? 'A stop',
+          ],
         ),
     ];
   });
@@ -209,6 +238,22 @@ class _LegRowTile extends StatelessWidget {
                   Text(
                     '${row.distanceKm!.round()} km',
                     style: AppTokens.numberStyle.copyWith(color: c.muted),
+                  )
+                // A BLANK SPACE IS NOT AN EXPLANATION. A leg with no
+                // kilometres is either waiting on a download or waiting on
+                // a stop that has no location, and those need different
+                // things done about them.
+                else if (row.blockedBy != null)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 148),
+                    child: Text(
+                      row.blockedBy!,
+                      textAlign: TextAlign.end,
+                      style: AppTokens.captionStyle.copyWith(
+                        fontSize: 11.5,
+                        color: row.canBeRouted ? c.muted : c.cautionMark,
+                      ),
+                    ),
                   ),
                 if (row.isBooked)
                   Padding(
