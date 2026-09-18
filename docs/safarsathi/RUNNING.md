@@ -54,6 +54,25 @@ one before it.
 
 ### Make the key once
 
+**In Android Studio** (no command line, and any project will do — a keystore
+belongs to you, not to a project):
+
+1. Build → **Generate Signed App Bundle / APK…**
+2. Pick **APK**, then Next
+3. Click **Create new…**
+4. Fill in the New Key Store dialog:
+   - **Key store path** — browse somewhere permanent, name it `safarsathi.jks`
+   - **Password** and confirm — write it down somewhere real
+   - **Alias**: `safarsathi`
+   - **Key password** — the same one is fine
+   - **Validity**: 25 years or more
+   - **First and Last Name** — the only certificate field that matters
+5. OK. The `.jks` is written at that point.
+6. **Cancel the rest of the wizard.** Nothing needs building; the key was the
+   whole errand.
+
+**Or from a terminal**, if you have a JDK on the path:
+
 ```
 keytool -genkey -v -keystore safarsathi.jks -keyalg RSA -keysize 2048 \
         -validity 10000 -alias safarsathi
@@ -84,13 +103,29 @@ Four repository secrets, under **Settings → Secrets and variables → Actions*
 
 | Secret | Value |
 |---|---|
-| `ANDROID_KEYSTORE_BASE64` | `base64 -w0 safarsathi.jks` |
+| `ANDROID_KEYSTORE_BASE64` | the keystore as base64 — see below |
 | `ANDROID_KEYSTORE_PASSWORD` | the store password |
 | `ANDROID_KEY_ALIAS` | `safarsathi` |
 | `ANDROID_KEY_PASSWORD` | the key password |
 
 The workflow prints which signing it used, so a missing secret is visible in
 the build log rather than only on the phone.
+
+**Turning the keystore into base64.** On Linux or macOS:
+
+```
+base64 -w0 safarsathi.jks
+```
+
+**On Windows**, `base64` does not exist. In PowerShell:
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\path\to\safarsathi.jks")) | Set-Clipboard
+```
+
+That puts the whole string on the clipboard, ready to paste straight into the
+secret. It is one very long line with no newlines, which is what the workflow
+expects — a wrapped version will not decode.
 
 ### One last uninstall
 
