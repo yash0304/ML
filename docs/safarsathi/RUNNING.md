@@ -130,8 +130,22 @@ expects — a wrapped version will not decode.
 ### One last uninstall
 
 The build that first carries the real key is signed differently from whatever
-is on the phone now, so **that one installs over nothing** — uninstall first.
-Every build after it goes over the top and keeps the data.
+is on the phone now, so Android refuses it with the same "package conflicts"
+message — **the current copy has to be uninstalled once**. Every build after
+it goes over the top and keeps the data.
+
+Uninstalling deletes the database and the downloaded map tiles with it, so
+that one time, in this order:
+
+1. **More → Backup and restore → With the map.** That writes a zip holding
+   the data *and* the tiles. The plain backup above it leaves the tiles out,
+   and re-downloading them needs WiFi and patience.
+2. **Share the file off the phone** — Drive, a chat to yourself, anywhere but
+   the app's own storage, which the uninstall takes too.
+3. Uninstall, install the new APK, restore the file.
+
+If the installed build is old enough not to offer "With the map", take the
+plain backup and plan to re-download the map afterwards.
 
 ## The MapTiler key
 
