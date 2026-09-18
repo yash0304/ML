@@ -18,14 +18,31 @@ import 'tile_math.dart';
 class TileStore {
   final AppDatabase db;
 
-  /// Root under which `<provider>/<z>/<x>/<y>.png` hangs.
+  /// Root under which `<provider>/<z>/<x>/<y>.<ext>` hangs.
   final Directory root;
 
   const TileStore({required this.db, required this.root});
 
-  File fileFor(String provider, TileCoordinate tile) => File(
-    '${root.path}/$provider/${tile.z}/${tile.x}/${tile.y}.png',
-  );
+  /// The formats a tile may be stored in, newest preference first.
+  ///
+  /// WEBP WAS ADDED WITHOUT INVALIDATING ANYTHING ALREADY ON DISK. Tiles
+  /// downloaded before the switch are PNG and are still perfectly good; making
+  /// the reader miss them would have turned a working offline map blank and
+  /// forced a 346 MB re-download, which is precisely the cost this change
+  /// exists to avoid. So a read tries both, and only new downloads are WebP.
+  static const formats = ['webp', 'png'];
+
+  File fileFor(String provider, TileCoordinate tile, {String format = 'png'}) =>
+      File('${root.path}/$provider/${tile.z}/${tile.x}/${tile.y}.$format');
+
+  /// The file actually on disk for this tile, whatever format it is in.
+  File? storedFile(String provider, TileCoordinate tile) {
+    for (final format in formats) {
+      final file = fileFor(provider, tile, format: format);
+      if (file.existsSync()) return file;
+    }
+    return null;
+  }
 
   /// Reads a tile, or null when it was never downloaded.
   ///
@@ -33,8 +50,8 @@ class TileStore {
   /// was not downloaded returns null and renders blank, and the only way to be
   /// certain of that on a mountain road is for the code to be absent.
   Future<Uint8List?> read(String provider, TileCoordinate tile) async {
-    final file = fileFor(provider, tile);
-    if (!file.existsSync()) return null;
+    final file = storedFile(provider, tile);
+    if (file == null) return null;
     try {
       return await file.readAsBytes();
     } on FileSystemException {
@@ -44,14 +61,15 @@ class TileStore {
   }
 
   Future<bool> has(String provider, TileCoordinate tile) async =>
-      fileFor(provider, tile).existsSync();
+      storedFile(provider, tile) != null;
 
   Future<void> write(
     String provider,
     TileCoordinate tile,
-    Uint8List bytes,
-  ) async {
-    final file = fileFor(provider, tile);
+    Uint8List bytes, {
+    String format = 'png',
+  }) async {
+    final file = fileFor(provider, tile, format: format);
     await file.parent.create(recursive: true);
     await file.writeAsBytes(bytes, flush: true);
 

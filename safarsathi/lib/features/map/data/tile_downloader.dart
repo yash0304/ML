@@ -164,7 +164,7 @@ class TileDownloader {
       try {
         final bytes = await fetch(provider.urlFor(tile.z, tile.x, tile.y));
         if (bytes != null && bytes.isNotEmpty) {
-          await store.write(provider.id, tile, bytes);
+          await store.write(provider.id, tile, bytes, format: provider.format);
         } else {
           failed++;
         }

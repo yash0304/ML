@@ -47,6 +47,12 @@ abstract class MapTileProvider {
   int get minZoom;
   int get maxZoom;
 
+  /// The image format tiles are fetched and stored in, without the dot.
+  ///
+  /// Part of the interface because the cache is files on disk and the store
+  /// has to know what to name them.
+  String get format;
+
   /// The URL for one tile. Throws when unconfigured rather than returning a
   /// URL that will 403 — a failure at the point of the mistake beats a
   /// thousand failed requests.
@@ -76,14 +82,28 @@ class MapTilerRaster implements MapTileProvider {
   /// the flatter city alternative.
   final String style;
 
+  /// WEBP, NOT PNG. MapTiler serves the same tiles either way, and WebP is
+  /// roughly a third the size at the same visual quality — 346 MB of a
+  /// Meghalaya corridor becomes something closer to 110 MB. That matters more
+  /// than it sounds: it is the difference between a re-download somebody will
+  /// do and one they will put off.
+  ///
+  /// Tiles already on disk as PNG keep working; see `TileStore.formats`.
+  @override
+  final String format;
+
   const MapTilerRaster({
     this.apiKey = buildTimeKey,
     this.style = 'outdoor-v2',
+    this.format = 'webp',
   });
 
   /// What `--dart-define` left in the binary, or the empty string.
   static const buildTimeKey = String.fromEnvironment('MAPTILER_KEY');
 
+  /// Deliberately NOT including the format: the cache is the same ground
+  /// whichever way the bytes were encoded, and folding the format in here
+  /// would strand every tile downloaded before the switch.
   @override
   String get id => 'maptiler-$style';
 
@@ -117,7 +137,8 @@ class MapTilerRaster implements MapTileProvider {
     if (!isConfigured) {
       throw const TileProviderNotConfigured('No MapTiler key.');
     }
-    return 'https://api.maptiler.com/maps/$style/$z/$x/$y@2x.png?key=$apiKey';
+    return 'https://api.maptiler.com/maps/$style/$z/$x/$y@2x.$format'
+        '?key=$apiKey';
   }
 }
 
@@ -141,6 +162,8 @@ class NoTileProvider implements MapTileProvider {
   int get minZoom => 0;
   @override
   int get maxZoom => 0;
+  @override
+  String get format => 'png';
   @override
   String urlFor(int z, int x, int y) =>
       throw const TileProviderNotConfigured('No map provider is configured.');

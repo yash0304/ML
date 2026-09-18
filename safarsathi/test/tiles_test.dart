@@ -185,6 +185,70 @@ void main() {
     });
   });
 
+  group('webp, without stranding what is already downloaded', () {
+    late AppDatabase db;
+    late Directory root;
+    late TileStore store;
+
+    setUp(() async {
+      db = AppDatabase(NativeDatabase.memory());
+      root = await Directory.systemTemp.createTemp('tiles-format');
+      store = TileStore(db: db, root: root);
+    });
+    tearDown(() async {
+      await db.close();
+      if (root.existsSync()) root.deleteSync(recursive: true);
+    });
+
+    test('the provider now asks for webp', () {
+      const provider = MapTilerRaster(apiKey: 'k');
+      expect(provider.format, 'webp');
+      expect(provider.urlFor(12, 1, 2), contains('@2x.webp'));
+      expect(provider.urlFor(12, 1, 2), isNot(contains('.png')));
+    });
+
+    test('THE CACHE ID DOES NOT MOVE WITH THE FORMAT', () {
+      // Folding the format into the id would strand every tile downloaded
+      // before the switch — 346 MB of them, on a phone, a fortnight before
+      // a trip.
+      expect(
+        const MapTilerRaster(apiKey: 'k', format: 'webp').id,
+        const MapTilerRaster(apiKey: 'k', format: 'png').id,
+      );
+    });
+
+    test('A TILE DOWNLOADED AS PNG IS STILL FOUND AFTER THE SWITCH', () async {
+      const tile = TileCoordinate(12, 100, 200);
+      // Written the old way, before this change existed.
+      await store.write('maptiler-outdoor-v2', tile, Uint8List.fromList([1, 2]));
+
+      // Read the new way, with webp preferred.
+      expect(await store.has('maptiler-outdoor-v2', tile), isTrue);
+      expect(await store.read('maptiler-outdoor-v2', tile), [1, 2]);
+    });
+
+    test('a webp tile wins when both happen to exist', () async {
+      const tile = TileCoordinate(12, 100, 200);
+      await store.write('p', tile, Uint8List.fromList([1]), format: 'png');
+      await store.write('p', tile, Uint8List.fromList([2]), format: 'webp');
+      expect(await store.read('p', tile), [2]);
+    });
+
+    test('new downloads land as webp', () async {
+      const tile = TileCoordinate(12, 100, 200);
+      await store.write('p', tile, Uint8List.fromList([9]), format: 'webp');
+      expect(store.fileFor('p', tile, format: 'webp').existsSync(), isTrue);
+      expect(store.fileFor('p', tile, format: 'png').existsSync(), isFalse);
+    });
+
+    test('a missing tile is still missing in either format', () async {
+      expect(
+        await store.has('p', const TileCoordinate(1, 1, 1)),
+        isFalse,
+      );
+    });
+  });
+
   group('the store', () {
     late AppDatabase db;
     late Directory root;
