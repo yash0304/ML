@@ -14,6 +14,7 @@ import 'package:safarsathi/features/map/data/tile_downloader.dart';
 import 'package:safarsathi/features/map/data/tile_provider.dart';
 import 'package:safarsathi/features/map/data/tile_store.dart';
 import 'package:safarsathi/features/map/presentation/map_download_screen.dart';
+import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:safarsathi/features/map/presentation/trip_map.dart';
 
 Widget wrap(Widget child, {Brightness brightness = Brightness.light}) =>
@@ -304,6 +305,75 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       }
+    });
+  });
+
+  group('the map opens on tiles that exist', () {
+    // THE BUG THIS CATCHES. TripMap opened at zoom 11 with literals of its
+    // own, while the downloader has only ever fetched defaultMinZoom to
+    // defaultMaxZoom (12-15). Zoom 11 is a level no phone has ever held a
+    // tile for, so a complete download rendered as blank paper with the
+    // route floating on it: "all maps downloaded but it is not at all
+    // readable". Two constants in two files, never compared.
+
+    fm.MapOptions optionsOf(WidgetTester tester) =>
+        tester.widget<fm.FlutterMap>(find.byType(fm.FlutterMap)).options;
+
+    fm.TileLayer tileLayerOf(WidgetTester tester) =>
+        tester.widget<fm.TileLayer>(find.byType(fm.TileLayer));
+
+    Future<void> pumpMap(WidgetTester tester) => tester.pumpWidget(
+      wrap(
+        TripMap(
+          provider: const MapTilerRaster(apiKey: 'k'),
+          store: store,
+          stops: const [(name: 'Shillong', at: LatLng(25.5788, 91.8933))],
+        ),
+      ),
+    );
+
+    testWidgets('it opens inside the downloaded band', (tester) async {
+      await pumpMap(tester);
+      final zoom = optionsOf(tester).initialZoom;
+
+      expect(
+        zoom,
+        greaterThanOrEqualTo(defaultMinZoom.toDouble()),
+        reason: 'opening below the downloaded band shows blank paper over a '
+            'complete download',
+      );
+      expect(zoom, lessThanOrEqualTo(defaultMaxZoom.toDouble()));
+    });
+
+    testWidgets('no reachable zoom is left without tiles to scale', (
+      tester,
+    ) async {
+      await pumpMap(tester);
+      final options = optionsOf(tester);
+      final layer = tileLayerOf(tester);
+
+      // Outside the native band flutter_map scales the nearest level it has.
+      // That only holds if the layer is TOLD where the band is; left at the
+      // defaults (0 and 19) it asks for levels that were never downloaded
+      // and draws nothing.
+      expect(layer.minNativeZoom, defaultMinZoom);
+      expect(layer.maxNativeZoom, defaultMaxZoom);
+      expect(options.minZoom, isNotNull);
+      expect(options.maxZoom, isNotNull);
+    });
+
+    testWidgets('zooming out stays close enough to stay cheap', (tester) async {
+      await pumpMap(tester);
+      final options = optionsOf(tester);
+
+      // Each level below the native minimum quadruples the tiles needed to
+      // cover the screen. One step is four; three steps is sixty-four and a
+      // stutter. This is a performance bound, not a rendering one.
+      expect(
+        defaultMinZoom - options.minZoom!,
+        lessThanOrEqualTo(1),
+        reason: 'more than one level below native scales too many tiles',
+      );
     });
   });
 }

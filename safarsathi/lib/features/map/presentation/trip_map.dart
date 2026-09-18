@@ -15,6 +15,8 @@ import 'package:latlong2/latlong.dart' as ll;
 
 import '../../../core/theme/app_tokens.dart';
 import '../../discovery/data/geo.dart';
+import '../data/tile_downloader.dart'
+    show defaultMinZoom, defaultMaxZoom;
 import '../data/tile_provider.dart';
 import '../data/tile_store.dart';
 import 'offline_tile_provider.dart';
@@ -86,9 +88,23 @@ class TripMap extends StatelessWidget {
           fm.FlutterMap(
             options: fm.MapOptions(
               initialCenter: ll.LatLng(_centre.lat, _centre.lon),
-              initialZoom: 11,
-              minZoom: 10,
-              maxZoom: 16,
+              // OPENS INSIDE THE BAND THAT WAS ACTUALLY DOWNLOADED.
+              //
+              // This opened at 11 while the downloader only ever fetches
+              // defaultMinZoom..defaultMaxZoom, which is 12 to 15. Zoom 11
+              // is a level for which not one tile has ever existed on any
+              // phone, so the map drew the route and the stops over blank
+              // paper and looked broken — reported as "all maps downloaded
+              // but it is not at all readable".
+              //
+              // Two literals in two files that were never checked against
+              // each other. They are now the same constants.
+              initialZoom: defaultMinZoom.toDouble(),
+              // One step out is still legible: tiles below minNativeZoom are
+              // scaled rather than dropped. Further out would need 64 tiles
+              // to cover what one covers, which is a stutter, not a map.
+              minZoom: defaultMinZoom - 1,
+              maxZoom: defaultMaxZoom + 2,
               backgroundColor: c.stone,
             ),
             children: [
@@ -98,6 +114,12 @@ class TripMap extends StatelessWidget {
                   providerId: provider.id,
                 ),
                 tileDimension: provider.tileSize,
+                // Outside this band flutter_map scales the nearest tile it
+                // has instead of asking for a level nothing was downloaded
+                // for. Blurry beats blank: past 15 it is soft but readable,
+                // and the alternative is an empty screen.
+                minNativeZoom: defaultMinZoom,
+                maxNativeZoom: defaultMaxZoom,
                 // A URL template is required by the widget but never used:
                 // OfflineTileProvider ignores it and reads from disk. The
                 // placeholder keeps the real one, and the key, out of the
