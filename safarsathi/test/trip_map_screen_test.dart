@@ -131,9 +131,7 @@ void main() {
       expect(find.text('DOWNLOAD THE MAP'), findsNothing);
     });
 
-    testWidgets('a build with no key says that instead of drawing grey', (
-      tester,
-    ) async {
+    testWidgets('no key AND no tiles points at the key', (tester) async {
       await tester.pumpWidget(
         wrap(
           TripMapScreen(
@@ -145,7 +143,32 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('Maps are off'), findsOneWidget);
+      expect(find.textContaining('Maps are off until you add a key'),
+          findsOneWidget);
+    });
+
+    testWidgets('A DOWNLOADED MAP DRAWS WITH NO KEY AT ALL', (tester) async {
+      // The state after restoring a backup onto a new phone: every tile is
+      // on disk, the key has not been pasted back yet. Refusing to draw here
+      // would withhold a map the user already has, in the exact place they
+      // cannot go and fetch a key.
+      await tester.pumpWidget(
+        wrap(
+          TripMapScreen(
+            provider: const MapTilerRaster(apiKey: ''),
+            store: store,
+            load: () async => const TripMapView(
+              route: [],
+              stops: [(name: 'Shillong', at: LatLng(25.57, 91.88))],
+              tileCount: 3424,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Maps are off'), findsNothing);
+      expect(find.textContaining('3424 tiles on this phone'), findsOneWidget);
     });
   });
 }

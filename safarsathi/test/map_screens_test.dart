@@ -55,11 +55,14 @@ void main() {
           TripMap(
             provider: const MapTilerRaster(apiKey: ''),
             store: store,
+            // No key AND nothing downloaded. With tiles on disk the map
+            // draws regardless of the key, which is its own test.
+            hasTiles: false,
           ),
         ),
       );
 
-      expect(find.text('Maps are off in this build'), findsOneWidget);
+      expect(find.text('Maps are off until you add a key'), findsOneWidget);
       // The hint has to name a place the user can actually go.
       expect(find.textContaining('Settings → Map key'), findsOneWidget);
     });
@@ -107,7 +110,11 @@ void main() {
     ) async {
       await tester.pumpWidget(
         wrap(
-          TripMap(provider: const MapTilerRaster(apiKey: ''), store: store),
+          TripMap(
+            provider: const MapTilerRaster(apiKey: ''),
+            store: store,
+            hasTiles: false,
+          ),
         ),
       );
       expect(find.textContaining('© MapTiler'), findsNothing);

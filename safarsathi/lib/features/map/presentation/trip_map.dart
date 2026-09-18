@@ -58,20 +58,24 @@ class TripMap extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = AppTokens.of(context);
 
-    if (!provider.isConfigured) {
-      return _Notice(
-        height: height,
-        title: 'Maps are off in this build',
-        body: provider.configurationHint,
-      );
-    }
+    // TILES FIRST, KEY SECOND, AND THE ORDER IS THE WHOLE POINT.
+    //
+    // `OfflineTileProvider` reads files off this phone and never looks at a
+    // key. Checking `isConfigured` first meant a phone holding a complete
+    // downloaded map refused to draw it and said "maps are off" — which is
+    // exactly the state somebody is in after restoring a backup onto a new
+    // handset, standing in a valley, needing the map they already paid for.
+    // A key is needed to FETCH tiles. It is needed for nothing else.
     if (!hasTiles) {
       return _Notice(
         height: height,
-        title: 'Nothing downloaded for this trip yet',
-        body:
-            'Download the map on WiFi before you leave. After that it works '
-            'with no signal at all.',
+        title: provider.isConfigured
+            ? 'Nothing downloaded for this trip yet'
+            : 'Maps are off until you add a key',
+        body: provider.isConfigured
+            ? 'Download the map on WiFi before you leave. After that it works '
+                  'with no signal at all.'
+            : provider.configurationHint,
       );
     }
 

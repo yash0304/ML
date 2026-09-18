@@ -5,6 +5,8 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-18 — [MAP] **A downloaded map draws whether or not a MapTiler key is present. Tiles are checked before the key, and the order is the whole point.** (`OfflineTileProvider` reads files off the phone and never looks at a key — a key is needed to FETCH tiles and for nothing else. Checking `isConfigured` first meant a phone holding a complete downloaded map refused to draw it and said "maps are off", which is precisely the state somebody is in after restoring a backup onto a new handset: in a valley, with the map they already paid for, being told it is unavailable. Now the key is only mentioned when there is genuinely nothing to draw.)
+
 2026-09-18 — [MAP] **There is now a screen that shows the downloaded map: More → The map.** (`TripMap` was built at #24, tested, and wired to nothing. The app could fetch 346 MB of tiles, count them accurately on the cache screen, and offer no way whatsoever to look at them — Yash asked where the offline map was and the honest answer was "nowhere". A download nobody can see is not an offline map, it is a directory. The old "Offline map" entry is now "Download the map", and "The map" sits above it, because the two are different jobs and one of them was missing.)
 
 2026-09-18 — [MAP] The map screen states what it does at the edge of what was downloaded. ("Pan outside what you downloaded and it goes blank, which is the honest answer." A grey rectangle with no explanation is indistinguishable from a broken map, and this app's whole claim is that you can tell the difference.)
