@@ -110,11 +110,48 @@ class WeatherClient {
   static Future<String> _fetchOverHttp(Uri url) async {
     final response = await http.get(url).timeout(NetTimeouts.weather);
     if (response.statusCode != 200) {
-      throw WeatherException(
-        'The forecast service returned ${response.statusCode}.',
-      );
+      throw WeatherException(explainRefusal(response.statusCode, response.body));
     }
     return response.body;
+  }
+
+  /// Turns a refusal into the sentence the screen shows.
+  ///
+  /// OPEN-METEO SAYS WHY, AND THIS USED TO THROW IT AWAY. A 400 carries
+  /// `{"error": true, "reason": "..."}` naming the offending parameter and
+  /// often the exact range it will accept. Reporting the bare status code
+  /// turned an answer into a mystery: "The server turned the request down
+  /// (400)" gives a person nothing to do, while "end_date is out of allowed
+  /// range" tells them to come back nearer the date.
+  static String explainRefusal(int status, String body) {
+    String? reason;
+    try {
+      final json = jsonDecode(body);
+      if (json is Map && json['reason'] is String) {
+        reason = (json['reason'] as String).trim();
+      }
+    } on Object {
+      // A refusal that is not JSON is common enough from proxies and
+      // captive portals. The status code is then all there is.
+      reason = null;
+    }
+
+    if (reason == null || reason.isEmpty) {
+      return 'The forecast service returned $status.';
+    }
+
+    // The one refusal that is not a bug: forecasts do not reach far enough
+    // ahead yet. Worth naming, because the fix is to wait rather than retry.
+    final outOfRange =
+        reason.toLowerCase().contains('out of allowed range') ||
+        reason.toLowerCase().contains('is too far');
+    if (outOfRange) {
+      return 'The forecast does not reach these dates yet — the service only '
+          'publishes about a fortnight ahead. Fetch the weather again closer '
+          'to the trip. ($reason)';
+    }
+
+    return 'The forecast service refused the request: $reason.';
   }
 
   static Uri buildUrl(LatLng at, {required DateTime from, required DateTime to}) {

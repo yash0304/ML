@@ -353,6 +353,7 @@ class _Progress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppTokens.of(context);
+    final tiles = progress.tiles;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
       child: Column(
@@ -394,6 +395,33 @@ class _Progress extends StatelessWidget {
               ),
             ],
           ),
+          if (tiles != null) ...[
+            const SizedBox(height: AppTokens.s8),
+            SizedBox(
+              height: 2,
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: (tiles.fraction * 1000).round(),
+                    child: Container(color: c.signal),
+                  ),
+                  Expanded(
+                    flex: 1000 - (tiles.fraction * 1000).round(),
+                    child: Container(color: c.rule),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppTokens.s8),
+            Text(
+              // The map is one row above and an hour of work here. Without a
+              // number that moves, a working download and a hung one look
+              // exactly alike.
+              '${tiles.done} of ${tiles.total} tiles'
+              '${tiles.failed > 0 ? ' · ${tiles.failed} missed' : ''}',
+              style: AppTokens.captionStyle.copyWith(color: c.muted),
+            ),
+          ],
         ],
       ),
     );

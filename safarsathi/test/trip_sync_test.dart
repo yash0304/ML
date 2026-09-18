@@ -298,6 +298,51 @@ void main() {
       expect(await estimateSyncSize(map, tripId), contains('already here'));
     });
   });
+
+  group('the map reports its own tiles', () {
+    // A REGRESSION WITH A WITNESS. The map is one row out of twelve and
+    // thousands of requests, so the row counter cannot move while it runs.
+    // Reported from the road as a hang: "nearly 1 hour in this screen,
+    // nothing is happening". It was working the whole time and said nothing.
+
+    test('tile counts come through while the map task runs', () async {
+      final sync = syncWith();
+      final tiled = <TileProgress>[];
+
+      await for (final progress in sync.run(tripId)) {
+        if (progress.tiles != null) tiled.add(progress.tiles!);
+      }
+
+      expect(
+        tiled,
+        isNotEmpty,
+        reason: 'the map task must report tile progress, or an hour-long '
+            'download is indistinguishable from a hang',
+      );
+      expect(tiled.last.done, tiled.last.total);
+      expect(tiled.last.total, greaterThan(0));
+    });
+
+    test('tile progress is attributed to the map task, not another', () async {
+      final sync = syncWith();
+
+      await for (final progress in sync.run(tripId)) {
+        if (progress.tiles != null) {
+          expect(progress.current?.kind, SyncKind.tiles);
+        }
+      }
+    });
+
+    test('the other tasks carry no tile count', () async {
+      final sync = syncWith();
+
+      await for (final progress in sync.run(tripId)) {
+        if (progress.current?.kind == SyncKind.corridor) {
+          expect(progress.tiles, isNull);
+        }
+      }
+    });
+  });
 }
 
 extension on SyncFailure {

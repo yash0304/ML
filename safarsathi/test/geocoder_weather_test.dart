@@ -350,4 +350,44 @@ void main() {
       expect(view.single.staleness(), isNull);
     });
   });
+
+  group('a refused forecast says why', () {
+    // OPEN-METEO ANSWERS THE QUESTION AND THIS USED TO BIN IT. Reported from
+    // the road as "The server turned the request down (400)" against three
+    // stops — a sentence nobody can act on, when the body said exactly which
+    // parameter was wrong.
+
+    test('the server\'s reason is carried into the message', () {
+      final message = WeatherClient.explainRefusal(
+        400,
+        '{"error":true,"reason":"Cannot initialize WeatherVariable from '
+        'invalid String value foo"}',
+      );
+      expect(message, contains('invalid String value foo'));
+      expect(message, isNot(contains('400')));
+    });
+
+    test('dates beyond the horizon are named as waiting, not failing', () {
+      final message = WeatherClient.explainRefusal(
+        400,
+        '{"error":true,"reason":"Parameter \'end_date\' is out of allowed '
+        "range from 2026-06-20 to 2026-10-04\"}",
+      );
+      expect(message.toLowerCase(), contains('does not reach these dates'));
+      expect(message, contains('closer to the trip'));
+      // The raw reason still travels, because the exact window is the useful
+      // part and paraphrasing it would lose the date.
+      expect(message, contains('2026-10-04'));
+    });
+
+    test('a refusal that is not JSON falls back to the status code', () {
+      final message = WeatherClient.explainRefusal(502, '<html>gateway</html>');
+      expect(message, contains('502'));
+    });
+
+    test('JSON with no reason falls back to the status code', () {
+      final message = WeatherClient.explainRefusal(400, '{"error":true}');
+      expect(message, contains('400'));
+    });
+  });
 }

@@ -16,6 +16,7 @@ import 'package:drift/drift.dart';
 import '../../../core/database/app_database.dart';
 import '../../discovery/data/corridor_sync.dart';
 import '../../map/data/map_download.dart';
+import '../../map/data/tile_downloader.dart' show TileProgress;
 import '../../map/data/tile_math.dart';
 import '../../weather/data/weather_sync.dart';
 import 'sync_error.dart';
@@ -27,6 +28,9 @@ import 'sync_error.dart';
 /// listing "route" and "places" as separate rows would report progress that
 /// does not correspond to any work.
 enum SyncKind { corridor, tiles, weather }
+
+/// How often the tile count is reported up to the screen, in tiles.
+const _tileReportEvery = 25;
 
 extension SyncKindLabel on SyncKind {
   String get label => switch (this) {
@@ -76,11 +80,21 @@ class SyncProgress {
 
   final List<SyncFailure> failures;
 
+  /// How far the map is through its own tiles, while the map task is running.
+  ///
+  /// THE MAP IS ONE ROW AND THOUSANDS OF REQUESTS. Without this the screen
+  /// sits on "11 of 12" for the best part of an hour with a disabled button,
+  /// which is indistinguishable from a hang — and was reported as one. The
+  /// row-level count cannot move during the only task long enough to need a
+  /// progress bar, so the tile count has to come through.
+  final TileProgress? tiles;
+
   const SyncProgress({
     required this.done,
     required this.total,
     this.current,
     this.failures = const [],
+    this.tiles,
   });
 
   double get fraction => total == 0 ? 1 : done / total;
@@ -234,10 +248,21 @@ class TripSync {
             await weather.syncStop(stop);
 
           case SyncKind.tiles:
-            await for (final _ in map.download(tripId)) {
-              // Tile-level progress is not surfaced here; the whole tile
-              // download is one row in this list. The map screen shows the
-              // per-tile detail for anyone who wants it.
+            // Emitted in blocks rather than per tile: at roughly 25 tiles a
+            // second a per-tile rebuild is wasted frames, and a counter
+            // moving in 25s still reads as alive. The last one always lands
+            // so the number ends on the true total.
+            await for (final tile in map.download(tripId)) {
+              if (tile.done % _tileReportEvery == 0 ||
+                  tile.done == tile.total) {
+                yield SyncProgress(
+                  done: done,
+                  total: plan.total,
+                  current: task,
+                  failures: List.of(failures),
+                  tiles: tile,
+                );
+              }
             }
         }
       } on Object catch (e) {
