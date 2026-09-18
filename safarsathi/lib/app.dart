@@ -18,7 +18,10 @@ import 'features/contacts/data/entry_draft.dart';
 import 'features/contacts/presentation/diary_screen.dart';
 import 'features/contacts/presentation/entry_form_screen.dart';
 import 'features/contacts/presentation/entry_screen.dart';
+import 'package:share_plus/share_plus.dart';
+
 import 'features/backup/data/backup.dart';
+import 'features/backup/data/full_backup.dart';
 import 'features/backup/presentation/backup_screen.dart';
 import 'features/contacts/data/multi_add.dart';
 import 'features/contacts/presentation/multi_add_screen.dart';
@@ -951,6 +954,18 @@ class _HomeState extends State<_Home> {
     );
   }
 
+  /// The archive a restore is about to unpack, when a zip was picked.
+  ///
+  /// Held here rather than on the screen because it is a file on disk that
+  /// has to be cleaned up whichever way the screen is left.
+  File? _pendingArchive;
+
+  Future<void> _clearPendingArchive() async {
+    final archive = _pendingArchive;
+    _pendingArchive = null;
+    if (archive != null && archive.existsSync()) await archive.delete();
+  }
+
   /// Backup and restore — issue #56.
   Future<void> _openBackup(BuildContext context) => Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -970,17 +985,79 @@ class _HomeState extends State<_Home> {
         onPick: () async {
           final file = await FilePicker.pickFile(
             type: FileType.custom,
-            allowedExtensions: const ['json'],
+            allowedExtensions: const ['json', 'zip'],
             dialogTitle: 'Pick a SafarSathi backup',
           );
           if (file == null) return null;
-          // Bytes, never a path: on Android a picked file usually lives
-          // behind a content:// URI with no readable filesystem path.
-          return readBackup(utf8.decode(await file.readAsBytes()));
+
+          // Whatever was picked last time is no longer what will be
+          // restored, and a stale archive here would silently write the
+          // wrong map back.
+          await _clearPendingArchive();
+
+          if ((file.extension ?? '').toLowerCase() != 'zip') {
+            // Bytes, never a path: on Android a picked file usually lives
+            // behind a content:// URI with no readable filesystem path.
+            return readBackup(utf8.decode(await file.readAsBytes()));
+          }
+
+          // STREAMED TO DISK, NOT READ INTO MEMORY. A full archive carries
+          // every downloaded tile, and reading that as one list is how a
+          // restore turns into a crash on the phone that needed it most.
+          final temp = await getTemporaryDirectory();
+          final copy = File('${temp.path}/restore-${file.name}');
+          final sink = copy.openWrite();
+          await sink.addStream(file.readAsByteStream());
+          await sink.close();
+
+          _pendingArchive = copy;
+          return (await readFullBackup(copy)).database;
+        },
+        onPlanFull: () => planFullBackup(widget.db),
+        onExportFull: () async {
+          final store = _tiles;
+          if (store == null) return null;
+
+          // Written to the app's own cache first, then handed out by path.
+          // The save dialog takes bytes, and a 350 MB tile cache as one
+          // Uint8List is how you turn a backup into a crash.
+          final temp = await getTemporaryDirectory();
+          final archive = File('${temp.path}/${fullBackupFileName()}');
+          await writeFullBackup(
+            widget.db,
+            destination: archive,
+            tileRoot: store.root,
+          );
+
+          final result = await SharePlus.instance.share(
+            ShareParams(
+              files: [XFile(archive.path)],
+              fileNameOverrides: [archive.uri.pathSegments.last],
+              subject: 'SafarSathi backup, with the map',
+            ),
+          );
+          // The temp copy is the app's, not the user's; whatever they chose
+          // has its own copy by now.
+          if (archive.existsSync()) await archive.delete();
+
+          if (result.status == ShareResultStatus.dismissed) return null;
+          return 'Saved, map included. Keep it somewhere that is not this '
+              'phone — that is the whole point of it.';
         },
         onCurrent: () => currentContents(widget.db),
         onRestore: (backup) async {
-          await restoreBackup(widget.db, backup);
+          final archive = _pendingArchive;
+          final store = _tiles;
+          if (archive != null && store != null) {
+            await restoreFullBackup(
+              widget.db,
+              archive,
+              tileRoot: store.root,
+            );
+          } else {
+            await restoreBackup(widget.db, backup);
+          }
+          await _clearPendingArchive();
           // A restored database may hold a different active trip, or none.
           await ensureActiveTrip(widget.db);
         },

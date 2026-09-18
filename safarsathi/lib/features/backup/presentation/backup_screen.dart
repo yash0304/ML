@@ -7,12 +7,20 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
+import '../../map/data/tile_math.dart' show describeBytes;
 import '../data/backup.dart';
+import '../data/full_backup.dart';
 
 class BackupScreen extends StatefulWidget {
   /// Writes the backup wherever the user chooses. Returns what to say about
   /// it, or null if they cancelled the save dialog.
   final Future<String?> Function() onExport;
+
+  /// The same, plus every downloaded tile. Null when the app cannot offer it.
+  final Future<String?> Function()? onExportFull;
+
+  /// What a full backup would carry, for the label on its button.
+  final Future<FullBackupPlan> Function()? onPlanFull;
 
   /// Lets the user pick a file and parses it. Null if they cancelled.
   final Future<BackupContents?> Function() onPick;
@@ -25,6 +33,8 @@ class BackupScreen extends StatefulWidget {
   const BackupScreen({
     super.key,
     required this.onExport,
+    this.onExportFull,
+    this.onPlanFull,
     required this.onPick,
     required this.onCurrent,
     required this.onRestore,
@@ -38,9 +48,21 @@ class _BackupScreenState extends State<BackupScreen> {
   bool _busy = false;
   String? _message;
   String? _problem;
+  FullBackupPlan? _plan;
 
   BackupContents? _picked;
   BackupContents? _current;
+
+  @override
+  void initState() {
+    super.initState();
+    // Asked once, on open. The button cannot honestly say how big the file
+    // will be without it, and "Save a full backup" with no size is the kind
+    // of button people press and then regret.
+    widget.onPlanFull?.call().then((plan) {
+      if (mounted) setState(() => _plan = plan);
+    });
+  }
 
   Future<void> _run(Future<void> Function() body) async {
     setState(() {
@@ -61,6 +83,13 @@ class _BackupScreenState extends State<BackupScreen> {
 
   Future<void> _export() => _run(() async {
     final where = await widget.onExport();
+    if (!mounted || where == null) return;
+    Haptics.confirm();
+    setState(() => _message = where);
+  });
+
+  Future<void> _exportFull() => _run(() async {
+    final where = await widget.onExportFull!();
     if (!mounted || where == null) return;
     Haptics.confirm();
     setState(() => _message = where);
@@ -175,6 +204,28 @@ class _BackupScreenState extends State<BackupScreen> {
             muted: true,
           ),
 
+          if (widget.onExportFull != null) ...[
+            const StencilLabel('With the map'),
+            _Note(
+              _plan == null
+                  ? 'Working out what is downloaded…'
+                  : !_plan!.hasTiles
+                  ? 'Nothing is downloaded yet, so this would hold the same '
+                        'thing as the file above. Download a map first.'
+                  : 'The same, plus the ${_plan!.tileCount} map tiles already '
+                        'on this phone — about '
+                        '${describeBytes(_plan!.tileBytes)}. Bigger and slower '
+                        'to write, and the only version that puts a working '
+                        'offline map onto a new phone without WiFi.',
+            ),
+            _Button(
+              label: 'Save a full backup',
+              primary: false,
+              busy: _busy || _plan?.hasTiles != true,
+              onTap: _exportFull,
+            ),
+          ],
+
           const StencilLabel('Bring one back'),
           _Button(
             label: picked == null ? 'Choose a backup file' : 'Choose another',
@@ -273,6 +324,8 @@ class _Summary extends StatelessWidget {
           backup: backup.expenses,
           current: now?.expenses,
         ),
+        if (backup.carriesMap)
+          _Row(label: 'Map tiles', backup: backup.tileCount),
 
         Padding(
           padding: const EdgeInsets.fromLTRB(

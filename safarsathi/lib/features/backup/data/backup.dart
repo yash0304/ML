@@ -50,6 +50,10 @@ class BackupContents {
   final int expenses;
   final int callLogs;
 
+  /// Map tiles carried alongside, when this came from a full archive.
+  /// Zero for the plain JSON backup, which never carries any.
+  final int tileCount;
+
   /// The parsed tables, kept so the restore does not re-parse.
   final Map<String, List<Map<String, dynamic>>> tables;
 
@@ -64,9 +68,27 @@ class BackupContents {
     required this.expenses,
     required this.callLogs,
     required this.tables,
+    this.tileCount = 0,
   });
 
   bool get isEmpty => trips == 0 && contacts == 0;
+
+  /// True when restoring this also puts an offline map back.
+  bool get carriesMap => tileCount > 0;
+
+  BackupContents withTiles(int count) => BackupContents(
+    createdAt: createdAt,
+    schemaVersion: schemaVersion,
+    trips: trips,
+    stops: stops,
+    contacts: contacts,
+    confirmedContacts: confirmedContacts,
+    checklistItems: checklistItems,
+    expenses: expenses,
+    callLogs: callLogs,
+    tables: tables,
+    tileCount: count,
+  );
 }
 
 /// Tables a backup deliberately does not carry, and why.

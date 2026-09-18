@@ -5,6 +5,12 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-18 — [BACKUP] **The full backup is written and read as a stream, never assembled in memory, and it leaves the phone by a share sheet rather than the save dialog.** (`FilePicker.saveFile` takes the whole file as a `Uint8List`; a 350 MB tile cache passed that way is how a backup becomes a crash on the phone that most needed one. `ZipFileEncoder` writes entry by entry to disk, `InputFileStream` reads it back the same way, and `share_plus` hands the finished file over by path. Tiles are STORED, not deflated — they are already-compressed PNG and WebP, so deflating spends minutes of phone CPU to save nothing.)
+
+2026-09-18 — [BACKUP] After a full restore the tile index is rebuilt by walking the directory, not trusted from the archive. (A truncated or partly-extracted archive would otherwise leave the cache screen reporting thousands of tiles over a directory that does not have them — the worst possible answer to "what have I got offline".)
+
+2026-09-18 — [BACKUP] A full restore puts the database back first and the tiles second. (If the tiles fail halfway — the phone fills up, the file is damaged — the trip, the numbers and the checklist are already back, and the map is the half that can be fetched again. The other order loses the irreplaceable part to protect the replaceable one.)
+
 2026-09-18 — [MAP] **Tiles are fetched as WebP, and the reader accepts both WebP and PNG.** (MapTiler serves the same tiles either way and WebP is roughly a third the size — a Meghalaya corridor at 346 MB becomes something nearer 110 MB, which is the difference between a re-download somebody does and one they put off. Verified against the live endpoint before shipping. The format is deliberately NOT part of the provider id and the reader tries both extensions, because folding it in would have stranded every tile already on disk and turned a working offline map blank a fortnight before the trip — the exact cost the change exists to avoid.)
 
 2026-09-18 — [UI] A leg with no kilometres now says which of its two stops has no location, rather than showing an empty space. (From the phone: five legs, and the two touching Sohrra were blank. Both were blocked on the same thing — that stop had never been located — and the screen said neither which stop nor that it mattered. "Not downloaded yet" and "Sohrra has no location yet" need different things done about them, so they read differently: the second is in caution, because only the user can clear it.)

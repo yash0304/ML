@@ -44,6 +44,13 @@ dependencies:
   # The backlog originally named libphonenumber_plugin, which wraps the
   # native library over a channel — see DECISIONS.md.
   phone_numbers_parser: ^9.0.2
+  # Sharing a file BY PATH, for the full backup. The plain save dialog takes
+  # the whole file as bytes in memory, and a 350 MB tile cache would very
+  # likely take the app down with it. This streams from disk instead.
+  share_plus: ^13.3.0
+  # Zip, written and read as a stream rather than assembled in memory, for
+  # the same reason.
+  archive: ^3.6.1
 
 dev_dependencies:
   flutter_test:

@@ -396,6 +396,13 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   import invariant; the screen says what it is trusting.
   *See ISSUE_56_Backup.md.*
 
+- [x] **#57 Full backup, with the downloaded map** — M — *added 18 Sep*
+  The same backup plus every tile, as one zip, written and read as a stream
+  so a 350 MB cache never becomes a 350 MB allocation. Shared by path rather
+  than through the save dialog, which takes bytes. The tile index is rebuilt
+  from what actually landed on disk, not from the archive's word.
+  *Depends on #56.*
+
 ---
 
 ## Parked (revisit only if the constraint changes)
