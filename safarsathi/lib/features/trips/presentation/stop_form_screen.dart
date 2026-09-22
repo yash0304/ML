@@ -321,8 +321,12 @@ class _StopFormScreenState extends State<StopFormScreen> {
             padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
             child: TextField(
               controller: _note,
-              maxLines: 3,
-              minLines: 1,
+              // Was three. A note holding what is at a stop — the pharmacy
+              // that shuts at five, the hospital two villages over — runs
+              // longer than that, and editing it through a three-line
+              // window is how it stays unwritten.
+              maxLines: 12,
+              minLines: 2,
               style: AppTokens.captionStyle.copyWith(color: c.ink),
               decoration: InputDecoration(
                 hintText: 'Blue gate past the church',

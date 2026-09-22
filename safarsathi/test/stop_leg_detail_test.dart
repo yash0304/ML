@@ -47,7 +47,7 @@ WeatherSnapshot _day(
   cachedAt: cachedAt ?? _cached,
 );
 
-Stop _stop({String tags = 'trek,caves', int nights = 2}) => Stop(
+Stop _stop({String tags = 'trek,caves', int nights = 2, String? note}) => Stop(
   id: 1,
   tripId: 1,
   name: 'Cherrapunji',
@@ -58,6 +58,7 @@ Stop _stop({String tags = 'trek,caves', int nights = 2}) => Stop(
   arrivalDate: DateTime(2025, 10, 2),
   lat: 25.27,
   lon: 91.72,
+  note: note,
 );
 
 StopDetail _detail({
@@ -70,8 +71,9 @@ StopDetail _detail({
   int places = 9,
   DateTime? synced,
   String tags = 'trek,caves',
+  String? note,
 }) => StopDetail(
-  stop: _stop(tags: tags),
+  stop: _stop(tags: tags, note: note),
   weather: weather ?? [_day(1, DateTime(2025, 10, 2), 'Heavy rain', rain: 41)],
   weatherCachedAt: cachedAt ?? _cached,
   diaryCount: diary,
@@ -627,6 +629,82 @@ void main() {
       expect(t.mode, 'Shared sumo');
       expect(t.isBooked, isTrue);
       expect(t.isEmpty, isFalse);
+    });
+  });
+
+  group('the stop note is readable, not just writable', () {
+    // THE STOP FORM HAS HAD A NOTE BOX SINCE #16 AND NOTHING RENDERED IT.
+    // Whatever was typed went into the database and out of reach — the same
+    // shape of bug as a map screen wired to nothing. Found while putting the
+    // Meghalaya places-with-no-number list into stop notes, which would have
+    // been typed in and then invisible.
+
+    testWidgets('a note the user wrote is shown', (tester) async {
+      useTallSurface(tester);
+      await tester.pumpWidget(
+        wrap(
+          StopDetailScreen(
+            detail: Stream.value(
+              _detail(note: 'Erica Pharmacy, Dukan Rd. No phone — walk in.'),
+            ),
+            now: _now,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.text('Erica Pharmacy, Dukan Rd. No phone — walk in.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a long note is not truncated', (tester) async {
+      useTallSurface(tester);
+      final long = List.generate(8, (i) => 'Line $i of what is here').join('\n');
+      await tester.pumpWidget(
+        wrap(
+          StopDetailScreen(detail: Stream.value(_detail(note: long)), now: _now),
+        ),
+      );
+      await tester.pump();
+
+      final text = tester.widget<Text>(find.text(long));
+      expect(
+        text.maxLines,
+        isNull,
+        reason: 'a hospital three villages away, truncated at one line, is '
+            'worse than not written down',
+      );
+    });
+
+    testWidgets('no note renders nothing at all', (tester) async {
+      useTallSurface(tester);
+      await tester.pumpWidget(
+        wrap(StopDetailScreen(detail: Stream.value(_detail()), now: _now)),
+      );
+      await tester.pump();
+
+      // Not an empty box, not a heading with nothing under it.
+      expect(find.byType(SizedBox), findsWidgets);
+      expect(find.textContaining('Line 0 of'), findsNothing);
+    });
+
+    testWidgets('a note of only whitespace is treated as absent', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      await tester.pumpWidget(
+        wrap(
+          StopDetailScreen(
+            detail: Stream.value(_detail(note: '   \n  ')),
+            now: _now,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('   \n  '), findsNothing);
     });
   });
 }

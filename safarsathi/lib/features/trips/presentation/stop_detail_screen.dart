@@ -72,6 +72,7 @@ class StopDetailScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: AppTokens.s32),
                   children: [
                     _Header(detail: data),
+                    _Note(detail: data),
                     _WeatherSection(detail: data, now: now),
                     _WhatIsHere(
                       detail: data,
@@ -118,6 +119,44 @@ class _Header extends StatelessWidget {
         style: AppTokens.captionStyle.copyWith(
           color: detail.hasCoordinates ? c.muted : c.cautionMark,
         ),
+      ),
+    );
+  }
+}
+
+/// The stop's own note.
+///
+/// A FIELD THAT COULD BE WRITTEN AND NEVER READ. The stop form has had a
+/// Note box since #16 and nothing has ever rendered it: whatever was typed
+/// went into the database and out of reach. Leg notes show on two screens;
+/// stop notes showed on none, which is the worst kind of bug because the
+/// app accepts the work and silently discards the point of it.
+///
+/// Sits directly under the header, above the weather, because a note is
+/// something the person wrote themselves and should not be below a forecast.
+class _Note extends StatelessWidget {
+  final StopDetail detail;
+  const _Note({required this.detail});
+
+  @override
+  Widget build(BuildContext context) {
+    final note = detail.stop.note;
+    if (note == null || note.trim().isEmpty) return const SizedBox.shrink();
+    final c = AppTokens.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTokens.gutter,
+        AppTokens.s12,
+        AppTokens.gutter,
+        0,
+      ),
+      child: Text(
+        note,
+        // No maxLines. A note is as long as the person made it, and a
+        // hospital three villages away truncated at one line is worse than
+        // not written down.
+        style: AppTokens.captionStyle.copyWith(color: c.ink, height: 1.45),
       ),
     );
   }
