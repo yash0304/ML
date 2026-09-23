@@ -13,6 +13,9 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/retro.dart';
 import '../../contacts/presentation/diary_widgets.dart';
+import '../../../core/database/app_database.dart';
+import '../../../core/util/sun.dart';
+import '../data/tonight.dart';
 import '../data/readiness.dart';
 import '../data/trip_summary.dart';
 import 'readiness_panel.dart';
@@ -35,6 +38,15 @@ class TripScreen extends StatelessWidget {
   /// The legs, and the places found along each one.
   final VoidCallback? onLegs;
 
+  /// Where you sleep tonight (or the first night, before the trip).
+  final Stream<Tonight?>? tonight;
+
+  /// Opens a diary entry — a stay on the Tonight card.
+  final void Function(Contact contact)? onOpenContact;
+
+  /// "No stay saved here yet — add one", starting at that stop.
+  final void Function(int stopId)? onAddStay;
+
   const TripScreen({
     super.key,
     required this.trip,
@@ -43,6 +55,9 @@ class TripScreen extends StatelessWidget {
     this.onEditItinerary,
     this.onViewMap,
     this.onLegs,
+    this.tonight,
+    this.onOpenContact,
+    this.onAddStay,
   });
 
   /// The section rule, with a way into the editor when one is wired.
@@ -86,6 +101,15 @@ class TripScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: AppTokens.s24),
                 children: [
                   _header(c, data),
+                  // TONIGHT FIRST. At six in the evening on a dark road the
+                  // question is where the bed is and how to ring them; the
+                  // next leg is tomorrow's problem.
+                  if (tonight != null)
+                    _TonightCard(
+                      tonight: tonight!,
+                      onOpen: onOpenContact,
+                      onAdd: onAddStay,
+                    ),
                   if (data.nextLeg != null) ...[
                     const StencilLabel('Next leg'),
                     _nextLeg(c, data.nextLeg!),
@@ -409,6 +433,140 @@ class _Shortcut extends StatelessWidget {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tonight's bed: the stop, the stays saved there, and when the light goes.
+class _TonightCard extends StatelessWidget {
+  final Stream<Tonight?> tonight;
+  final void Function(Contact)? onOpen;
+  final void Function(int stopId)? onAdd;
+
+  const _TonightCard({required this.tonight, this.onOpen, this.onAdd});
+
+  /// Two is enough on the first screen; the rest are one tap into the diary.
+  static const shown = 2;
+
+  static const _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    return StreamBuilder<Tonight?>(
+      stream: tonight,
+      builder: (context, snap) {
+        final t = snap.data;
+        // After the trip, or on a night with no bed on the plan, the card is
+        // absent rather than pointing at somebody else's bed.
+        if (t == null) return const SizedBox.shrink();
+
+        final label = t.kind == TonightKind.tonight
+            ? 'Tonight · ${t.stop.name}'
+            : 'First night · ${t.stop.name}, '
+                  '${t.night.day} ${_months[t.night.month - 1]}';
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            StencilLabel(label),
+            if (t.stays.isEmpty)
+              InkWell(
+                onTap: onAdd == null ? null : () => onAdd!(t.stop.id),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTokens.gutter,
+                    0,
+                    AppTokens.gutter,
+                    AppTokens.s8,
+                  ),
+                  child: Text(
+                    'No stay for ${t.stop.name} in your diary yet.'
+                    '${onAdd == null ? '' : ' Add one.'}',
+                    style: AppTokens.captionStyle.copyWith(
+                      color: c.cautionMark,
+                    ),
+                  ),
+                ),
+              )
+            else
+              for (final stay in t.stays.take(shown))
+                _StayRow(
+                  stay: stay,
+                  onTap: onOpen == null ? null : () => onOpen!(stay),
+                ),
+            if (t.sun?.sunset != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTokens.gutter,
+                  AppTokens.s8,
+                  AppTokens.gutter,
+                  0,
+                ),
+                child: Text(
+                  'Sunset at ${t.stop.name} ${clockTime(t.sun!.sunset!)}.',
+                  style: AppTokens.captionStyle.copyWith(color: c.muted),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _StayRow extends StatelessWidget {
+  final Contact stay;
+  final VoidCallback? onTap;
+  const _StayRow({required this.stay, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    final note = stay.note?.trim();
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppTokens.gutter,
+          AppTokens.s4,
+          AppTokens.gutter,
+          AppTokens.s8,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    stay.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTokens.rowTitleStyle.copyWith(color: c.ink),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    stay.phoneRaw,
+                    style: AppTokens.numberStyle.copyWith(color: c.ink),
+                  ),
+                  if (note != null && note.isNotEmpty)
+                    Text(
+                      note,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTokens.captionStyle.copyWith(color: c.muted),
+                    ),
+                ],
+              ),
+            ),
+            if (!stay.callConfirmed) const TrustDot(),
           ],
         ),
       ),

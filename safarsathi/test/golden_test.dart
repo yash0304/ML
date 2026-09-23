@@ -15,7 +15,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:safarsathi/core/database/app_database.dart';
 import 'package:safarsathi/core/theme/app_tokens.dart';
-import 'package:safarsathi/core/util/sun.dart' show clockOffsetOverride;
+import 'package:safarsathi/core/util/sun.dart'
+    show clockOffsetOverride, sunTimes;
+import 'package:safarsathi/features/trips/data/tonight.dart';
 import 'package:safarsathi/features/contacts/data/contacts_dao.dart';
 import 'package:safarsathi/features/contacts/data/entry_draft.dart';
 import 'package:safarsathi/features/contacts/presentation/diary_screen.dart';
@@ -486,6 +488,36 @@ void main() {
         // covers the section rather than the null case.
         onViewMap: () {},
         onLegs: () {},
+        onOpenContact: (_) {},
+        onAddStay: (_) {},
+        tonight: Stream.value(
+          Tonight(
+            kind: TonightKind.tonight,
+            stop: Stop(
+              id: 3,
+              tripId: 1,
+              name: 'Kongthong',
+              sequenceOrder: 3,
+              countryCode: 'IN',
+              nights: 2,
+              activityTags: '',
+              lat: 25.3309,
+              lon: 91.8238,
+              arrivalDate: DateTime(2026, 10, 3),
+            ),
+            night: DateTime(2026, 10, 3),
+            stays: [
+              diaryContact(
+                id: 9,
+                name: 'Kongthong Travellers Nest',
+                category: 'accommodation',
+                phone: '+91 90000 00019',
+                note: 'Owner meets the sumo at the village gate.',
+              ),
+            ],
+            sun: sunTimes(25.3309, 91.8238, DateTime(2026, 10, 3)),
+          ),
+        ),
         trip: Stream.value(
           TripSummary(
             name: 'Meghalaya · demo',

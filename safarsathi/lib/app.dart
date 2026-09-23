@@ -13,6 +13,7 @@ import 'core/database/app_database.dart';
 import 'core/theme/app_tokens.dart';
 import 'core/theme/motion.dart';
 import 'core/widgets/app_shell.dart';
+import 'features/contacts/data/contacts_dao.dart' show ContactCategory;
 import 'features/contacts/data/phone_contact_picker.dart';
 import 'features/contacts/data/contact_actions.dart';
 import 'features/contacts/data/entry_draft.dart';
@@ -52,6 +53,7 @@ import 'features/money/data/money_summary.dart';
 import 'features/money/presentation/expense_form_screen.dart';
 import 'features/money/presentation/travellers_screen.dart';
 import 'features/money/presentation/money_screen.dart';
+import 'features/trips/data/tonight.dart';
 import 'features/trips/data/readiness.dart';
 import 'features/trips/data/trip_editor.dart';
 import 'features/trips/data/stop_detail.dart';
@@ -706,6 +708,8 @@ class _HomeState extends State<_Home> {
     ActiveTripContext trip, {
     Contact? existing,
     bool pickOnOpen = false,
+    int? initialStopId,
+    String? initialCategory,
   }) async {
     final db = widget.db;
     final stops =
@@ -721,6 +725,8 @@ class _HomeState extends State<_Home> {
           existing: existing,
           pickFromPhone: const PhoneContactPicker().pick,
           pickOnOpen: pickOnOpen,
+          initialStopId: initialStopId,
+          initialCategory: initialCategory,
           stops: [for (final s in stops) StopOption(s.id, s.name)],
           // A European trip crosses borders mid-itinerary, so the country to
           // normalise against comes from the stop, not the trip.
@@ -813,6 +819,15 @@ class _HomeState extends State<_Home> {
                 _openItinerary(context, trip.tripId, trip.name),
             onViewMap: () => _viewMap(context, trip.tripId),
             onLegs: () => _openLegs(context, trip.tripId),
+            tonight: watchTonight(db, trip.tripId),
+            onOpenContact: (contact) =>
+                _openEntry(context, trip, contact, actions),
+            onAddStay: (stopId) => _openForm(
+              context,
+              trip,
+              initialStopId: stopId,
+              initialCategory: ContactCategory.accommodation,
+            ),
           ),
         ),
         ShellDestination(

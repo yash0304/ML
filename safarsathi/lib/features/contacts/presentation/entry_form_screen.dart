@@ -48,6 +48,12 @@ class EntryFormScreen extends StatefulWidget {
   /// contacts" entry on More, where picking is the whole point of coming in.
   final bool pickOnOpen;
 
+  /// Where a new entry starts, when the screen that opened the form already
+  /// knows — "No stay for Mawlynnong yet · add one" should not make you pick
+  /// Mawlynnong and Stay again. Ignored when editing.
+  final int? initialStopId;
+  final String? initialCategory;
+
   const EntryFormScreen({
     super.key,
     this.existing,
@@ -57,6 +63,8 @@ class EntryFormScreen extends StatefulWidget {
     required this.onSave,
     this.pickFromPhone,
     this.pickOnOpen = false,
+    this.initialStopId,
+    this.initialCategory,
   });
 
   @override
@@ -86,8 +94,8 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
     _name = TextEditingController(text: e?.name ?? '');
     _phone = TextEditingController(text: e?.phoneRaw ?? '');
     _note = TextEditingController(text: e?.note ?? '');
-    _category = e?.category ?? ContactCategory.other;
-    _stopId = e?.stopId;
+    _category = e?.category ?? widget.initialCategory ?? ContactCategory.other;
+    _stopId = e == null ? widget.initialStopId : e.stopId;
     _hasWhatsapp = e?.hasWhatsapp ?? false;
     if (e != null) _renormalise(e.phoneRaw);
     if (widget.pickOnOpen && _canPick) {
