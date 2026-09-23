@@ -203,12 +203,20 @@ ImportPreview validateRows(
       messages.add('Could not read this as a phone number. Saved as typed.');
     }
 
+    // A DUPLICATE ARRIVES UNTICKED. It used to arrive ticked with a warning,
+    // which meant importing the same sheet twice put every stay in the diary
+    // twice — found on a phone as each homestay listed three times. The row
+    // is still shown and can still be ticked; importing a copy is now a
+    // choice rather than the default.
+    var duplicate = false;
     final key = phone.e164;
     if (key != null) {
       if (existing.e164.contains(key)) {
-        messages.add('Already in your diary.');
+        messages.add('Already in your diary — left unticked.');
+        duplicate = true;
       } else if (seenInFile.contains(key)) {
-        messages.add('Appears earlier in this file too.');
+        messages.add('Appears earlier in this file too — left unticked.');
+        duplicate = true;
       }
       seenInFile.add(key);
     } else if (existing.squashedNames.contains(_squashName(name))) {
@@ -252,9 +260,11 @@ ImportPreview validateRows(
         hasWhatsapp: _isTruthy(at(ImportField.whatsapp)),
         lat: position.lat,
         lon: position.lon,
-        // A warning is information, not a veto: these rows arrive selected.
+        // A warning is information, not a veto: these rows arrive selected —
+        // except a duplicate, which arrives unticked.
         state: messages.isEmpty ? RowState.ready : RowState.warning,
         messages: messages,
+        selected: !duplicate,
       ),
     );
   }

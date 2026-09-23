@@ -5,6 +5,14 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-23 — [CONTACTS] **The demo never seeds a number as confirmed or as an emergency contact, and the Trip page offers to remove the demo's sample rows from a real trip.** (A trip started from the demo kept a made-up "Bah Rothell" as a CONFIRMED EMERGENCY contact who "can reach a local ambulance faster than 108" — found on the phone a week before departure. The demo itself broke "nothing arrives verified". Samples are found by the demo's own seven numbers and five expenses to the paisa, never by name, so nothing the person typed can be caught; removal is confirmed first.)
+
+2026-09-23 — [CONTACTS] **An import row already in the diary, or repeated earlier in the same file, arrives unticked.** Existing exact duplicates can be removed from the Trip page, keeping a confirmed copy over an unconfirmed one and otherwise the oldest. (Importing the same sheet twice put every stay on screen three times. A duplicate is now a choice, not the default; "exact" means same name, number, stop and type.)
+
+2026-09-23 — [TRIP] The leg screen reads in road order: your numbers on the way, then the map's places along the road, then the destination's numbers. (The destination list sat in between and a town's worth of numbers pushed what is actually on the road off the screen.)
+
+2026-09-23 — [DISCOVERY] Food places keep OpenStreetMap's type, cuisine, vegetarian and hours (Pois.rawTags, a column that existed and was never written). Menus are not offered: no source this app can use carries them, and the screen says so. (Veg "yes" and "only" are shown as different answers because they are.)
+
 2026-09-23 — [SAFETY] **The SOS text opens the phone's SMS app with the message written; the person presses Send. It never sends by itself, and it never waits on the GPS.** (SMS gets through on one bar with no data, where WhatsApp does not. An SOS that fires unseen fires by accident. With no fix — refused, switched off, a slow valley, or "Send without it" after at most 12 s — it goes anyway, saying so and naming the planned stop. The people who get it are stored for every trip, not per trip: family does not change between holidays. A number that will not normalise is refused, because an SOS to it would be believed sent.)
 
 2026-09-23 — [SAFETY] **Location permission: fine + coarse, asked only on a tap, only while the app is open; no background location.** (GPS needs no signal, which is what makes "you are here" possible offline. Opening the map never prompts. The position is drawn on the map and leaves the phone only in a text the person sends. The accuracy circle is drawn at the fix's own stated radius so a ±200 m fix does not look like a ±5 m one.)

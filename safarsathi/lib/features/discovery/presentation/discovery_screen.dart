@@ -12,6 +12,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
 import '../../contacts/data/contacts_dao.dart';
+import '../data/place_details.dart' show foodLine;
 import '../data/discovery.dart';
 
 class DiscoveryScreen extends StatefulWidget {
@@ -204,6 +205,16 @@ class _PlaceRow extends StatelessWidget {
                         ),
                     ],
                   ),
+                  if (foodLine(place.tags) != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        foodLine(place.tags)!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTokens.captionStyle.copyWith(color: c.ink),
+                      ),
+                    ),
                   const SizedBox(height: 4),
                   Text(
                     place.offRouteKm < 0.2

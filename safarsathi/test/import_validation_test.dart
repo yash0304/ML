@@ -59,8 +59,10 @@ void main() {
     expect(p.warnings, 2);
     expect(p.skipped, 1);
     // Everything except the nameless row will be written.
-    expect(p.selected, 4);
-    expect(p.toImport.length, 4);
+    // The in-file duplicate is flagged and left unticked: importing the same
+    // row twice is a choice now, not the default.
+    expect(p.selected, 3);
+    expect(p.toImport.length, 3);
   });
 
   test('a row with no name is skipped and cannot be selected', () {
@@ -88,7 +90,9 @@ void main() {
     expect(row.phoneE164, isNull);
   });
 
-  test('a duplicate of an existing diary entry warns but imports', () {
+  test('A DUPLICATE OF AN EXISTING ENTRY ARRIVES UNTICKED', () {
+    // It used to arrive ticked. Importing a sheet twice then listed every
+    // homestay twice — seen on a phone as three copies of each.
     final p = run(
       'name,phone\nRina,+91 90000 00001\n',
       existing: const ExistingContacts(
@@ -98,7 +102,9 @@ void main() {
     );
     final row = p.rows.single;
     expect(row.state, RowState.warning);
-    expect(row.selected, isTrue);
+    expect(row.selected, isFalse);
+    // Still a choice: it can be ticked.
+    expect(row.canSelect, isTrue);
     expect(row.messages.single, contains('Already in your diary'));
   });
 

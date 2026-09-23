@@ -15,6 +15,7 @@ import '../../../core/widgets/retro.dart';
 import '../../contacts/presentation/diary_widgets.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/util/sun.dart';
+import '../data/trip_health.dart';
 import '../data/tonight.dart';
 import '../data/readiness.dart';
 import '../data/trip_summary.dart';
@@ -50,6 +51,11 @@ class TripScreen extends StatelessWidget {
   /// Sends the plan — each night's stop and stay — to someone at home.
   final VoidCallback? onSharePlan;
 
+  /// Sample data from the demo, and duplicate entries, each with a fix.
+  final Stream<TripHealth>? health;
+  final Future<void> Function()? onRemoveSamples;
+  final Future<void> Function()? onRemoveDuplicates;
+
   const TripScreen({
     super.key,
     required this.trip,
@@ -62,6 +68,9 @@ class TripScreen extends StatelessWidget {
     this.onOpenContact,
     this.onAddStay,
     this.onSharePlan,
+    this.health,
+    this.onRemoveSamples,
+    this.onRemoveDuplicates,
   });
 
   /// The section rule, with a way into the editor when one is wired.
@@ -105,6 +114,15 @@ class TripScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: AppTokens.s24),
                 children: [
                   _header(c, data),
+                  // ABOVE EVERYTHING, WHEN THERE IS ANYTHING. A made-up
+                  // number that looks call-verified is the one thing this
+                  // screen must never let sit quietly under a pleasant card.
+                  if (health != null)
+                    _HealthBanner(
+                      health: health!,
+                      onRemoveSamples: onRemoveSamples,
+                      onRemoveDuplicates: onRemoveDuplicates,
+                    ),
                   // TONIGHT FIRST. At six in the evening on a dark road the
                   // question is where the bed is and how to ring them; the
                   // next leg is tomorrow's problem.
@@ -582,6 +600,144 @@ class _StayRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HealthBanner extends StatelessWidget {
+  final Stream<TripHealth> health;
+  final Future<void> Function()? onRemoveSamples;
+  final Future<void> Function()? onRemoveDuplicates;
+
+  const _HealthBanner({
+    required this.health,
+    this.onRemoveSamples,
+    this.onRemoveDuplicates,
+  });
+
+  Future<void> _confirm(
+    BuildContext context, {
+    required String title,
+    required String body,
+    required String action,
+    required Future<void> Function() run,
+  }) async {
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Not now'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(action),
+          ),
+        ],
+      ),
+    );
+    if (yes == true) await run();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    return StreamBuilder<TripHealth>(
+      stream: health,
+      builder: (context, snap) {
+        final h = snap.data;
+        if (h == null || h.isHealthy) return const SizedBox.shrink();
+
+        Widget item(String text, String button, VoidCallback? onTap) =>
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTokens.gutter,
+                AppTokens.s12,
+                AppTokens.gutter,
+                0,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(AppTokens.s12),
+                decoration: BoxDecoration(
+                  color: c.caution.withValues(alpha: 0.10),
+                  border: Border.all(color: c.cautionMark),
+                  borderRadius: BorderRadius.circular(AppTokens.radiusSoft),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      text,
+                      style: AppTokens.captionStyle.copyWith(color: c.ink),
+                    ),
+                    if (onTap != null)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(onPressed: onTap, child: Text(button)),
+                      ),
+                  ],
+                ),
+              ),
+            );
+
+        final samples = h.sampleContacts.length + h.sampleExpenses.length;
+        final risky = [
+          if (h.sampleConfirmed > 0)
+            '${h.sampleConfirmed} ${h.sampleConfirmed == 1 ? 'is' : 'are'} '
+                'marked confirmed',
+          if (h.sampleEmergency > 0)
+            '${h.sampleEmergency} ${h.sampleEmergency == 1 ? 'is' : 'are'} '
+                'on the SOS tab',
+        ];
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (h.hasSamples)
+              item(
+                '$samples sample ${samples == 1 ? 'entry' : 'entries'} from '
+                'the demo ${samples == 1 ? 'is' : 'are'} still in this trip. '
+                'The numbers are made up'
+                '${risky.isEmpty ? '' : ' — and ${risky.join(' and ')}'}.',
+                'Remove them',
+                onRemoveSamples == null
+                    ? null
+                    : () => _confirm(
+                        context,
+                        title: 'Remove the demo\'s sample entries?',
+                        body:
+                            '${h.sampleContacts.length} made-up numbers and '
+                            '${h.sampleExpenses.length} made-up expenses. '
+                            'Only the demo\'s own — nothing you added.',
+                        action: 'Remove',
+                        run: onRemoveSamples!,
+                      ),
+              ),
+            if (h.duplicateExtras.isNotEmpty)
+              item(
+                '${h.duplicateExtras.length} '
+                '${h.duplicateExtras.length == 1 ? 'entry appears' : 'entries appear'} '
+                'more than once — usually a sheet imported twice.',
+                'Keep one of each',
+                onRemoveDuplicates == null
+                    ? null
+                    : () => _confirm(
+                        context,
+                        title: 'Remove the extra copies?',
+                        body:
+                            'Only exact copies: same name, number, stop and '
+                            'type. Where one copy was confirmed by a call, '
+                            'that is the one kept.',
+                        action: 'Remove copies',
+                        run: onRemoveDuplicates!,
+                      ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

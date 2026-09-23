@@ -901,6 +901,20 @@ void main() {
       expect(find.textContaining('NEAREST HELP'), findsNothing);
     });
 
+    testWidgets('THE ROAD COMES BEFORE THE DESTINATION', (tester) async {
+      // The destination's list used to sit between "your numbers on the
+      // way" and the map's places along the road, and a town's worth of
+      // numbers pushed the road off the screen.
+      await pump(tester, legWith(atDestination: [
+        for (var i = 1; i <= 3; i++) diary(i, 'Place $i'),
+      ]));
+      final road = tester.getTopLeft(find.text('ON THE ROAD')).dy;
+      final dest = tester.getTopLeft(find.text('YOUR NUMBERS AT DAWKI')).dy;
+      final way = tester.getTopLeft(find.text('YOUR NUMBERS ON THE WAY')).dy;
+      expect(way, lessThan(road));
+      expect(road, lessThan(dest));
+    });
+
     testWidgets('an empty destination says so by name', (tester) async {
       await pump(tester, legWith());
       expect(find.text('Nothing in your diary at Dawki yet.'), findsOneWidget);

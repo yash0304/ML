@@ -15,6 +15,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
 import '../../contacts/data/contacts_dao.dart';
+import '../data/place_details.dart';
 import '../data/discovery.dart';
 
 class PoiDetailScreen extends StatelessWidget {
@@ -68,6 +69,47 @@ class PoiDetailScreen extends StatelessWidget {
               style: AppTokens.titleStyle.copyWith(color: c.ink),
             ),
           ),
+
+          if (_hasFood(place)) ...[
+            const StencilLabel('What they serve'),
+            if (kindOfFood(place.tags) != null)
+              _Field(label: 'Kind', value: kindOfFood(place.tags)!),
+            if (cuisineOf(place.tags) != null)
+              _Field(label: 'Food', value: cuisineOf(place.tags)!),
+            if (vegOf(place.tags) != null)
+              _Field(label: 'Veg', value: vegOf(place.tags)!),
+            if (hoursOf(place.tags) != null)
+              _Field(label: 'Hours', value: hoursOf(place.tags)!),
+            if ((place.tags['description'] ?? '').trim().isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTokens.gutter,
+                  AppTokens.s8,
+                  AppTokens.gutter,
+                  0,
+                ),
+                child: Text(
+                  place.tags['description']!.trim(),
+                  style: AppTokens.captionStyle.copyWith(color: c.ink),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTokens.gutter,
+                AppTokens.s8,
+                AppTokens.gutter,
+                0,
+              ),
+              child: Text(
+                // SAID, because it was asked for. No source this app can
+                // use carries menus for places like this one.
+                'From OpenStreetMap, which does not carry menus — this is '
+                'what it knows. Hours may be out of date; the note you add '
+                'when you save it can say what you find.',
+                style: AppTokens.captionStyle.copyWith(color: c.muted),
+              ),
+            ),
+          ],
 
           const StencilLabel('Where'),
           _Field(
@@ -363,3 +405,10 @@ class _Field extends StatelessWidget {
     );
   }
 }
+
+/// Whether there is anything to say under "What they serve".
+bool _hasFood(CorridorPlace place) =>
+    kindOfFood(place.tags) != null ||
+    cuisineOf(place.tags) != null ||
+    vegOf(place.tags) != null ||
+    hoursOf(place.tags) != null;

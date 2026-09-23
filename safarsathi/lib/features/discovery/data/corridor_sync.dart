@@ -7,6 +7,7 @@
 // write the lot. Runs once, at setup, when the user presses a button that says
 // what it is about to do.
 
+import 'place_details.dart';
 import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
@@ -135,6 +136,9 @@ class CorridorSync {
                 lat: entry.item.location.lat,
                 lon: entry.item.location.lon,
                 osmId: Value(entry.item.osmId),
+                // What kind of food, veg, hours — see place_details.dart. The
+                // column existed from the start and nothing wrote to it.
+                rawTags: Value(encodeKeptTags(entry.item.tags)),
                 distanceAlongRouteKm: Value(entry.position.alongRouteKm),
                 distanceOffRouteKm: Value(entry.position.offRouteKm),
               ),

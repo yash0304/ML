@@ -1385,6 +1385,7 @@ void main() {
     required double along,
     required double off,
     String? phone,
+    Map<String, String> tags = const {},
   }) => CorridorPlace(
     id: id,
     name: name,
@@ -1395,6 +1396,7 @@ void main() {
     offRouteKm: off,
     osmId: 'node/$id',
     phones: phone == null ? const [] : [osmPhone(id, phone)],
+    tags: tags,
   );
 
   testWidgets('discovery', (tester) async {
@@ -1440,6 +1442,11 @@ void main() {
                 category: ContactCategory.restaurant,
                 along: 38,
                 off: 2.1,
+                tags: const {
+                  'amenity': 'fast_food',
+                  'cuisine': 'indian;momo',
+                  'diet:vegetarian': 'yes',
+                },
               ),
             ],
           ),
@@ -1667,6 +1674,11 @@ void main() {
                 category: ContactCategory.restaurant,
                 along: 38,
                 off: 2.1,
+                tags: const {
+                  'amenity': 'fast_food',
+                  'cuisine': 'indian;momo',
+                  'diet:vegetarian': 'yes',
+                },
               ),
               corridorPlace(
                 id: 5,

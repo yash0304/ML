@@ -6,6 +6,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../contacts/data/contacts_dao.dart';
+import 'place_details.dart';
 import 'corridor.dart';
 import 'geo.dart';
 import 'polyline.dart';
@@ -30,6 +31,10 @@ class CorridorPlace {
   /// Numbers OpenStreetMap holds for it. ALWAYS `communityOsm`.
   final List<PoiContact> phones;
 
+  /// The OSM tags kept for it: food type, cuisine, veg, hours, description.
+  /// Empty for places downloaded before these were kept.
+  final Map<String, String> tags;
+
   const CorridorPlace({
     required this.id,
     required this.name,
@@ -40,6 +45,7 @@ class CorridorPlace {
     required this.offRouteKm,
     this.osmId,
     this.phones = const [],
+    this.tags = const {},
   });
 
   bool get hasPhone => phones.isNotEmpty;
@@ -210,6 +216,7 @@ Stream<LegDiscovery> watchLegDiscovery(AppDatabase db, int legId) {
             offRouteKm: p.distanceOffRouteKm ?? 0,
             osmId: p.osmId,
             phones: byPoi[p.id] ?? const [],
+            tags: decodeKeptTags(p.rawTags),
           ),
       ],
       onTheWay: corridor == null

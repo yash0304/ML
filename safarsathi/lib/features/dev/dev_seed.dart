@@ -162,53 +162,54 @@ Future<DemoTrip> createDemoTrip(AppDatabase db) async {
     '+91 90000 00001',
     stopId: kongthong,
     category: ContactCategory.accommodation,
-    note: 'Placeholder data',
-    confirmed: true,
+    note: 'Sample — not a real number',
     pinned: true,
   );
   await entry(
     'Driver',
     '+91 90000 00002',
     category: ContactCategory.transport,
-    note: 'Placeholder data',
-    confirmed: true,
+    note: 'Sample — not a real number',
   );
   await entry(
     'Shillong guesthouse',
     '+91 90000 00003',
     stopId: shillong,
     category: ContactCategory.accommodation,
-    note: 'Placeholder data',
+    note: 'Sample — not a real number',
   );
   await entry(
     'Village guide',
     '+91 90000 00004',
     stopId: kongthong,
     category: ContactCategory.guide,
-    note: 'Placeholder data',
+    note: 'Sample — not a real number',
   );
   await entry(
     'Chemist, Sohra',
     '+91 90000 00005',
     category: ContactCategory.pharmacy,
-    note: 'Placeholder data',
+    note: 'Sample — not a real number',
   );
   await entry(
     'Fuel pump',
     '+91 90000 00006',
     category: ContactCategory.fuel,
-    note: 'Placeholder data',
+    note: 'Sample — not a real number',
   );
-  // Emergency-relevant, so it appears on the emergency screen in its own
-  // headed section rather than mixed in with the bundled helplines.
+  // NEVER CONFIRMED, NEVER EMERGENCY. This entry used to be seeded as a
+  // confirmed emergency contact who "can reach a local ambulance faster than
+  // 108" — a made-up number that looked call-verified on the SOS tab. People
+  // start real trips from the demo and keep its rows, and that is how it
+  // reached a real trip a week before departure. A sample may show what the
+  // diary looks like; it may never look trustworthy. trip_health.dart finds
+  // and removes the old ones.
   await entry(
     'Bah Rothell · homestay owner',
     '+91 90000 00007',
     stopId: kongthong,
     category: ContactCategory.localContact,
-    note: 'Can reach a local ambulance faster than 108 finds the village',
-    confirmed: true,
-    emergency: true,
+    note: 'Sample — not a real number',
   );
 
   // --- Money -------------------------------------------------------------

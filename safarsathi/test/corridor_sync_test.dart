@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:safarsathi/core/database/app_database.dart';
 import 'package:safarsathi/features/discovery/data/corridor_sync.dart';
+import 'package:safarsathi/features/discovery/data/discovery.dart';
 import 'package:safarsathi/features/discovery/data/geo.dart';
 import 'package:safarsathi/features/discovery/data/osrm_client.dart';
 import 'package:safarsathi/features/discovery/data/overpass_client.dart';
@@ -82,6 +83,24 @@ void main() {
     osrm: OsrmClient(fetch: (_) async => osrm ?? osrmBody()),
     overpass: OverpassClient(fetch: (_) async => overpass ?? _overpassBody),
   );
+
+  test('WHAT A FOOD PLACE SERVES SURVIVES THE DOWNLOAD', () async {
+    // The download fetched cuisine, veg and hours and kept none of it; the
+    // rawTags column existed and nothing wrote to it.
+    await syncWith(
+      overpass: '{"elements": [{"type":"node","id":7,"lat":25.42,'
+          '"lon":91.81,"tags":{"amenity":"fast_food","name":"Momo Point",'
+          '"cuisine":"indian;chinese;momo","diet:vegetarian":"yes",'
+          '"opening_hours":"Mo-Su 09:00-21:00","operator":"not kept"}}]}',
+    ).syncLeg(legId);
+
+    final place = (await watchLegDiscovery(db, legId).first).places.single;
+    expect(place.tags['cuisine'], 'indian;chinese;momo');
+    expect(place.tags['diet:vegetarian'], 'yes');
+    expect(place.tags['opening_hours'], 'Mo-Su 09:00-21:00');
+    expect(place.tags.containsKey('operator'), isFalse,
+        reason: 'only the tags worth carrying offline are kept');
+  });
 
   test('a synced leg gets its route, distance and timestamp', () async {
     final result = await syncWith().syncLeg(legId);

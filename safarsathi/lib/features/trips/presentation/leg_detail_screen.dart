@@ -16,6 +16,7 @@ import '../../../core/widgets/retro.dart';
 import '../../../core/util/sun.dart';
 import '../../contacts/data/contacts_dao.dart';
 import '../../contacts/presentation/diary_widgets.dart' show TrustDot;
+import '../../discovery/data/place_details.dart' show foodLine;
 import '../../discovery/data/discovery.dart';
 
 class LegDetailScreen extends StatelessWidget {
@@ -78,19 +79,22 @@ class LegDetailScreen extends StatelessWidget {
                       transport: transport,
                       onEdit: onEditTransport,
                     ),
-                    // YOUR NUMBERS BEFORE OPENSTREETMAP'S. These are the ones
-                    // somebody chose, checked against a source and imported
-                    // on purpose; the map data below is whatever happens to
-                    // be tagged near the road.
+                    // BETWEEN THE STOPS FIRST, THEN THE DESTINATION. Your own
+                    // numbers on the way lead, being the ones chosen and
+                    // imported on purpose; the map's places along the road
+                    // follow directly. The destination's list used to sit in
+                    // between — a town's worth of numbers — and pushed what
+                    // is actually on the road off the screen: "I am not able
+                    // to see many stops between two stops."
                     _YourNumbersOnTheWay(leg: leg, onOpen: onOpenContact),
-                    _YourNumbersAtDestination(
-                      leg: leg,
-                      onOpen: onOpenContact,
-                    ),
                     _OnTheRoad(
                       leg: leg,
                       onOpenPlace: onOpenPlace,
                       onSeeAll: onSeeAll,
+                    ),
+                    _YourNumbersAtDestination(
+                      leg: leg,
+                      onOpen: onOpenContact,
                     ),
                     _Cached(leg: leg),
                   ],
@@ -470,8 +474,14 @@ class _PlaceRow extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        ContactCategory.labels[place.category] ??
+                        // "Fast food · Indian, Momo · Veg options" when the
+                        // map knows it — what decides the stop — and the bare
+                        // category when it does not.
+                        foodLine(place.tags) ??
+                            ContactCategory.labels[place.category] ??
                             place.category,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: AppTokens.stencilStyle.copyWith(
                           fontSize: 9,
                           color: c.muted,

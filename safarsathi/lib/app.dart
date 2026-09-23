@@ -57,6 +57,7 @@ import 'features/money/data/money_summary.dart';
 import 'features/money/presentation/expense_form_screen.dart';
 import 'features/money/presentation/travellers_screen.dart';
 import 'features/money/presentation/money_screen.dart';
+import 'features/trips/data/trip_health.dart';
 import 'features/trips/data/plan_message.dart';
 import 'features/trips/data/tonight.dart';
 import 'features/trips/data/readiness.dart';
@@ -828,6 +829,15 @@ class _HomeState extends State<_Home> {
             tonight: watchTonight(db, trip.tripId),
             onOpenContact: (contact) =>
                 _openEntry(context, trip, contact, actions),
+            health: watchTripHealth(db, trip.tripId),
+            onRemoveSamples: () async {
+              await removeSamples(db, trip.tripId);
+              await syncReadinessChecklist(db, trip.tripId);
+            },
+            onRemoveDuplicates: () async {
+              await removeDuplicates(db, trip.tripId);
+              await syncReadinessChecklist(db, trip.tripId);
+            },
             onSharePlan: () async {
               // Plain text through the share sheet: WhatsApp, SMS, email —
               // whichever the person at home actually reads.
