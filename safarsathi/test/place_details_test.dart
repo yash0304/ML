@@ -65,6 +65,40 @@ void main() {
       );
       expect(foodLine({'amenity': 'fuel'}), isNull);
     });
+
+    test('JAIN IS ITS OWN ANSWER, NOT A KIND OF VEG', () {
+      expect(jainOf({'diet:jain': 'only'}), 'Jain only');
+      expect(jainOf({'diet:jain': 'yes'}), 'Jain food');
+      expect(jainOf({'diet:jain': 'no'}), 'No Jain food');
+      expect(jainOf({'diet:vegetarian': 'only'}), isNull);
+      expect(
+        foodLine({'amenity': 'restaurant', 'diet:jain': 'yes'}),
+        'Restaurant · Jain food',
+      );
+    });
+
+    test('jain is kept when the corridor is stored', () {
+      expect(decodeKeptTags(encodeKeptTags({'diet:jain': 'yes'})),
+          {'diet:jain': 'yes'});
+    });
+
+    test('what the Veg filter lets through', () {
+      expect(servesVeg({'diet:vegetarian': 'only'}), isTrue);
+      expect(servesVeg({'diet:vegetarian': 'yes'}), isTrue);
+      expect(servesVeg({'diet:vegetarian': 'limited'}), isTrue);
+      expect(servesVeg({'diet:vegan': 'yes'}), isTrue);
+      expect(servesVeg({'diet:vegetarian': 'no'}), isFalse);
+      // Untagged is unknown, and unknown is not a yes.
+      expect(servesVeg({'amenity': 'fast_food'}), isFalse);
+    });
+
+    test('what the Jain filter lets through', () {
+      expect(servesJain({'diet:jain': 'only'}), isTrue);
+      expect(servesJain({'diet:jain': 'yes'}), isTrue);
+      expect(servesJain({'diet:jain': 'no'}), isFalse);
+      // Pure veg is not Jain: onion, garlic and root vegetables.
+      expect(servesJain({'diet:vegetarian': 'only'}), isFalse);
+    });
   });
 
   testWidgets('the place screen shows what they serve, and says it is not a '

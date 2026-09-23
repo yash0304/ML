@@ -691,7 +691,7 @@ class _HomeState extends State<_Home> {
 
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => EntryScreen(
+        builder: (entryContext) => EntryScreen(
           contact: contact,
           stopName: stopName,
           onCopy: actions.copy,
@@ -703,14 +703,22 @@ class _HomeState extends State<_Home> {
             // Confirming a homestay number is what clears a blocking item.
             await syncReadinessChecklist(db, trip.tripId);
           },
-          onEdit: (c) => _openForm(context, trip, existing: c),
+          onEdit: (c) async {
+            final deleted = await _openForm(entryContext, trip, existing: c);
+            // Gone: close the entry too, rather than show a contact that no
+            // longer exists and would dial if tapped.
+            if (deleted && entryContext.mounted) {
+              Navigator.of(entryContext).pop();
+            }
+          },
         ),
       ),
     );
   }
 
-  /// The entry form, for a new entry or an existing one.
-  Future<void> _openForm(
+  /// The entry form, for a new entry or an existing one. True when the entry
+  /// was deleted from it.
+  Future<bool> _openForm(
     BuildContext context,
     ActiveTripContext trip, {
     Contact? existing,
@@ -724,16 +732,24 @@ class _HomeState extends State<_Home> {
               ..where((s) => s.tripId.equals(trip.tripId))
               ..orderBy([(s) => OrderingTerm(expression: s.sequenceOrder)]))
             .get();
-    if (!context.mounted) return;
+    if (!context.mounted) return false;
 
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
+    final deleted = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
         builder: (_) => EntryFormScreen(
           existing: existing,
           pickFromPhone: const PhoneContactPicker().pick,
           pickOnOpen: pickOnOpen,
           initialStopId: initialStopId,
           initialCategory: initialCategory,
+          onDelete: existing == null
+              ? null
+              : () async {
+                  await db.contactsDao.deleteContact(existing.id);
+                  // A deleted homestay may be what a readiness item was
+                  // waiting on; the list has to know it is gone.
+                  await syncReadinessChecklist(db, trip.tripId);
+                },
           stops: [for (final s in stops) StopOption(s.id, s.name)],
           // A European trip crosses borders mid-itinerary, so the country to
           // normalise against comes from the stop, not the trip.
@@ -747,6 +763,7 @@ class _HomeState extends State<_Home> {
         ),
       ),
     );
+    return deleted == true;
   }
 
   /// Puts a header row on the clipboard rather than writing a file.

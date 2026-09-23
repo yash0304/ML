@@ -78,6 +78,8 @@ class PoiDetailScreen extends StatelessWidget {
               _Field(label: 'Food', value: cuisineOf(place.tags)!),
             if (vegOf(place.tags) != null)
               _Field(label: 'Veg', value: vegOf(place.tags)!),
+            if (jainOf(place.tags) != null)
+              _Field(label: 'Jain', value: jainOf(place.tags)!),
             if (hoursOf(place.tags) != null)
               _Field(label: 'Hours', value: hoursOf(place.tags)!),
             if ((place.tags['description'] ?? '').trim().isNotEmpty)
@@ -411,4 +413,5 @@ bool _hasFood(CorridorPlace place) =>
     kindOfFood(place.tags) != null ||
     cuisineOf(place.tags) != null ||
     vegOf(place.tags) != null ||
+    jainOf(place.tags) != null ||
     hoursOf(place.tags) != null;

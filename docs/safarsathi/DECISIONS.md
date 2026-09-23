@@ -5,6 +5,10 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-23 — [CONTACTS] **A diary entry can be deleted from its edit form, and only after a confirm that names it.** The trash icon sits on the edit form, not on a list row, so it cannot be hit by a scroll. For a number confirmed by calling it, the dialog says the confirmation and call history go too. Call logs cascade. (The DAO could already delete, but no screen called it. Editing had always worked. The entry screen closes after a delete so nothing is left showing a row that no longer exists.)
+
+2026-09-23 — [DISCOVERY] Jain is its own answer, read from OSM `diet:jain`, never inferred from "pure veg" (pure veg can still mean onion, garlic and root vegetables). The list has Veg and Jain filter chips, but each appears only when some place on the leg is tagged for it, and an untagged place never counts as a yes. (Jain tagging is rare in OSM and probably absent in the Khasi Hills. A chip that always comes back empty would teach the person to distrust the filters, so the person's own notes remain the source for Jain food.)
+
 2026-09-23 — [CONTACTS] **The demo never seeds a number as confirmed or as an emergency contact, and the Trip page offers to remove the demo's sample rows from a real trip.** (A trip started from the demo kept a made-up "Bah Rothell" as a CONFIRMED EMERGENCY contact who "can reach a local ambulance faster than 108" — found on the phone a week before departure. The demo itself broke "nothing arrives verified". Samples are found by the demo's own seven numbers and five expenses to the paisa, never by name, so nothing the person typed can be caught; removal is confirmed first.)
 
 2026-09-23 — [CONTACTS] **An import row already in the diary, or repeated earlier in the same file, arrives unticked.** Existing exact duplicates can be removed from the Trip page, keeping a confirmed copy over an unconfirmed one and otherwise the oldest. (Importing the same sheet twice put every stay on screen three times. A duplicate is now a choice, not the default; "exact" means same name, number, stop and type.)

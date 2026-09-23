@@ -149,6 +149,78 @@ void main() {
       expect(find.text('Sohra PHC'), findsNothing);
     });
 
+    group('diet chips', () {
+      Finder chip(String label) => find.descendant(
+        of: find.byType(Wrap),
+        matching: find.text(label),
+      );
+
+      CorridorPlace food(int id, String name, Map<String, String> tags) =>
+          CorridorPlace(
+            id: id,
+            name: name,
+            category: ContactCategory.restaurant,
+            lat: 25.4,
+            lon: 91.8,
+            alongRouteKm: 10.0 + id,
+            offRouteKm: 0.1,
+            tags: tags,
+          );
+
+      testWidgets('NO JAIN CHIP WHEN NOTHING ON THE LEG SAYS JAIN', (
+        tester,
+      ) async {
+        useTallSurface(tester);
+        await tester.pumpWidget(screen(legOf()));
+        await tester.pump();
+        expect(chip('VEG'), findsNothing);
+        expect(chip('JAIN'), findsNothing);
+      });
+
+      testWidgets('Veg and Jain filter the list, and stack', (tester) async {
+        useTallSurface(tester);
+        await tester.pumpWidget(screen(legOf(places: [
+          food(1, 'Momo Point', {'amenity': 'fast_food'}),
+          food(2, 'Green Leaf', {'diet:vegetarian': 'only'}),
+          food(3, 'Marwari Bhojanalaya',
+              {'diet:vegetarian': 'only', 'diet:jain': 'yes'}),
+        ])));
+        await tester.pump();
+
+        await tester.tap(chip('VEG'));
+        await tester.pump();
+        expect(find.text('Momo Point'), findsNothing);
+        expect(find.text('Green Leaf'), findsOneWidget);
+        expect(find.text('Marwari Bhojanalaya'), findsOneWidget);
+
+        await tester.tap(chip('JAIN'));
+        await tester.pump();
+        expect(find.text('Green Leaf'), findsNothing);
+        expect(find.text('Marwari Bhojanalaya'), findsOneWidget);
+
+        // Off again brings the rest back.
+        await tester.tap(chip('VEG'));
+        await tester.tap(chip('JAIN'));
+        await tester.pump();
+        expect(find.text('Momo Point'), findsOneWidget);
+      });
+
+      testWidgets('an empty filter says so', (tester) async {
+        useTallSurface(tester);
+        await tester.pumpWidget(screen(legOf(places: [
+          placeOf(id: 1, name: 'IOC pump', category: ContactCategory.fuel),
+          food(2, 'Green Leaf', {'diet:vegetarian': 'only'}),
+        ])));
+        await tester.pump();
+
+        await tester.tap(chip('FUEL'));
+        await tester.tap(chip('VEG'));
+        await tester.pump();
+        expect(find.text('Nothing on this leg matches those filters.'),
+            findsOneWidget);
+      });
+    });
+
     testWidgets('tapping a place opens it', (tester) async {
       useTallSurface(tester);
       CorridorPlace? opened;

@@ -391,5 +391,14 @@ void main() {
       await dao.deleteContact(id);
       expect(await namesFor(ContactFilter(tripId: tripId)), isEmpty);
     });
+
+    test('DELETING A CONTACT TAKES ITS CALL HISTORY WITH IT', () async {
+      // The delete dialog promises this; a call log left pointing at nothing
+      // would be a row the app can never show or clear.
+      final id = await addContact('Homestay', '1');
+      await dao.logCall(contactId: id, tripId: tripId, action: 'call');
+      await dao.deleteContact(id);
+      expect(await db.select(db.callLogs).get(), isEmpty);
+    });
   });
 }

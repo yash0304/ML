@@ -21,6 +21,10 @@ const keptTags = {
   'cuisine',
   'diet:vegetarian',
   'diet:vegan',
+  // Rarely tagged — few places anywhere carry it, and in the Khasi hills
+  // probably none — but where it exists it is the one answer a Jain
+  // traveller needs, so it is kept and shown.
+  'diet:jain',
   'opening_hours',
   'description',
 };
@@ -90,6 +94,15 @@ String? vegOf(Map<String, String> tags) {
   };
 }
 
+/// Jain food, when the place says. "No" is shown too: for a Jain traveller
+/// it is worth knowing before the stop, not at the counter.
+String? jainOf(Map<String, String> tags) => switch (tags['diet:jain']) {
+  'only' => 'Jain only',
+  'yes' => 'Jain food',
+  'no' => 'No Jain food',
+  _ => null,
+};
+
 /// OSM's hours, made readable without pretending to parse them: "Mo-Su
 /// 09:00-21:00" becomes "Mon–Sun 09:00–21:00". The full grammar has public
 /// holidays, sunset offsets and exceptions; showing a half-parsed version as
@@ -114,6 +127,16 @@ String? foodLine(Map<String, String> tags) {
     kindOfFood(tags),
     cuisineOf(tags),
     vegOf(tags),
+    jainOf(tags),
   ].whereType<String>().toList();
   return parts.isEmpty ? null : parts.join(' · ');
 }
+
+/// Somewhere a vegetarian can eat — options, limited, or pure veg.
+bool servesVeg(Map<String, String> tags) =>
+    const {'yes', 'only', 'limited'}.contains(tags['diet:vegetarian']) ||
+    const {'yes', 'only'}.contains(tags['diet:vegan']);
+
+/// Somewhere that says it serves Jain food.
+bool servesJain(Map<String, String> tags) =>
+    const {'yes', 'only'}.contains(tags['diet:jain']);

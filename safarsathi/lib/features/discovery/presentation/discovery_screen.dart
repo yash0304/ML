@@ -12,7 +12,8 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
 import '../../contacts/data/contacts_dao.dart';
-import '../data/place_details.dart' show foodLine;
+import '../data/place_details.dart'
+    show foodLine, servesJain, servesVeg;
 import '../data/discovery.dart';
 
 class DiscoveryScreen extends StatefulWidget {
@@ -31,6 +32,11 @@ class DiscoveryScreen extends StatefulWidget {
 
 class _DiscoveryScreenState extends State<DiscoveryScreen> {
   String? _category;
+
+  /// Diet filters, on top of the category. Offered only when some place on
+  /// the leg says so — see the chip rule below.
+  bool _veg = false;
+  bool _jain = false;
 
   @override
   Widget build(BuildContext context) {
@@ -57,9 +63,19 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
           // A chip nobody can match is a filter that only disappoints, so the
           // row offers only the categories this leg actually has.
           final categories = leg.categoriesPresent;
-          final shown = _category == null
-              ? leg.places
-              : leg.places.where((p) => p.category == _category).toList();
+          // The same rule for diets: a Veg or Jain chip appears only if some
+          // place on this leg says it serves that. On most Khasi hill roads
+          // no place is tagged Jain, and the honest result is no Jain chip —
+          // not one that always comes back empty.
+          final anyVeg = leg.places.any((p) => servesVeg(p.tags));
+          final anyJain = leg.places.any((p) => servesJain(p.tags));
+          final shown = [
+            for (final p in leg.places)
+              if ((_category == null || p.category == _category) &&
+                  (!_veg || servesVeg(p.tags)) &&
+                  (!_jain || servesJain(p.tags)))
+                p,
+          ];
 
           return ListView(
             padding: const EdgeInsets.only(bottom: AppTokens.s32),
@@ -100,6 +116,18 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                           () => _category = _category == key ? null : key,
                         ),
                       ),
+                    if (anyVeg)
+                      _Chip(
+                        label: 'Veg',
+                        on: _veg,
+                        onTap: () => setState(() => _veg = !_veg),
+                      ),
+                    if (anyJain)
+                      _Chip(
+                        label: 'Jain',
+                        on: _jain,
+                        onTap: () => setState(() => _jain = !_jain),
+                      ),
                   ],
                 ),
               ),
@@ -114,7 +142,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                     horizontal: AppTokens.gutter,
                   ),
                   child: Text(
-                    'Nothing in that category on this leg.',
+                    'Nothing on this leg matches those filters.',
                     style: AppTokens.captionStyle.copyWith(color: c.muted),
                   ),
                 ),

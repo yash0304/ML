@@ -54,6 +54,10 @@ class EntryFormScreen extends StatefulWidget {
   final int? initialStopId;
   final String? initialCategory;
 
+  /// Deletes the entry being edited. Null hides the button — a new entry has
+  /// nothing to delete.
+  final Future<void> Function()? onDelete;
+
   const EntryFormScreen({
     super.key,
     this.existing,
@@ -65,6 +69,7 @@ class EntryFormScreen extends StatefulWidget {
     this.pickOnOpen = false,
     this.initialStopId,
     this.initialCategory,
+    this.onDelete,
   });
 
   @override
@@ -299,9 +304,51 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
               style: AppTokens.titleStyle.copyWith(color: c.ink),
             ),
           ),
+          if (_isEdit && widget.onDelete != null)
+            IconButton(
+              key: const Key('entry-delete'),
+              onPressed: _delete,
+              icon: Icon(Icons.delete_outline, color: c.muted),
+              tooltip: 'Delete this entry',
+            ),
         ],
       ),
     );
+  }
+
+  /// Deletes after asking — and asks harder about a number that was
+  /// confirmed, because that confirmation was a phone call made on purpose
+  /// and deleting it is the one thing here that cannot be redone by typing.
+  Future<void> _delete() async {
+    final e = widget.existing!;
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete ${e.name}?'),
+        content: Text(
+          e.callConfirmed
+              ? 'You confirmed this number by calling it. Deleting removes the '
+                    'entry, the confirmation and its call history.'
+              : 'Removes the entry and its call history from this trip.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep'),
+          ),
+          TextButton(
+            key: const Key('entry-delete-confirm'),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (yes != true || !mounted) return;
+    await widget.onDelete!();
+    // `true` tells whoever opened the form that the entry is gone, so a
+    // screen still showing it can close too rather than show a ghost.
+    if (mounted) Navigator.of(context).pop(true);
   }
 
   Widget _categoryField(AppColors c) {

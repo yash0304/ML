@@ -209,6 +209,103 @@ void main() {
     });
   });
 
+  group('deleting', () {
+    late int deletes;
+    late bool? popped;
+
+    // Opened from a page underneath, as the app does, so the result the
+    // form pops with can be read — true tells the entry screen to close too.
+    Future<void> openForm(
+      WidgetTester tester, {
+      Contact? existing,
+      bool deletable = true,
+    }) async {
+      deletes = 0;
+      popped = null;
+      tester.view.physicalSize = const Size(420, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTokens.light,
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () async {
+                popped = await Navigator.of(context).push<bool>(
+                  MaterialPageRoute(
+                    builder: (_) => EntryFormScreen(
+                      existing: existing,
+                      stops: const [],
+                      findDuplicate: (_) async => null,
+                      onSave: (_) async {},
+                      onDelete: deletable ? () async => deletes++ : null,
+                    ),
+                  ),
+                );
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a new entry has nothing to delete', (tester) async {
+      await openForm(tester);
+      expect(find.byKey(const Key('entry-delete')), findsNothing);
+    });
+
+    testWidgets('delete asks first, and Keep deletes nothing', (
+      tester,
+    ) async {
+      await openForm(tester, existing: existingEntry());
+      await tester.tap(find.byKey(const Key('entry-delete')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete Kongthong homestay?'), findsOneWidget);
+      await tester.tap(find.text('Keep'));
+      await tester.pumpAndSettle();
+
+      expect(deletes, 0);
+      expect(find.byType(EntryFormScreen), findsOneWidget);
+    });
+
+    testWidgets('confirming deletes once and closes with true', (
+      tester,
+    ) async {
+      await openForm(tester, existing: existingEntry());
+      await tester.tap(find.byKey(const Key('entry-delete')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('entry-delete-confirm')));
+      await tester.pumpAndSettle();
+
+      expect(deletes, 1);
+      expect(popped, isTrue);
+      expect(find.byType(EntryFormScreen), findsNothing);
+    });
+
+    testWidgets('A CONFIRMED NUMBER SAYS WHAT IS LOST', (tester) async {
+      await openForm(tester, existing: existingEntry(confirmed: true));
+      await tester.tap(find.byKey(const Key('entry-delete')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('You confirmed this number by calling it'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('no delete is offered where the caller gives none', (
+      tester,
+    ) async {
+      await openForm(tester, existing: existingEntry(), deletable: false);
+      expect(find.byKey(const Key('entry-delete')), findsNothing);
+    });
+  });
+
   group('writing a draft', () {
     late AppDatabase db;
     late ContactsDao dao;
