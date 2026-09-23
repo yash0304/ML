@@ -10,40 +10,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:safarsathi/core/database/app_database.dart';
 import 'package:safarsathi/features/contacts/data/contacts_dao.dart';
-import 'package:safarsathi/features/dev/dev_seed.dart';
 import 'package:safarsathi/features/trips/data/trip_health.dart';
 
 void main() {
   late AppDatabase db;
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
-
-  group('the demo', () {
-    test('NEVER SEEDS A NUMBER THAT LOOKS VERIFIED OR SITS ON THE SOS TAB',
-        () async {
-      final demo = await createDemoTrip(db);
-      final seeded = await (db.select(db.contacts)
-            ..where((c) => c.tripId.equals(demo.tripId)))
-          .get();
-      expect(seeded, isNotEmpty);
-      expect(seeded.where((c) => c.callConfirmed), isEmpty,
-          reason: 'a sample may show the diary; it may never look trusted');
-      expect(seeded.where((c) => c.isEmergency), isEmpty);
-    });
-
-    test('everything it seeds is recognised as sample data', () async {
-      final demo = await createDemoTrip(db);
-      final health = await watchTripHealth(db, demo.tripId).first;
-      final contacts = await (db.select(db.contacts)
-            ..where((c) => c.tripId.equals(demo.tripId)))
-          .get();
-      final expenses = await (db.select(db.expenses)
-            ..where((e) => e.tripId.equals(demo.tripId)))
-          .get();
-      expect(health.sampleContacts.length, contacts.length);
-      expect(health.sampleExpenses.length, expenses.length);
-    });
-  });
 
   group('sample data in a real trip', () {
     late int tripId;

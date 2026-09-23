@@ -5,6 +5,8 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-23 — [APP] **There is no demo. Nothing is seeded in any build, and the "fill it with a demo trip" link is gone. `dev_seed.dart` is deleted.** An empty install opens on "No trip yet" → Start a trip. The Trip page still finds and offers to remove made-up rows an older build left in a real trip. Removal stays one confirmed tap, not automatic, because the expense match (description + amount) could in principle equal a real expense. (The app is used for a real trip now. A demo that could leave a fake confirmed emergency number in that trip has no place in it.)
+
 2026-09-23 — [CONTACTS] **A diary entry can be deleted from its edit form, and only after a confirm that names it.** The trash icon sits on the edit form, not on a list row, so it cannot be hit by a scroll. For a number confirmed by calling it, the dialog says the confirmation and call history go too. Call logs cascade. (The DAO could already delete, but no screen called it. Editing had always worked. The entry screen closes after a delete so nothing is left showing a row that no longer exists.)
 
 2026-09-23 — [DISCOVERY] Jain is its own answer, read from OSM `diet:jain`, never inferred from "pure veg" (pure veg can still mean onion, garlic and root vegetables). The list has Veg and Jain filter chips, but each appears only when some place on the leg is tagged for it, and an untagged place never counts as a yes. (Jain tagging is rare in OSM and probably absent in the Khasi Hills. A chip that always comes back empty would teach the person to distrust the filters, so the person's own notes remain the source for Jain food.)

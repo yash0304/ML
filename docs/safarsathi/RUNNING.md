@@ -265,9 +265,11 @@ Once it is running, `r` hot-reloads and `R` restarts.
 
 ## What you should see
 
-A debug build seeds a demo trip with six entries the first time it opens,
-because trip creation does not exist yet (#16). **Its numbers are deliberately
-fake — +91 90000 000xx — so nothing here can be mistaken for a real number.**
+The app opens on **No trip yet** with a **Start a trip** button, in debug and
+release alike. There is no demo: nothing is seeded, so everything on screen is
+something you typed or imported. (A trip started from the demo in an older
+build may still hold its made-up +91 90000 000xx numbers. The Trip page finds
+them and offers to remove them.)
 
 ---
 
@@ -346,8 +348,9 @@ has its `<queries>` block. On Android 11 and later an app cannot see which
 other apps handle `tel:`, `sms:` or `https:` unless it declares them there,
 and `url_launcher` just returns false. This was missing until 2026-09-12.
 
-**The app opens empty.** The demo seed only runs in debug builds and only when
-the database has no trip at all. Uninstall and reinstall to reseed.
+**The app opens on "No trip yet".** That is correct for a fresh install. Tap
+Start a trip. Restoring a backup is under More, which appears once a trip
+exists.
 
 ---
 
@@ -379,9 +382,8 @@ publish.
 
 ### On first open
 
-A release build has no trip, because trip creation is #16. The app opens on a
-**Create demo trip** button that fills the diary with six placeholder entries.
-Their numbers are deliberately fake.
+The app opens on **No trip yet**. Tap **Start a trip**. (Restore a backup
+from More, which appears once a trip exists.)
 
 ### Building one locally instead
 

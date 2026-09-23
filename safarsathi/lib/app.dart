@@ -31,7 +31,6 @@ import 'features/contacts/presentation/multi_add_screen.dart';
 import 'features/checklist/data/checklist_dao.dart';
 import 'features/checklist/data/checklist_generator.dart';
 import 'features/checklist/presentation/checklist_screen.dart';
-import 'features/dev/dev_seed.dart';
 import 'features/emergency/data/sos.dart';
 import 'features/emergency/presentation/sos_panel.dart';
 import 'features/emergency/presentation/emergency_screen.dart';
@@ -154,9 +153,7 @@ class _HomeState extends State<_Home> {
   late final Future<void> _ready = _bootstrap();
 
   Future<void> _bootstrap() async {
-    // A debug build seeds a demo so there is something to look at; a release
-    // build opens on the "no trip" screen and offers to make one.
-    await ensureDemoTrip(widget.db);
+    // No seeding, in any build: an empty database opens on "No trip yet".
     await ensureActiveTrip(widget.db);
 
     final documents = await getApplicationDocumentsDirectory();
@@ -806,16 +803,7 @@ class _HomeState extends State<_Home> {
             }
             final trip = snap.data;
             if (trip == null) {
-              return _NoTrip(
-                onCreate: () => _openTripForm(context),
-                onDemo: () async {
-                  // createDemoTrip does not set the active flag, so without
-                  // this the trip would land in the database and the screen
-                  // would sit here looking broken.
-                  await createDemoTrip(widget.db);
-                  await ensureActiveTrip(widget.db);
-                },
-              );
+              return _NoTrip(onCreate: () => _openTripForm(context));
             }
             return _shell(context, trip);
           },
@@ -1219,9 +1207,8 @@ class _HomeState extends State<_Home> {
 /// Shown when the database holds no trip at all.
 class _NoTrip extends StatelessWidget {
   final VoidCallback onCreate;
-  final Future<void> Function() onDemo;
 
-  const _NoTrip({required this.onCreate, required this.onDemo});
+  const _NoTrip({required this.onCreate});
 
   @override
   Widget build(BuildContext context) {
@@ -1265,17 +1252,6 @@ class _NoTrip extends StatelessWidget {
                       fontSize: 11.5,
                       color: c.paper,
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppTokens.s16),
-              GestureDetector(
-                onTap: onDemo,
-                child: Text(
-                  'Or fill it with a demo trip to look around',
-                  style: AppTokens.captionStyle.copyWith(
-                    color: c.muted,
-                    decoration: TextDecoration.underline,
                   ),
                 ),
               ),

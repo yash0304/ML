@@ -698,8 +698,11 @@ class _HealthBanner extends StatelessWidget {
           children: [
             if (h.hasSamples)
               item(
+                // The demo is gone from the app; this clears what an older
+                // build left behind on the phone.
                 '$samples sample ${samples == 1 ? 'entry' : 'entries'} from '
-                'the demo ${samples == 1 ? 'is' : 'are'} still in this trip. '
+                'an older version\'s demo ${samples == 1 ? 'is' : 'are'} '
+                'still in this trip. '
                 'The numbers are made up'
                 '${risky.isEmpty ? '' : ' — and ${risky.join(' and ')}'}.',
                 'Remove them',

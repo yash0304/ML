@@ -51,7 +51,8 @@ void main() {
       contact(3, 'Village guide', '+91 90000 00004'),
     ]));
     expect(
-      find.text('3 sample entries from the demo are still in this trip. The '
+      find.text('3 sample entries from an older version\'s demo are still in '
+          'this trip. The '
           'numbers are made up — and 2 are marked confirmed and 1 is on the '
           'SOS tab.'),
       findsOneWidget,

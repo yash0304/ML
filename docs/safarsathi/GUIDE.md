@@ -87,9 +87,6 @@ These are deliberate, not missing features.
 
 Open the app. Tap **Start a trip**, give it a name and dates.
 
-*(If you just want a look around first, tap "Or fill it with a demo trip to
-look around". It fills the app with a made-up Meghalaya trip you can poke at.)*
-
 **2. Add your stops**
 
 **More → Edit the itinerary → Add stop.**
