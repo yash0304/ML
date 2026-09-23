@@ -256,4 +256,121 @@ void main() {
     expect((await db.select(db.contacts).get()).single.name,
         startsWith('Rina'));
   });
+
+  group('RE-IMPORTING A SHEET THAT NOW HAS LOCATIONS', () {
+    // Found on the phone: the sheet went in before it had Latitude and
+    // Longitude columns, so "27 of your numbers have no location". Importing
+    // the newer file marked every row a duplicate and left it unticked, so
+    // the locations never landed. The re-import is how they get there.
+    const before = 'name,phone,note\n'
+        'Civil Hospital,+91 364 222 4100,my note\n'
+        'Reid Chest,+91 364 224 1497,\n';
+    const after = 'name,phone,latitude,longitude,note\n'
+        'Civil Hospital (Ambulance),+91 364 222 4100,25.567739,91.881081,'
+        'sheet note\n'
+        'Reid Chest,+91 364 224 1497,,,\n'
+        'New place,+91 98560 11111,25.3,91.9,\n';
+
+    test('a known number with no location is ticked to be placed', () async {
+      await importCsv(before);
+      final p = await preview(after);
+      final civil = p.rows.first;
+      expect(civil.fillsLocation, isTrue);
+      expect(civil.selected, isTrue);
+      expect(civil.messages.first, contains('adds the location'));
+      // No location in the sheet: still a plain duplicate, unticked.
+      expect(p.rows[1].fillsLocation, isFalse);
+      expect(p.rows[1].selected, isFalse);
+      expect(p.toImport.map((r) => r.name), ['New place']);
+      expect(p.toPlace.map((r) => r.name), ['Civil Hospital (Ambulance)']);
+    });
+
+    test('ONLY THE POSITION CHANGES — no copy, and nothing of yours is '
+        'overwritten', () async {
+      await importCsv(before);
+      final existing = await db.select(db.contacts).get();
+      final civilId = existing.firstWhere((c) => c.name == 'Civil Hospital').id;
+      await db.contactsDao.markConfirmed(civilId);
+
+      final result = await importCsv(after);
+      expect(result.imported, 1);
+      expect(result.placed, 1);
+
+      final rows = await db.select(db.contacts).get();
+      expect(rows, hasLength(3));
+      final civil = rows.firstWhere((c) => c.id == civilId);
+      expect(civil.name, 'Civil Hospital');
+      expect(civil.note, 'my note');
+      expect(civil.callConfirmed, isTrue);
+      expect(civil.lat, 25.567739);
+      expect(civil.lon, 91.881081);
+    });
+
+    test('a number that already has a position is a plain duplicate', () async {
+      await importCsv(after.replaceFirst('New place', 'First'));
+      final p = await preview(after);
+      expect(p.rows.first.fillsLocation, isFalse);
+      expect(p.rows.first.selected, isFalse);
+    });
+
+    test('placing only makes no empty batch in history', () async {
+      await importCsv(before);
+      final onlyPlacing = await preview(
+        'name,phone,latitude,longitude\n'
+        'Civil Hospital,+91 364 222 4100,25.567739,91.881081\n',
+      );
+      final result = await commitImport(
+        db,
+        tripId: tripId,
+        fileName: 'again.csv',
+        preview: onlyPlacing,
+      );
+      expect(result.placed, 1);
+      expect(await watchImportBatches(db, tripId).first, hasLength(1));
+    });
+
+    test('unticked, it places nothing', () async {
+      await importCsv(before);
+      final p = await preview(after);
+      final off = ImportPreview([
+        for (final r in p.rows) r.copyWith(selected: false),
+      ]);
+      final result = await commitImport(
+        db,
+        tripId: tripId,
+        fileName: 'again.csv',
+        preview: off,
+      );
+      expect(result.placed, 0);
+      expect(
+        (await db.select(db.contacts).get()).every((c) => c.lat == null),
+        isTrue,
+      );
+    });
+
+    test('A SHORT CODE IMPORTED TWICE IS A DUPLICATE, NOT A SECOND COPY', () async {
+      // 112 and 181 have no E.164 form, so they had no duplicate check at
+      // all: re-importing the sheet added every helpline again.
+      const helplines = 'name,phone\n'
+          'Women Helpline,181\n'
+          'Child Helpline,1098\n';
+      await importCsv(helplines);
+      final p = await preview('$helplines' 'Other short code,181\n');
+      expect(p.rows[0].selected, isFalse);
+      expect(p.rows[1].selected, isFalse);
+      expect(
+        p.rows[0].messages,
+        contains('Already in your diary — left unticked.'),
+      );
+      // Same digits, different name: a different service, still ticked.
+      expect(p.rows[2].selected, isTrue);
+    });
+
+    test('a toggle keeps the row\'s position', () async {
+      final p = await preview(after);
+      final row = p.rows.last.copyWith(selected: false).copyWith(selected: true);
+      expect(row.lat, 25.3);
+      expect(row.lon, 91.9);
+    });
+  });
 }

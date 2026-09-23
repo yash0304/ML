@@ -13,14 +13,19 @@ import 'package:safarsathi/core/theme/app_tokens.dart';
 import 'package:safarsathi/features/contacts/data/contacts_dao.dart';
 import 'package:safarsathi/features/contacts/data/entry_draft.dart';
 import 'package:safarsathi/features/contacts/presentation/entry_form_screen.dart';
+import 'package:safarsathi/features/discovery/data/geo.dart';
 
 Contact existingEntry({
   String name = 'Kongthong homestay',
   String phoneRaw = '+91 98560 41122',
   String? phoneE164 = '+919856041122',
   bool confirmed = false,
+  double? lat,
+  double? lon,
 }) {
   return Contact(
+    lat: lat,
+    lon: lon,
     id: 42,
     name: name,
     phoneRaw: phoneRaw,
@@ -47,6 +52,7 @@ void main() {
       Contact? existing,
       Contact? duplicate,
       List<StopOption> stops = const [],
+      Future<LatLng?> Function()? locateMe,
     }) async {
       saved = [];
       // The default 800x600 surface is shorter than the form; the save
@@ -63,6 +69,7 @@ void main() {
             stops: stops,
             findDuplicate: (_) async => duplicate,
             onSave: (d) async => saved.add(d),
+            locateMe: locateMe,
           ),
         ),
       );
@@ -206,6 +213,116 @@ void main() {
       await save(tester, 'Save to diary');
 
       expect(saved.single.stopId, 7);
+    });
+  });
+
+  group('location', () {
+    late List<EntryDraft> saved;
+
+    Future<void> pumpForm(
+      WidgetTester tester, {
+      Contact? existing,
+      Future<LatLng?> Function()? locateMe,
+    }) async {
+      saved = [];
+      tester.view.physicalSize = const Size(420, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTokens.light,
+          home: EntryFormScreen(
+            existing: existing,
+            onSave: (d) async => saved.add(d),
+            locateMe: locateMe,
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    Finder field() => find.descendant(
+      of: find.byKey(const Key('field-location')),
+      matching: find.byType(TextField),
+    );
+
+    Future<void> save(WidgetTester tester) async {
+      final button = find.text('Save changes');
+      await tester.ensureVisible(button);
+      await tester.tap(button);
+      await tester.pump();
+    }
+
+    testWidgets('a saved position shows in the field', (tester) async {
+      await pumpForm(
+        tester,
+        existing: existingEntry(lat: 25.567739, lon: 91.881081),
+      );
+      expect(find.text('25.567739, 91.881081'), findsOneWidget);
+    });
+
+    testWidgets('a pasted Google Maps position is saved', (tester) async {
+      await pumpForm(tester, existing: existingEntry());
+      await tester.enterText(field(), '25°34\'03.9"N 91°52\'51.9"E');
+      await save(tester);
+      expect(saved.single.lat, closeTo(25.56775, 1e-5));
+      expect(saved.single.lon, closeTo(91.88108, 1e-5));
+    });
+
+    testWidgets('A LOCATION THAT WILL NOT READ BLOCKS THE SAVE', (
+      tester,
+    ) async {
+      // Saving without it would leave the person thinking the place is on
+      // the map.
+      await pumpForm(tester, existing: existingEntry());
+      await tester.enterText(field(), 'https://maps.app.goo.gl/xyz');
+      await save(tester);
+      expect(saved, isEmpty);
+      expect(find.textContaining('short link'), findsOneWidget);
+    });
+
+    testWidgets('clearing the field clears the position', (tester) async {
+      await pumpForm(
+        tester,
+        existing: existingEntry(lat: 25.567739, lon: 91.881081),
+      );
+      await tester.enterText(field(), '');
+      await save(tester);
+      expect(saved.single.lat, isNull);
+      expect(saved.single.lon, isNull);
+    });
+
+    testWidgets('"I am here now" fills the field from the GPS', (
+      tester,
+    ) async {
+      await pumpForm(
+        tester,
+        existing: existingEntry(),
+        locateMe: () async => const LatLng(25.33094, 91.82381),
+      );
+      await tester.ensureVisible(find.byKey(const Key('location-here')));
+      await tester.tap(find.byKey(const Key('location-here')));
+      await tester.pump();
+      expect(find.text('25.330940, 91.823810'), findsOneWidget);
+    });
+
+    testWidgets('no fix says what to check, and fills nothing', (
+      tester,
+    ) async {
+      await pumpForm(
+        tester,
+        existing: existingEntry(),
+        locateMe: () async => null,
+      );
+      await tester.ensureVisible(find.byKey(const Key('location-here')));
+      await tester.tap(find.byKey(const Key('location-here')));
+      await tester.pump();
+      expect(find.textContaining('No position from the phone'), findsOneWidget);
+    });
+
+    testWidgets('no GPS offered where the caller gives none', (tester) async {
+      await pumpForm(tester, existing: existingEntry());
+      expect(find.byKey(const Key('location-here')), findsNothing);
     });
   });
 
@@ -386,6 +503,30 @@ void main() {
       expect(row.tier, ContactTier.userEntered.name);
       expect(row.confirmedAt, isNull);
       expect(await dao.watchUnconfirmedCount(tripId).first, 1);
+    });
+
+    test('a position is written, and an edit can clear it', () async {
+      final id = await saveEntry(
+        dao,
+        const EntryDraft(
+          name: 'Civil Hospital',
+          phoneRaw: '+91 364 222 4100',
+          lat: 25.567739,
+          lon: 91.881081,
+        ),
+        tripId: tripId,
+      );
+      var row = await db.select(db.contacts).getSingle();
+      expect(row.lat, 25.567739);
+      expect(row.lon, 91.881081);
+
+      await saveEntry(
+        dao,
+        EntryDraft(id: id, name: 'Civil Hospital', phoneRaw: '+91 364 222 4100'),
+        tripId: tripId,
+      );
+      row = await db.select(db.contacts).getSingle();
+      expect(row.lat, isNull);
     });
 
     test('an empty note is stored as nothing, not as blank text', () async {

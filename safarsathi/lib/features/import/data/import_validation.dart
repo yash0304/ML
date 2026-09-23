@@ -55,6 +55,13 @@ class ValidatedRow {
   /// cannot be turned on.
   final bool selected;
 
+  /// The number is already in the diary WITHOUT a position, and this row has
+  /// one. Ticked, it adds the position to that entry rather than making a
+  /// second copy. Re-importing a sheet that gained Latitude and Longitude
+  /// columns is how a diary gets placed on the road, so this is the point
+  /// of re-importing, not a duplicate.
+  final bool fillsLocation;
+
   const ValidatedRow({
     required this.sourceRow,
     required this.name,
@@ -71,6 +78,7 @@ class ValidatedRow {
     this.lon,
     this.messages = const [],
     this.selected = true,
+    this.fillsLocation = false,
   });
 
   bool get canSelect => state != RowState.skip;
@@ -86,6 +94,11 @@ class ValidatedRow {
     stopName: stopName,
     isEmergency: isEmergency,
     hasWhatsapp: hasWhatsapp,
+    // Carried through a toggle. Before this, ticking a row off and on again
+    // quietly dropped its position.
+    lat: lat,
+    lon: lon,
+    fillsLocation: fillsLocation,
     state: state,
     messages: messages,
     selected: state == RowState.skip ? false : (selected ?? this.selected),
@@ -102,9 +115,16 @@ class ImportPreview {
   int get skipped => rows.where((r) => r.state == RowState.skip).length;
   int get selected => rows.where((r) => r.selected).length;
 
+  /// Rows that become new diary entries.
   List<ValidatedRow> get toImport => [
     for (final r in rows)
-      if (r.selected) r,
+      if (r.selected && !r.fillsLocation) r,
+  ];
+
+  /// Rows that only add a position to an entry already in the diary.
+  List<ValidatedRow> get toPlace => [
+    for (final r in rows)
+      if (r.selected && r.fillsLocation) r,
   ];
 }
 
@@ -113,7 +133,21 @@ class ImportPreview {
 class ExistingContacts {
   final Set<String> e164;
   final Set<String> squashedNames;
-  const ExistingContacts({required this.e164, required this.squashedNames});
+
+  /// The subset of [e164] with no position saved.
+  final Set<String> unplacedE164;
+
+  /// Name and digits together, for numbers with no E.164 form — 112, 181,
+  /// 1098. Without this a short code had no duplicate check at all, and
+  /// re-importing a sheet added every helpline again.
+  final Set<String> nameAndDigits;
+
+  const ExistingContacts({
+    required this.e164,
+    required this.squashedNames,
+    this.unplacedE164 = const {},
+    this.nameAndDigits = const {},
+  });
 
   static const empty = ExistingContacts(e164: {}, squashedNames: {});
 }
@@ -208,10 +242,23 @@ ImportPreview validateRows(
     // twice — found on a phone as each homestay listed three times. The row
     // is still shown and can still be ticked; importing a copy is now a
     // choice rather than the default.
+    final position = _position(
+      at(ImportField.latitude),
+      at(ImportField.longitude),
+    );
+
     var duplicate = false;
+    var fillsLocation = false;
     final key = phone.e164;
     if (key != null) {
-      if (existing.e164.contains(key)) {
+      if (existing.e164.contains(key) &&
+          !seenInFile.contains(key) &&
+          position.lat != null &&
+          existing.unplacedE164.contains(key)) {
+        messages.add('Already in your diary with no location — this adds the '
+            'location to it. No second copy is made.');
+        fillsLocation = true;
+      } else if (existing.e164.contains(key)) {
         messages.add('Already in your diary — left unticked.');
         duplicate = true;
       } else if (seenInFile.contains(key)) {
@@ -219,8 +266,18 @@ ImportPreview validateRows(
         duplicate = true;
       }
       seenInFile.add(key);
-    } else if (existing.squashedNames.contains(_squashName(name))) {
-      messages.add('A contact with this name is already in your diary.');
+    } else {
+      final nameKey = nameAndDigitsKey(name, phone.raw);
+      if (existing.nameAndDigits.contains(nameKey)) {
+        messages.add('Already in your diary — left unticked.');
+        duplicate = true;
+      } else if (seenInFile.contains(nameKey)) {
+        messages.add('Appears earlier in this file too — left unticked.');
+        duplicate = true;
+      } else if (existing.squashedNames.contains(_squashName(name))) {
+        messages.add('A contact with this name is already in your diary.');
+      }
+      seenInFile.add(nameKey);
     }
 
     final stopRaw = at(ImportField.stopName);
@@ -233,10 +290,6 @@ ImportPreview validateRows(
       );
     }
 
-    final position = _position(
-      at(ImportField.latitude),
-      at(ImportField.longitude),
-    );
     if (position.problem != null) messages.add(position.problem!);
 
     final categoryRaw = at(ImportField.category);
@@ -265,6 +318,7 @@ ImportPreview validateRows(
         state: messages.isEmpty ? RowState.ready : RowState.warning,
         messages: messages,
         selected: !duplicate,
+        fillsLocation: fillsLocation,
       ),
     );
   }
@@ -320,6 +374,11 @@ String? _orNull(String s) => s.isEmpty ? null : s;
 
 String _squashName(String s) =>
     s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+/// The duplicate key for a number with no E.164 form: same name, same digits.
+/// Both, because "181" alone is every women's helpline in the country.
+String nameAndDigitsKey(String name, String phone) =>
+    '${_squashName(name)}|${phone.replaceAll(RegExp(r'\D'), '')}';
 
 /// Matches a sheet's category text against the app's own list, on the same
 /// squashed key the column matcher uses, plus the handful of words people

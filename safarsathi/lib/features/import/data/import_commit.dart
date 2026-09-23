@@ -16,7 +16,15 @@ import 'import_validation.dart';
 class ImportResult {
   final int imported;
   final int skipped;
-  const ImportResult({required this.imported, required this.skipped});
+
+  /// Entries already in the diary that gained a position.
+  final int placed;
+
+  const ImportResult({
+    required this.imported,
+    required this.skipped,
+    this.placed = 0,
+  });
 }
 
 /// Writes the selected rows of [preview] as one batch.
@@ -33,7 +41,8 @@ Future<ImportResult> commitImport(
   required ImportPreview preview,
 }) async {
   final rows = preview.toImport;
-  final skipped = preview.total - rows.length;
+  final toPlace = preview.toPlace;
+  final skipped = preview.total - rows.length - toPlace.length;
 
   final entries = [
     for (final r in rows)
@@ -52,18 +61,39 @@ Future<ImportResult> commitImport(
       ),
   ];
 
-  await db.contactsDao.insertBatch(
-    entries,
-    ImportBatchesCompanion.insert(
-      fileName: fileName,
-      tripId: Value(tripId),
-      sheetName: Value(sheetName),
-      rowsImported: Value(rows.length),
-      rowsSkipped: Value(skipped),
-    ),
-  );
+  var placed = 0;
+  await db.transaction(() async {
+    // A sheet that only placed existing entries makes no batch: there would
+    // be nothing in it to undo, and an empty line in Import history.
+    if (entries.isNotEmpty) {
+      await db.contactsDao.insertBatch(
+        entries,
+        ImportBatchesCompanion.insert(
+          fileName: fileName,
+          tripId: Value(tripId),
+          sheetName: Value(sheetName),
+          rowsImported: Value(rows.length),
+          rowsSkipped: Value(skipped),
+        ),
+      );
+    }
 
-  return ImportResult(imported: rows.length, skipped: skipped);
+    // ONLY THE POSITION, AND ONLY WHERE THERE WAS NONE. The name, note, tier
+    // and confirmation of the diary's entry are the person's, and a sheet
+    // does not get to change them. `lat IS NULL` also means a position the
+    // person set by hand is never overwritten.
+    for (final r in toPlace) {
+      placed += await (db.update(db.contacts)..where(
+            (c) =>
+                c.tripId.equals(tripId) &
+                c.phoneE164.equals(r.phoneE164!) &
+                c.lat.isNull(),
+          ))
+          .write(ContactsCompanion(lat: Value(r.lat), lon: Value(r.lon)));
+    }
+  });
+
+  return ImportResult(imported: rows.length, skipped: skipped, placed: placed);
 }
 
 /// What the diary already holds, for duplicate detection in the preview.
@@ -82,6 +112,14 @@ Future<ExistingContacts> readExistingContacts(
     e164: {
       for (final c in rows)
         if (c.phoneE164 != null) c.phoneE164!,
+    },
+    nameAndDigits: {
+      for (final c in rows)
+        if (c.phoneE164 == null) nameAndDigitsKey(c.name, c.phoneRaw),
+    },
+    unplacedE164: {
+      for (final c in rows)
+        if (c.phoneE164 != null && c.lat == null) c.phoneE164!,
     },
     squashedNames: {
       for (final c in rows)

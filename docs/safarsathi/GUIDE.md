@@ -149,6 +149,27 @@ Diary → tap the row → the number is copied → **Open dialer** → paste →
 
 Or swipe the row right to do the same thing without aiming.
 
+**To get to a place in your diary**
+
+Open the entry. Under **Where it is** there is a small map with the place
+pinned, drawn from what you downloaded, so it works with no signal. Tap **How
+far am I?** and the phone's GPS puts you on it, with the straight-line
+distance. GPS needs no signal either.
+
+**Directions** opens Google Maps with the route from where you are. That
+part needs signal, unless you have saved the area as an offline map inside
+Google Maps, which can then give driving directions with none.
+
+An entry with no location says so. To add one, tap **Edit**. In Google Maps,
+press and hold the place, copy the numbers that appear at the top (like
+`25.567739, 91.881081`), and paste them into **Location**. Standing at the
+place? Tap **I am here now** instead. A shared `maps.app.goo.gl` link does not
+work, because it holds no coordinates.
+
+If your numbers came from a spreadsheet without locations, import the newer
+sheet that has **Latitude** and **Longitude** columns. Entries already in the
+diary get their location added, and no copies are made.
+
 **In an emergency**
 
 **SOS.** Tap a number and it dials straight away, no copying. This screen is

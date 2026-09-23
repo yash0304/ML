@@ -22,6 +22,10 @@ class EntryDraft {
   final String? note;
   final bool hasWhatsapp;
 
+  /// Where the place is. Both or neither; null clears a saved position.
+  final double? lat;
+  final double? lon;
+
   /// Set when an already-confirmed entry has had its digits changed.
   ///
   /// A confirmation means "I called THIS number and it worked". Change the
@@ -38,6 +42,8 @@ class EntryDraft {
     this.stopId,
     this.note,
     this.hasWhatsapp = false,
+    this.lat,
+    this.lon,
     this.resetConfirmation = false,
   });
 
@@ -60,6 +66,8 @@ Future<int> saveEntry(ContactsDao dao, EntryDraft draft, {int? tripId}) async {
         category: Value(draft.category),
         note: Value(note),
         hasWhatsapp: Value(draft.hasWhatsapp),
+        lat: Value(draft.lat),
+        lon: Value(draft.lon),
         // Never anything else. Typing a number does not make it work.
         tier: Value(ContactTier.userEntered.name),
         callConfirmed: const Value(false),
@@ -76,6 +84,10 @@ Future<int> saveEntry(ContactsDao dao, EntryDraft draft, {int? tripId}) async {
       category: Value(draft.category),
       note: Value(note),
       hasWhatsapp: Value(draft.hasWhatsapp),
+      // The form starts from the saved position, so writing it back is a
+      // no-op unless the person changed or cleared it.
+      lat: Value(draft.lat),
+      lon: Value(draft.lon),
       // Absent leaves the columns alone; present clears the confirmation.
       callConfirmed: draft.resetConfirmation
           ? const Value(false)

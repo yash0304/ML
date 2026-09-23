@@ -50,6 +50,7 @@ import 'features/map/data/tile_downloader.dart';
 import 'features/map/data/tile_provider.dart';
 import 'features/map/data/tile_store.dart';
 import 'features/map/presentation/map_download_screen.dart';
+import 'features/map/presentation/place_map.dart';
 import 'features/map/presentation/trip_map_screen.dart';
 import 'features/money/data/expense_editor.dart';
 import 'features/money/data/money_summary.dart';
@@ -677,36 +678,81 @@ class _HomeState extends State<_Home> {
     ContactActions actions,
   ) async {
     final db = widget.db;
-    String? stopName;
-    if (contact.stopId != null) {
-      final stop = await (db.select(
-        db.stops,
-      )..where((s) => s.id.equals(contact.stopId!))).getSingleOrNull();
-      stopName = stop?.name;
-    }
+    final store = _tiles;
+    final provider = tileProviderFor(await _settings.readMapTilerKey());
     if (!context.mounted) return;
+
+    // LIVE, NOT A SNAPSHOT. The page used to hold the row it was opened
+    // with, so a location pasted in Edit did not appear until the page was
+    // closed and opened again — and neither did a new name or stop.
+    final live = (db.select(db.contacts)..where((c) => c.id.equals(contact.id)))
+        .watchSingleOrNull()
+        .asyncMap((row) async {
+          if (row == null) return null;
+          String? stopName;
+          if (row.stopId != null) {
+            final stop = await (db.select(
+              db.stops,
+            )..where((s) => s.id.equals(row.stopId!))).getSingleOrNull();
+            stopName = stop?.name;
+          }
+          return (contact: row, stopName: stopName);
+        });
 
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (entryContext) => EntryScreen(
-          contact: contact,
-          stopName: stopName,
-          onCopy: actions.copy,
-          onOpenDialer: actions.openDialer,
-          onCall: actions.call,
-          onChat: actions.whatsapp,
-          onConfirm: (c, {required confirmed}) async {
-            await db.contactsDao.markConfirmed(c.id, confirmed: confirmed);
-            // Confirming a homestay number is what clears a blocking item.
-            await syncReadinessChecklist(db, trip.tripId);
-          },
-          onEdit: (c) async {
-            final deleted = await _openForm(entryContext, trip, existing: c);
-            // Gone: close the entry too, rather than show a contact that no
-            // longer exists and would dial if tapped.
-            if (deleted && entryContext.mounted) {
-              Navigator.of(entryContext).pop();
+        builder: (entryContext) => StreamBuilder(
+          stream: live,
+          builder: (_, snap) {
+            final data = snap.data;
+            if (data == null) {
+              return Scaffold(
+                backgroundColor: AppTokens.of(entryContext).paper,
+              );
             }
+            return EntryScreen(
+              // A changed confirmation is a fresh page, because the screen
+              // keeps that state from the row it was built with. Nothing
+              // else resets it: a copy bumps the call count, and rebuilding
+              // then would wipe the "Copied" note the instant it appeared.
+              key: ValueKey(
+                '${data.contact.id}:${data.contact.callConfirmed}:'
+                '${data.contact.confirmedAt}',
+              ),
+              contact: data.contact,
+              stopName: data.stopName,
+              onCopy: actions.copy,
+              onOpenDialer: actions.openDialer,
+              onCall: actions.call,
+              onChat: actions.whatsapp,
+              onOpenMaps: actions.openMaps,
+              placeMap: store == null
+                  ? null
+                  : (_, place) => PlaceMap(
+                      provider: provider,
+                      store: store,
+                      place: place,
+                      location: const DeviceLocation(),
+                    ),
+              onConfirm: (c, {required confirmed}) async {
+                await db.contactsDao.markConfirmed(c.id, confirmed: confirmed);
+                // Confirming a homestay number is what clears a blocking
+                // item.
+                await syncReadinessChecklist(db, trip.tripId);
+              },
+              onEdit: (c) async {
+                final deleted = await _openForm(
+                  entryContext,
+                  trip,
+                  existing: c,
+                );
+                // Gone: close the entry too, rather than show a contact that
+                // no longer exists and would dial if tapped.
+                if (deleted && entryContext.mounted) {
+                  Navigator.of(entryContext).pop();
+                }
+              },
+            );
           },
         ),
       ),
@@ -736,6 +782,14 @@ class _HomeState extends State<_Home> {
         builder: (_) => EntryFormScreen(
           existing: existing,
           pickFromPhone: const PhoneContactPicker().pick,
+          locateMe: () async {
+            const here = DeviceLocation();
+            final state = await here.check(ask: true);
+            if (state != HereState.locating && state != HereState.found) {
+              return null;
+            }
+            return (await here.once())?.at;
+          },
           pickOnOpen: pickOnOpen,
           initialStopId: initialStopId,
           initialCategory: initialCategory,

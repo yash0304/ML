@@ -542,8 +542,10 @@ class _YourNumbersOnTheWay extends StatelessWidget {
                       '${leg.unplaced == 1 ? 'number has' : 'numbers have'} '
                       'no location saved, so '
                       '${leg.unplaced == 1 ? 'it' : 'they'} cannot be put on '
-                      'this road. Import from a sheet with Latitude and '
-                      'Longitude columns to place them.'
+                      'this road. Import your sheet again with Latitude and '
+                      'Longitude columns — entries already here get the '
+                      'location added, with no copies — or paste one into '
+                      'any entry with Edit.'
                 : 'None of your numbers lie along this road.',
             caution: !leg.canPlace || (!leg.anyPlaced && leg.unplaced > 0),
           )

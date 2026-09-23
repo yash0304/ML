@@ -17,6 +17,8 @@ import '../data/phone_contact_picker.dart';
 import '../data/contacts_dao.dart';
 import '../data/entry_draft.dart';
 import '../data/phone_normaliser.dart';
+import '../data/place_location.dart';
+import '../../discovery/data/geo.dart' show LatLng;
 
 /// A stop the entry can be attached to.
 class StopOption {
@@ -58,6 +60,10 @@ class EntryFormScreen extends StatefulWidget {
   /// nothing to delete.
   final Future<void> Function()? onDelete;
 
+  /// Where the phone is now, for "I am standing at the homestay". Null when
+  /// no fix came; null callback hides the button.
+  final Future<LatLng?> Function()? locateMe;
+
   const EntryFormScreen({
     super.key,
     this.existing,
@@ -70,6 +76,7 @@ class EntryFormScreen extends StatefulWidget {
     this.initialStopId,
     this.initialCategory,
     this.onDelete,
+    this.locateMe,
   });
 
   @override
@@ -80,6 +87,9 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
   late final TextEditingController _name;
   late final TextEditingController _phone;
   late final TextEditingController _note;
+  late final TextEditingController _location;
+  String? _locationError;
+  bool _locating = false;
   late String _category;
   late int? _stopId;
   late bool _hasWhatsapp;
@@ -99,6 +109,11 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
     _name = TextEditingController(text: e?.name ?? '');
     _phone = TextEditingController(text: e?.phoneRaw ?? '');
     _note = TextEditingController(text: e?.note ?? '');
+    _location = TextEditingController(
+      text: e?.lat == null || e?.lon == null
+          ? ''
+          : formatLocation(LatLng(e!.lat!, e.lon!)),
+    );
     _category = e?.category ?? widget.initialCategory ?? ContactCategory.other;
     _stopId = e == null ? widget.initialStopId : e.stopId;
     _hasWhatsapp = e?.hasWhatsapp ?? false;
@@ -139,6 +154,7 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
     _name.dispose();
     _phone.dispose();
     _note.dispose();
+    _location.dispose();
     super.dispose();
   }
 
@@ -169,11 +185,16 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
   Future<void> _save() async {
     final name = _name.text.trim();
     final phone = _phone.text.trim();
+    final place = parseLocation(_location.text);
     setState(() {
       _nameError = name.isEmpty ? 'An entry needs a name.' : null;
       _phoneError = phone.isEmpty ? 'An entry needs a number.' : null;
+      _locationError = place.problem;
     });
-    if (name.isEmpty || phone.isEmpty) return;
+    // A location that will not read BLOCKS the save, unlike a number that
+    // will not: dropping it silently would leave the person believing the
+    // place is on the map when it is not.
+    if (name.isEmpty || phone.isEmpty || place.problem != null) return;
 
     setState(() => _saving = true);
     Haptics.confirm();
@@ -187,6 +208,8 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
         stopId: _stopId,
         note: _note.text,
         hasWhatsapp: _hasWhatsapp,
+        lat: place.at?.lat,
+        lon: place.at?.lon,
         resetConfirmation: _confirmationAtRisk,
       ),
     );
@@ -258,6 +281,31 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
                       hint: 'Optional — what this number is for',
                     ),
                     _whatsappField(c),
+                    const StencilLabel('Where it is'),
+                    _TextField(
+                      key: const Key('field-location'),
+                      label: 'Location',
+                      controller: _location,
+                      hint: 'Optional — paste from Google Maps',
+                      error: _locationError,
+                      onChanged: (_) => setState(() => _locationError = null),
+                    ),
+                    if (widget.locateMe != null) _hereRow(c),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTokens.gutter,
+                        AppTokens.s4,
+                        AppTokens.gutter,
+                        0,
+                      ),
+                      child: Text(
+                        'In Google Maps, press and hold the place and copy '
+                        'the numbers shown at the top. With a location, this '
+                        'number sits on the road between stops, and its page '
+                        'has a map and directions.',
+                        style: AppTokens.captionStyle.copyWith(color: c.muted),
+                      ),
+                    ),
                     const StencilLabel('How it will be saved'),
                     _tierExplainer(c),
                     Padding(
@@ -278,6 +326,53 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _useHere() async {
+    if (_locating) return;
+    setState(() => _locating = true);
+    final at = await widget.locateMe!();
+    if (!mounted) return;
+    setState(() {
+      _locating = false;
+      if (at == null) {
+        _locationError = 'No position from the phone. Check that location '
+            'is on and allowed for this app, then try again.';
+      } else {
+        _location.text = formatLocation(at);
+        _locationError = null;
+      }
+    });
+  }
+
+  Widget _hereRow(AppColors c) {
+    return InkWell(
+      key: const Key('location-here'),
+      onTap: _locating ? null : _useHere,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppTokens.gutter,
+          AppTokens.s8,
+          AppTokens.gutter,
+          AppTokens.s4,
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.my_location, size: 18, color: c.signal),
+            const SizedBox(width: AppTokens.s8),
+            Expanded(
+              child: Text(
+                // Only useful standing at the place; the label says so.
+                _locating
+                    ? 'Finding where you are…'
+                    : 'I am here now — use my position',
+                style: AppTokens.rowTitleStyle.copyWith(color: c.signal),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -44,6 +44,14 @@ class TripMap extends StatelessWidget {
   /// Lets the screen recentre on [me] without rebuilding the map.
   final fm.MapController? controller;
 
+  /// One place to mark and open on — a diary entry's page. Null for the
+  /// whole-trip map.
+  final LatLng? place;
+
+  /// Where to open, when the trip's bottom level is not the right one. A
+  /// single place opens at the closest level downloaded for it.
+  final int? initialZoom;
+
   const TripMap({
     super.key,
     required this.provider,
@@ -54,9 +62,12 @@ class TripMap extends StatelessWidget {
     this.height = 260,
     this.me,
     this.controller,
+    this.place,
+    this.initialZoom,
   });
 
   LatLng get _centre {
+    if (place != null) return place!;
     if (route.isNotEmpty) {
       final box = boundsOf(route);
       return LatLng((box.north + box.south) / 2, (box.east + box.west) / 2);
@@ -109,7 +120,7 @@ class TripMap extends StatelessWidget {
               //
               // Two literals in two files that were never checked against
               // each other. They are now the same constants.
-              initialZoom: defaultMinZoom.toDouble(),
+              initialZoom: (initialZoom ?? defaultMinZoom).toDouble(),
               // One step out is still legible: tiles below minNativeZoom are
               // scaled rather than dropped. Further out would need 64 tiles
               // to cover what one covers, which is a stutter, not a map.
@@ -165,6 +176,25 @@ class TripMap extends StatelessWidget {
                         height: 22,
                         child: _StopPin(index: i + 1),
                       ),
+                  ],
+                ),
+              // Ink, not red: red is the SOS tab's alone. The pin's tip is
+              // the point, so the marker sits above it.
+              if (place != null)
+                fm.MarkerLayer(
+                  markers: [
+                    fm.Marker(
+                      point: ll.LatLng(place!.lat, place!.lon),
+                      width: 36,
+                      height: 36,
+                      alignment: Alignment.topCenter,
+                      child: Icon(
+                        Icons.place,
+                        key: const Key('place-pin'),
+                        size: 36,
+                        color: c.ink,
+                      ),
+                    ),
                   ],
                 ),
               // YOU, LAST, SO NOTHING DRAWS OVER YOU. The circle is the fix's

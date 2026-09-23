@@ -15,7 +15,9 @@ import '../../../core/database/app_database.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
+import '../../discovery/data/geo.dart' show LatLng;
 import '../data/contacts_dao.dart';
+import '../data/place_location.dart';
 import 'diary_widgets.dart';
 
 class EntryScreen extends StatefulWidget {
@@ -35,6 +37,13 @@ class EntryScreen extends StatefulWidget {
 
   final void Function(Contact)? onEdit;
 
+  /// The offline map for a placed entry. Built by the caller, which owns the
+  /// tiles; null draws no map.
+  final Widget Function(BuildContext context, LatLng place)? placeMap;
+
+  /// Opens a Google Maps link. Null hides the directions button.
+  final Future<void> Function(String url)? onOpenMaps;
+
   /// Reads the time a confirmation happened. Injectable because a golden that
   /// confirms a contact would otherwise bake today's date into the image and
   /// fail on every later day — which it duly did.
@@ -50,6 +59,8 @@ class EntryScreen extends StatefulWidget {
     this.onChat,
     this.onConfirm,
     this.onEdit,
+    this.placeMap,
+    this.onOpenMaps,
     this.clock = DateTime.now,
   });
 
@@ -129,6 +140,8 @@ class _EntryScreenState extends State<EntryScreen> {
                   _header(c, contact),
                   _number(c, contact),
                   _primaryActions(c, contact),
+                  const StencilLabel('Where it is'),
+                  _where(c, contact),
                   const StencilLabel('Record'),
                   _record(c, contact),
                   if (_userCanConfirm) ...[
@@ -368,6 +381,82 @@ class _EntryScreenState extends State<EntryScreen> {
     );
   }
 
+  LatLng? _placeOf(Contact contact) =>
+      contact.lat == null || contact.lon == null
+      ? null
+      : LatLng(contact.lat!, contact.lon!);
+
+  Widget _where(AppColors c, Contact contact) {
+    final place = _placeOf(contact);
+    final open = widget.onOpenMaps;
+    final caption = AppTokens.captionStyle.copyWith(color: c.muted);
+    const pad = EdgeInsets.symmetric(horizontal: AppTokens.gutter);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (place != null && widget.placeMap != null)
+          // Keyed on the position, so a location changed in Edit draws a
+          // new map rather than the old one's cached coverage.
+          KeyedSubtree(
+            key: ValueKey('${place.lat},${place.lon}'),
+            child: widget.placeMap!(context, place),
+          ),
+        if (place == null)
+          Padding(
+            padding: pad,
+            child: Text(
+              'No location saved for this number. Tap Edit and paste it from '
+              'Google Maps to see it on the map here.',
+              style: caption,
+            ),
+          ),
+        if (open != null) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppTokens.gutter,
+              AppTokens.s12,
+              AppTokens.gutter,
+              0,
+            ),
+            child: _Button(
+              key: const Key('entry-directions'),
+              label: place == null ? 'Search in Google Maps' : 'Directions',
+              icon: place == null ? Icons.search : Icons.directions,
+              ghost: true,
+              onTap: () => _run(
+                () => open(
+                  place == null
+                      ? mapsSearchUrl(contact.name, widget.stopName)
+                      : directionsUrl(place),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppTokens.gutter,
+              AppTokens.s8,
+              AppTokens.gutter,
+              0,
+            ),
+            child: Text(
+              // Said before the tap, not after a dead one on a hill road.
+              place == null
+                  ? 'Needs signal. A search by name — check it found the '
+                        'right place before you set off.'
+                  : 'Opens Google Maps, starting from where you are. Needs '
+                        'signal — unless you saved this area as an offline '
+                        'map in Google Maps, which then gives driving '
+                        'directions with none.',
+              style: caption,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _record(AppColors c, Contact contact) {
     return Column(
       // Without stretch each row shrinks to its content and the rules render
@@ -502,6 +591,7 @@ class _Button extends StatelessWidget {
   final VoidCallback? onTap;
 
   const _Button({
+    super.key,
     required this.label,
     this.icon,
     this.ghost = false,

@@ -11,9 +11,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:safarsathi/core/theme/app_tokens.dart';
 import 'package:safarsathi/features/import/data/column_mapping.dart';
+import 'package:safarsathi/features/import/data/import_commit.dart';
 import 'package:safarsathi/features/import/data/import_validation.dart';
 import 'package:safarsathi/features/import/data/sheet_parser.dart';
 import 'package:safarsathi/features/import/presentation/column_mapping_screen.dart';
+import 'package:safarsathi/features/import/presentation/import_flow.dart'
+    show importResultMessage;
 import 'package:safarsathi/features/import/presentation/import_preview_screen.dart';
 
 SheetTable table(String csv) => SheetParser.parse(
@@ -133,6 +136,44 @@ void main() {
         brightness: brightness,
       ),
     );
+
+    testWidgets('THE BUTTON SAYS WHAT WILL HAPPEN: new entries and '
+        'locations added are counted apart', (tester) async {
+      final t = table(
+        'name,phone,latitude,longitude\n'
+        'Civil Hospital,+91 364 222 4100,25.567739,91.881081\n'
+        'Woodland,+91 364 222 5240,25.566285,91.889846\n'
+        'New place,+91 98560 11111,25.3,91.9\n',
+      );
+      final p = validateRows(
+        t,
+        autoMatchColumns(t.headers),
+        existing: const ExistingContacts(
+          e164: {'+913642224100', '+913642225240'},
+          squashedNames: {},
+          unplacedE164: {'+913642224100', '+913642225240'},
+        ),
+      );
+      await pumpPreview(tester, p);
+      expect(find.text('Import 1 contact + 2 locations'), findsOneWidget);
+      expect(find.textContaining('stays if the batch is undone'), findsOneWidget);
+    });
+
+    test('the message after importing names both kinds of change', () {
+      expect(
+        importResultMessage(
+          const ImportResult(imported: 0, skipped: 17, placed: 50),
+        ),
+        '50 entries in your diary now have locations.',
+      );
+      expect(
+        importResultMessage(
+          const ImportResult(imported: 1, skipped: 0, placed: 1),
+        ),
+        '1 contact imported, all unconfirmed. Call them, then mark them. '
+        '1 entry in your diary now has a location.',
+      );
+    });
 
     testWidgets('the counts are stated in the header', (tester) async {
       await pumpPreview(

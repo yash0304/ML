@@ -105,7 +105,7 @@ class ImportFlow {
                       sheetName: workbook.needsSheetChoice ? sheet.name : null,
                       preview: p,
                     );
-                    return result.imported;
+                    return result;
                   },
                 ),
               ),
@@ -202,7 +202,7 @@ class ImportPreviewHost extends StatelessWidget {
   final ImportPreview preview;
   final String fileName;
   final String? sheetName;
-  final Future<int> Function(ImportPreview) onCommit;
+  final Future<ImportResult> Function(ImportPreview) onCommit;
 
   const ImportPreviewHost({
     super.key,
@@ -219,7 +219,8 @@ class ImportPreviewHost extends StatelessWidget {
       fileName: fileName,
       sheetName: sheetName,
       onCommit: (p) async {
-        final n = await onCommit(p);
+        final result = await onCommit(p);
+        final n = result.imported;
         if (!context.mounted) return n;
         Haptics.confirm();
         final c = AppTokens.of(context);
@@ -229,8 +230,7 @@ class ImportPreviewHost extends StatelessWidget {
           SnackBar(
             backgroundColor: c.ink,
             content: Text(
-              '$n ${n == 1 ? 'contact' : 'contacts'} imported, all '
-              'unconfirmed. Call them, then mark them.',
+              importResultMessage(result),
               style: AppTokens.captionStyle.copyWith(color: c.paper),
             ),
           ),
@@ -239,4 +239,17 @@ class ImportPreviewHost extends StatelessWidget {
       },
     );
   }
+}
+
+/// What the import did, in one sentence per kind of change.
+String importResultMessage(ImportResult r) {
+  final parts = [
+    if (r.imported > 0)
+      '${r.imported} ${r.imported == 1 ? 'contact' : 'contacts'} imported, '
+          'all unconfirmed. Call them, then mark them.',
+    if (r.placed > 0)
+      '${r.placed} ${r.placed == 1 ? 'entry' : 'entries'} in your diary '
+          'now ${r.placed == 1 ? 'has a location' : 'have locations'}.',
+  ];
+  return parts.isEmpty ? 'Nothing changed.' : parts.join(' ');
 }

@@ -65,6 +65,8 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
     final c = AppTokens.of(context);
     final p = _current;
     final selected = p.selected;
+    final adding = p.toImport.length;
+    final placing = p.toPlace.length;
 
     return Scaffold(
       backgroundColor: c.paper,
@@ -89,7 +91,10 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
               'spelled in the sheet. A number in a spreadsheet is still a '
               'number nobody has dialled. Call it, then mark it confirmed.\n\n'
               'The whole batch can be undone in one action from Import '
-              'history.',
+              'history.'
+              '${placing == 0 ? '' : '\n\nA location added to an entry '
+                  'already in your diary only fills in where there was none, '
+                  'and stays if the batch is undone.'}',
               style: AppTokens.captionStyle.copyWith(color: c.muted),
             ),
           ),
@@ -109,9 +114,7 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
               borderRadius: BorderRadius.circular(AppTokens.radiusSoft),
             ),
             child: Text(
-              selected == 0
-                  ? 'Nothing selected'
-                  : 'Import $selected ${selected == 1 ? 'contact' : 'contacts'}',
+              _buttonLabel(adding, placing),
               style: AppTokens.stencilStyle.copyWith(
                 fontSize: 11.5,
                 color: selected == 0 ? c.muted : c.paper,
@@ -122,6 +125,15 @@ class _ImportPreviewScreenState extends State<ImportPreviewScreen> {
       ),
     );
   }
+}
+
+String _buttonLabel(int adding, int placing) {
+  final add = 'Import $adding ${adding == 1 ? 'contact' : 'contacts'}';
+  final place = '$placing ${placing == 1 ? 'location' : 'locations'}';
+  if (adding == 0 && placing == 0) return 'Nothing selected';
+  if (placing == 0) return add;
+  if (adding == 0) return 'Add $place';
+  return '$add + $place';
 }
 
 class _Counts extends StatelessWidget {

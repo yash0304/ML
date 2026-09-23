@@ -293,13 +293,26 @@ List<LegContact> contactsOnTheWay(
 /// Emergency numbers are not counted: 112 has no location and never will,
 /// and "3 numbers could not be placed" when all three are helplines would
 /// send someone looking for a fix that does not exist.
+///
+/// Nor are short codes and toll-free lines, emergency-flagged or not: 181,
+/// 1098 and 1800 11 1363 are services, not places, and a sheet does not
+/// always tick them as emergency numbers.
 int unplacedContacts(List<Contact> diary, {required Set<int> endStopIds}) => [
   for (final c in diary)
     if ((c.lat == null || c.lon == null) &&
         !c.isEmergency &&
+        !isServiceNumber(c.phoneE164 ?? c.phoneRaw) &&
         !endStopIds.contains(c.stopId))
       c,
 ].length;
+
+/// A number that reaches a service rather than a place: a short code
+/// (112, 181, 1098, 1363) or an Indian toll-free 1800 line.
+bool isServiceNumber(String phone) {
+  final digits = phone.replaceAll(RegExp(r'\D'), '');
+  if (digits.length <= 6) return true;
+  return digits.startsWith('1800') || digits.startsWith('911800');
+}
 
 /// Help categories: what somebody needs within the hour, not the evening.
 const helpCategories = {ContactCategory.hospital, ContactCategory.pharmacy};
