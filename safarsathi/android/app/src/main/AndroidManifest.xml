@@ -19,6 +19,15 @@
       service, precisely so that stays checkable.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Where the phone is, for "you are here" on the offline map and the SOS
+         text. FINE because a village is smaller than a coarse fix; COARSE
+         because Android 12+ lets the person choose it instead, and the app
+         must still work if they do. Asked only when the target button is
+         tapped, only while the app is open — there is deliberately no
+         ACCESS_BACKGROUND_LOCATION here. GPS needs no signal, and the
+         position never leaves the phone unless the person sends a text. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
     <application
         android:label="SafarSathi"

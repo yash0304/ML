@@ -15,6 +15,7 @@ import 'package:latlong2/latlong.dart' as ll;
 
 import '../../../core/theme/app_tokens.dart';
 import '../../discovery/data/geo.dart';
+import '../data/here.dart';
 import '../data/tile_downloader.dart'
     show defaultMinZoom, defaultMaxZoom;
 import '../data/tile_provider.dart';
@@ -37,6 +38,12 @@ class TripMap extends StatelessWidget {
 
   final double height;
 
+  /// Where the phone is, from its own GPS. Null draws no dot.
+  final HereFix? me;
+
+  /// Lets the screen recentre on [me] without rebuilding the map.
+  final fm.MapController? controller;
+
   const TripMap({
     super.key,
     required this.provider,
@@ -45,6 +52,8 @@ class TripMap extends StatelessWidget {
     this.stops = const [],
     this.hasTiles = true,
     this.height = 260,
+    this.me,
+    this.controller,
   });
 
   LatLng get _centre {
@@ -86,6 +95,7 @@ class TripMap extends StatelessWidget {
       child: Stack(
         children: [
           fm.FlutterMap(
+            mapController: controller,
             options: fm.MapOptions(
               initialCenter: ll.LatLng(_centre.lat, _centre.lon),
               // OPENS INSIDE THE BAND THAT WAS ACTUALLY DOWNLOADED.
@@ -157,6 +167,44 @@ class TripMap extends StatelessWidget {
                       ),
                   ],
                 ),
+              // YOU, LAST, SO NOTHING DRAWS OVER YOU. The circle is the fix's
+              // own accuracy in metres on the ground: a wide one says "you
+              // are somewhere in here", which is the truth when the GPS is
+              // still settling in a valley.
+              if (me != null) ...[
+                fm.CircleLayer(
+                  circles: [
+                    fm.CircleMarker(
+                      point: ll.LatLng(me!.at.lat, me!.at.lon),
+                      radius: me!.accuracyM,
+                      useRadiusInMeter: true,
+                      color: c.signal.withValues(alpha: 0.14),
+                      borderColor: c.signal.withValues(alpha: 0.5),
+                      borderStrokeWidth: 1,
+                    ),
+                  ],
+                ),
+                fm.MarkerLayer(
+                  markers: [
+                    fm.Marker(
+                      point: ll.LatLng(me!.at.lat, me!.at.lon),
+                      width: 18,
+                      height: 18,
+                      child: Semantics(
+                        label: 'You are here',
+                        child: Container(
+                          key: const Key('you-are-here'),
+                          decoration: BoxDecoration(
+                            color: c.signal,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: c.paper, width: 3),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
 

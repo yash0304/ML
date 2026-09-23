@@ -42,6 +42,7 @@ import 'features/discovery/data/geo.dart';
 import 'features/discovery/data/geocoder.dart';
 import 'features/discovery/presentation/discovery_screen.dart';
 import 'features/discovery/presentation/poi_detail_screen.dart';
+import 'features/map/data/here.dart';
 import 'features/map/data/map_download.dart';
 import 'features/map/data/tile_downloader.dart';
 import 'features/map/data/tile_provider.dart';
@@ -484,6 +485,7 @@ class _HomeState extends State<_Home> {
         builder: (mapContext) => TripMapScreen(
           provider: provider,
           store: store,
+          location: const DeviceLocation(),
           load: () =>
               readTripMap(widget.db, tripId, providerId: provider.id),
           onDownload: () => _openMap(mapContext, tripId),
