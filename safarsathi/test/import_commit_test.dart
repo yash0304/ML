@@ -148,6 +148,22 @@ void main() {
     expect(chemist.category, ContactCategory.pharmacy);
   });
 
+  test('coordinates reach the database (v5)', () async {
+    // The whole point of reading them: a contact with no stored position
+    // cannot be placed on a leg, however carefully the sheet was made.
+    await importCsv(
+      'name,phone,latitude,longitude\n'
+      'Pynursla SDH,+91 90000 00077,25.3089,91.9120\n'
+      'No position,+91 90000 00078,,\n',
+    );
+    final rows = await db.select(db.contacts).get();
+    final placed = rows.firstWhere((c) => c.name == 'Pynursla SDH');
+    final unplaced = rows.firstWhere((c) => c.name == 'No position');
+    expect(placed.lat, 25.3089);
+    expect(placed.lon, 91.9120);
+    expect(unplaced.lat, isNull);
+  });
+
   test('the batch records what actually happened', () async {
     await importCsv(
       'name,phone\nA,+91 90000 00001\n,+91 90000 00002\nC,\n',

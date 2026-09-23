@@ -367,4 +367,60 @@ void main() {
       );
     });
   });
+
+  group('v5: where a contact is', () {
+    test('coordinates survive a backup and restore', () async {
+      final tripId = await editor.createTrip(name: 'Meghalaya');
+      await db.into(db.contacts).insert(
+        ContactsCompanion.insert(
+          tripId: Value(tripId),
+          name: 'Pynursla pharmacy',
+          phoneRaw: '+91 90000 00009',
+          lat: const Value(25.3104),
+          lon: const Value(91.8987),
+        ),
+      );
+
+      final json = await exportBackup(db);
+      final fresh = AppDatabase(NativeDatabase.memory());
+      addTearDown(fresh.close);
+      await restoreBackup(fresh, readBackup(json));
+
+      final restored = await fresh.select(fresh.contacts).getSingle();
+      expect(restored.lat, 25.3104);
+      expect(restored.lon, 91.8987);
+    });
+
+    test('A v4 BACKUP, WITH NO COORDINATES AT ALL, STILL RESTORES', () async {
+      // Every backup taken before this version has contact rows with no
+      // "lat" or "lon" key — not null, absent. It has to restore, or the
+      // backup somebody took before updating is useless the moment they
+      // update. Built by stripping the keys, so the file is shaped exactly
+      // like a v4 export.
+      await seedTrip();
+      final decoded = jsonDecode(await exportBackup(db)) as Map<String, dynamic>;
+      decoded['schemaVersion'] = 4;
+      final contacts = (decoded['tables'] as Map)['contacts'] as List;
+      for (final row in contacts) {
+        (row as Map)
+          ..remove('lat')
+          ..remove('lon');
+      }
+      expect(
+        contacts.every((r) => !(r as Map).containsKey('lat')),
+        isTrue,
+        reason: 'the fixture must actually be v4-shaped',
+      );
+
+      final fresh = AppDatabase(NativeDatabase.memory());
+      addTearDown(fresh.close);
+      await restoreBackup(fresh, readBackup(jsonEncode(decoded)));
+
+      final restored = await fresh.select(fresh.contacts).get();
+      expect(restored, hasLength(2));
+      expect(restored.every((c) => c.lat == null && c.lon == null), isTrue);
+      // The confirmed one is still confirmed.
+      expect(restored.where((c) => c.callConfirmed), hasLength(1));
+    });
+  });
 }

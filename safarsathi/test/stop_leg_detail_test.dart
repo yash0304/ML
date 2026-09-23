@@ -707,4 +707,203 @@ void main() {
       expect(find.text('   \n  '), findsNothing);
     });
   });
+
+  group('your numbers on the leg', () {
+    Contact diary(
+      int id,
+      String name, {
+      String category = 'hospital',
+      String? note,
+      bool confirmed = false,
+    }) => Contact(
+      id: id,
+      name: name,
+      phoneRaw: '+91 90000 0000$id',
+      category: category,
+      tier: 'userEntered',
+      callConfirmed: confirmed,
+      isPinned: false,
+      isEmergency: false,
+      hasWhatsapp: false,
+      callCount: 0,
+      createdAt: DateTime(2026, 9, 22),
+      note: note,
+    );
+
+    LegDiscovery legWith({
+      List<LegContact> onTheWay = const [],
+      List<Contact> atDestination = const [],
+      bool canPlace = true,
+      int unplaced = 0,
+      bool anyPlaced = false,
+      List<NearbyHelp> nearestHelp = const [],
+    }) => LegDiscovery(
+      legId: 1,
+      fromName: 'Shillong',
+      toName: 'Dawki',
+      places: const [],
+      onTheWay: onTheWay,
+      atDestination: atDestination,
+      canPlace: canPlace,
+      unplaced: unplaced,
+      anyPlaced: anyPlaced,
+      nearestHelp: nearestHelp,
+    );
+
+    Future<void> pump(WidgetTester tester, LegDiscovery leg,
+        {void Function(Contact)? onOpen}) async {
+      useTallSurface(tester);
+      await tester.pumpWidget(
+        wrap(
+          LegDetailScreen(
+            discovery: Stream.value(leg),
+            transport: Stream.value(const LegTransport()),
+            onOpenContact: onOpen,
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('a number on the way shows its km, number and note', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        legWith(
+          onTheWay: [
+            LegContact(
+              contact: diary(
+                1,
+                'Pynursla Sub-Divisional Hospital',
+                note: '24x7. Govt source: East Khasi Hills District',
+              ),
+              alongRouteKm: 38.4,
+              offRouteKm: 0.3,
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('YOUR NUMBERS ON THE WAY'), findsOneWidget);
+      expect(find.text('38 km'), findsOneWidget);
+      expect(find.text('Pynursla Sub-Divisional Hospital'), findsOneWidget);
+      expect(find.text('HOSPITAL · +91 90000 00001'), findsOneWidget);
+      expect(
+        find.text('24x7. Govt source: East Khasi Hills District'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('tapping a number opens that diary entry', (tester) async {
+      Contact? opened;
+      final hospital = diary(4, 'Dawki PHC');
+      await pump(
+        tester,
+        legWith(atDestination: [hospital]),
+        onOpen: (c) => opened = c,
+      );
+      await tester.tap(find.text('Dawki PHC'));
+      expect(opened?.id, 4);
+    });
+
+    testWidgets('an unconfirmed number carries the amber dot, a confirmed '
+        'one does not', (tester) async {
+      await pump(
+        tester,
+        legWith(
+          atDestination: [
+            diary(1, 'Not called yet'),
+            diary(2, 'Called and confirmed', confirmed: true),
+          ],
+        ),
+      );
+      // Inside a list each row's semantics merge into one node, so the dot
+      // is announced as part of its row — "Not called yet, … Not confirmed
+      // yet" — which is what a screen reader should say. One row says it;
+      // the confirmed row must not.
+      final flagged = find.bySemanticsLabel(RegExp('Not confirmed yet'));
+      expect(flagged, findsOneWidget);
+      expect(
+        tester.getSemantics(flagged).label,
+        contains('Not called yet'),
+      );
+    });
+
+    testWidgets('EMPTY BECAUSE NOTHING HAS A LOCATION says so, and says '
+        'what to do', (tester) async {
+      // The state of every contact imported before coordinates were read.
+      // "None of your numbers lie along this road" would be false.
+      await pump(tester, legWith(unplaced: 12));
+      expect(find.textContaining('12 of your numbers have no location'),
+          findsOneWidget);
+      expect(find.textContaining('Latitude and Longitude'), findsOneWidget);
+      expect(find.textContaining('None of your numbers lie'), findsNothing);
+    });
+
+    testWidgets('empty because the leg cannot be measured says that instead',
+        (tester) async {
+      await pump(tester, legWith(canPlace: false, unplaced: 3));
+      expect(find.textContaining('nothing can be placed along it yet'),
+          findsOneWidget);
+    });
+
+    testWidgets('genuinely empty is the only case that says nothing is there',
+        (tester) async {
+      await pump(tester, legWith());
+      expect(find.text('None of your numbers lie along this road.'),
+          findsOneWidget);
+    });
+
+    testWidgets('the destination list stops at eight and points at the diary',
+        (tester) async {
+      await pump(
+        tester,
+        legWith(atDestination: [
+          for (var i = 1; i <= 11; i++) diary(i, 'Place $i'),
+        ]),
+      );
+      expect(find.text('YOUR NUMBERS AT DAWKI'), findsOneWidget);
+      expect(find.text('Place 8'), findsOneWidget);
+      expect(find.text('Place 9'), findsNothing);
+      expect(find.text('3 more at Dawki — all of them are in the diary.'),
+          findsOneWidget);
+    });
+
+    testWidgets('once anything is placed, the re-import hint stops', (
+      tester,
+    ) async {
+      await pump(tester, legWith(unplaced: 4, anyPlaced: true));
+      expect(find.textContaining('no location'), findsNothing);
+      expect(find.text('None of your numbers lie along this road.'),
+          findsOneWidget);
+    });
+
+    testWidgets('nearest help names the stop and says the km are straight-line',
+        (tester) async {
+      await pump(
+        tester,
+        legWith(nearestHelp: [
+          NearbyHelp(
+            contact: diary(7, 'MK Pharmacy', category: 'pharmacy'),
+            straightLineKm: 13.2,
+          ),
+        ]),
+      );
+      expect(find.text('NEAREST HELP TO DAWKI'), findsOneWidget);
+      expect(find.textContaining('straight-line'), findsOneWidget);
+      expect(find.text('PHARMACY · +91 90000 00007 · 13 KM AWAY'),
+          findsOneWidget);
+    });
+
+    testWidgets('no nearest-help section when there is none', (tester) async {
+      await pump(tester, legWith());
+      expect(find.textContaining('NEAREST HELP'), findsNothing);
+    });
+
+    testWidgets('an empty destination says so by name', (tester) async {
+      await pump(tester, legWith());
+      expect(find.text('Nothing in your diary at Dawki yet.'), findsOneWidget);
+    });
+  });
 }

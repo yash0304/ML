@@ -5,6 +5,10 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../contacts/data/contacts_dao.dart';
+import 'corridor.dart';
+import 'geo.dart';
+import 'polyline.dart';
 
 /// One place on the corridor, with everything the list and detail need.
 class CorridorPlace {
@@ -41,6 +45,30 @@ class CorridorPlace {
   bool get hasPhone => phones.isNotEmpty;
 }
 
+/// One of the user's own diary contacts, placed on a leg.
+class LegContact {
+  final Contact contact;
+  final double alongRouteKm;
+  final double offRouteKm;
+
+  const LegContact({
+    required this.contact,
+    required this.alongRouteKm,
+    required this.offRouteKm,
+  });
+}
+
+/// A hospital or pharmacy near a stop that has none of its own.
+class NearbyHelp {
+  final Contact contact;
+
+  /// As the crow flies. In these hills the road is longer, and the screen
+  /// says so rather than letting 13 km read as a quarter of an hour.
+  final double straightLineKm;
+
+  const NearbyHelp({required this.contact, required this.straightLineKm});
+}
+
 class LegDiscovery {
   final int legId;
   final String fromName;
@@ -49,6 +77,38 @@ class LegDiscovery {
   final DateTime? lastSyncedAt;
   final List<CorridorPlace> places;
 
+  /// The user's own numbers that lie along this road, in the order they come
+  /// up. Only contacts with a stored position can be here; ones attached to
+  /// either end of the leg are left to those stops, so the start of every
+  /// leg is not buried under the whole of the town being left.
+  final List<LegContact> onTheWay;
+
+  /// The user's own numbers at the stop this leg arrives at, the ones that
+  /// matter if something goes wrong on arrival first.
+  final List<Contact> atDestination;
+
+  /// False when there is no line to measure along — no route yet and no
+  /// coordinates on one of the stops — so the screen can say why "on the
+  /// way" is empty rather than implying there is nothing there.
+  final bool canPlace;
+
+  /// Diary contacts that could have been on this road but have no position
+  /// saved. Without this, an empty "on the way" reads as "nothing is there"
+  /// when the truth is "nothing here knows where anything is" — which is the
+  /// state of every contact imported before coordinates were read.
+  final int unplaced;
+
+  /// Whether anything in this trip's diary has a position at all. The
+  /// "no location saved" hint is only true while this is false: once a
+  /// sheet with coordinates is in, a few helplines with no place — 1363,
+  /// an embassy line — must not nag on every leg forever.
+  final bool anyPlaced;
+
+  /// The closest hospitals and pharmacies to the arrival stop, when that stop
+  /// has neither of its own in the diary. "Kongthong has no pharmacy; the
+  /// nearest is in Pynursla" is the sentence this exists to say.
+  final List<NearbyHelp> nearestHelp;
+
   const LegDiscovery({
     required this.legId,
     required this.fromName,
@@ -56,6 +116,12 @@ class LegDiscovery {
     required this.places,
     this.distanceKm,
     this.lastSyncedAt,
+    this.onTheWay = const [],
+    this.atDestination = const [],
+    this.canPlace = true,
+    this.unplaced = 0,
+    this.anyPlaced = false,
+    this.nearestHelp = const [],
   });
 
   bool get isSynced => lastSyncedAt != null;
@@ -78,7 +144,11 @@ Stream<LegDiscovery> watchLegDiscovery(AppDatabase db, int legId) {
   final tick = db
       .customSelect(
         'SELECT 1',
-        readsFrom: {db.legs, db.stops, db.pois, db.poiContacts},
+        // CONTACTS IS HERE ON PURPOSE. Importing a sheet, confirming a number
+        // or editing a note all change what this leg shows, and a Drift
+        // stream only fires for the tables it names — leave this out and the
+        // leg screen goes stale with no error anywhere.
+        readsFrom: {db.legs, db.stops, db.pois, db.poiContacts, db.contacts},
       )
       .watch();
 
@@ -91,6 +161,17 @@ Stream<LegDiscovery> watchLegDiscovery(AppDatabase db, int legId) {
       db.stops,
     )..where((s) => s.id.isIn([leg.fromStopId, leg.toStopId]))).get();
     final byId = {for (final s in stops) s.id: s.name};
+    final stopById = {for (final s in stops) s.id: s};
+
+    final diary = await (db.select(
+      db.contacts,
+    )..where((c) => c.tripId.equals(leg.tripId))).get();
+
+    final corridor = legCorridor(
+      leg,
+      from: stopById[leg.fromStopId],
+      to: stopById[leg.toStopId],
+    );
 
     final pois =
         await (db.select(db.pois)
@@ -131,8 +212,156 @@ Stream<LegDiscovery> watchLegDiscovery(AppDatabase db, int legId) {
             phones: byPoi[p.id] ?? const [],
           ),
       ],
+      onTheWay: corridor == null
+          ? const []
+          : contactsOnTheWay(
+              corridor,
+              diary,
+              endStopIds: {leg.fromStopId, leg.toStopId},
+            ),
+      atDestination: contactsAtStop(diary, leg.toStopId),
+      canPlace: corridor != null,
+      unplaced: unplacedContacts(
+        diary,
+        endStopIds: {leg.fromStopId, leg.toStopId},
+      ),
+      anyPlaced: diary.any((c) => c.lat != null && c.lon != null),
+      nearestHelp: nearestHelpTo(stopById[leg.toStopId], diary),
     );
   });
+}
+
+/// The line a leg's places are measured along.
+///
+/// The real route when there is one. Before routing has run, the straight
+/// line between the two stops stands in — wrong in the hills, but the same
+/// fallback the map download uses, and it errs wide rather than narrow.
+/// Null only when neither is available.
+Corridor? legCorridor(Leg leg, {Stop? from, Stop? to}) {
+  final polyline = leg.routePolyline;
+  final List<LatLng> points;
+  if (polyline != null) {
+    points = Polyline.decode(polyline);
+  } else if (from?.lat != null &&
+      from?.lon != null &&
+      to?.lat != null &&
+      to?.lon != null) {
+    points = [LatLng(from!.lat!, from.lon!), LatLng(to!.lat!, to.lon!)];
+  } else {
+    return null;
+  }
+  if (points.length < 2) return null;
+  return Corridor(points, bufferKm: leg.corridorKm);
+}
+
+/// Diary contacts inside [corridor], in the order the road reaches them.
+///
+/// Contacts at either end of the leg are left out: they belong to those
+/// stops, and on a leg out of Shillong they would otherwise fill the top of
+/// the list with twenty-seven city numbers at kilometre nought.
+List<LegContact> contactsOnTheWay(
+  Corridor corridor,
+  List<Contact> diary, {
+  required Set<int> endStopIds,
+}) {
+  final placeable = [
+    for (final c in diary)
+      if (c.lat != null && c.lon != null && !endStopIds.contains(c.stopId)) c,
+  ];
+  return [
+    for (final hit in corridor.place(
+      placeable,
+      (c) => LatLng(c.lat!, c.lon!),
+    ))
+      LegContact(
+        contact: hit.item,
+        alongRouteKm: hit.position.alongRouteKm,
+        offRouteKm: hit.position.offRouteKm,
+      ),
+  ];
+}
+
+/// Contacts that might belong on a leg but carry no position.
+///
+/// Emergency numbers are not counted: 112 has no location and never will,
+/// and "3 numbers could not be placed" when all three are helplines would
+/// send someone looking for a fix that does not exist.
+int unplacedContacts(List<Contact> diary, {required Set<int> endStopIds}) => [
+  for (final c in diary)
+    if ((c.lat == null || c.lon == null) &&
+        !c.isEmergency &&
+        !endStopIds.contains(c.stopId))
+      c,
+].length;
+
+/// Help categories: what somebody needs within the hour, not the evening.
+const helpCategories = {ContactCategory.hospital, ContactCategory.pharmacy};
+
+/// How far to look for help from a stop that has none. Pynursla to Kongthong
+/// is about 13 km in a straight line; Jowai to Dawki about 30.
+const nearestHelpRadiusKm = 35.0;
+
+/// The closest hospitals and pharmacies to [stop], nearest first — but ONLY
+/// when the stop has no hospital or pharmacy of its own in the diary.
+///
+/// Shown for every stop, this would list Shillong's suburbs under Shillong,
+/// which already has twenty-seven numbers. It earns its place only where the
+/// answer to "where is the nearest chemist" is somewhere else.
+List<NearbyHelp> nearestHelpTo(
+  Stop? stop,
+  List<Contact> diary, {
+  int limit = 3,
+}) {
+  if (stop == null || stop.lat == null || stop.lon == null) return const [];
+  final hasOwn = diary.any(
+    (c) => c.stopId == stop.id && helpCategories.contains(c.category),
+  );
+  if (hasOwn) return const [];
+
+  final here = LatLng(stop.lat!, stop.lon!);
+  final found = <NearbyHelp>[
+    for (final c in diary)
+      if (c.stopId != stop.id &&
+          helpCategories.contains(c.category) &&
+          c.lat != null &&
+          c.lon != null)
+        NearbyHelp(
+          contact: c,
+          straightLineKm: haversineMetres(here, LatLng(c.lat!, c.lon!)) / 1000,
+        ),
+  ].where((h) => h.straightLineKm <= nearestHelpRadiusKm).toList()
+    ..sort((a, b) => a.straightLineKm.compareTo(b.straightLineKm));
+
+  return found.take(limit).toList();
+}
+
+/// The order a person arriving somewhere needs things in: help first, then a
+/// bed, then food. Anything unlisted follows, alphabetically.
+const arrivalOrder = [
+  ContactCategory.emergency,
+  ContactCategory.hospital,
+  ContactCategory.pharmacy,
+  ContactCategory.accommodation,
+  ContactCategory.restaurant,
+  ContactCategory.transport,
+];
+
+/// Diary contacts attached to [stopId], help first.
+List<Contact> contactsAtStop(List<Contact> diary, int stopId) {
+  int rank(Contact c) {
+    final i = arrivalOrder.indexOf(c.category);
+    return i == -1 ? arrivalOrder.length : i;
+  }
+
+  return [
+    for (final c in diary)
+      if (c.stopId == stopId) c,
+  ]..sort((a, b) {
+      final byRank = rank(a).compareTo(rank(b));
+      return byRank != 0
+          ? byRank
+          : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
 }
 
 /// Saves a place's number into the diary.

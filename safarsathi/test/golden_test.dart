@@ -1527,6 +1527,7 @@ void main() {
         onEditTransport: () {},
         onSeeAll: () {},
         onOpenPlace: (_) {},
+        onOpenContact: (_) {},
         transport: Stream.value(
           LegTransport(
             mode: 'Shared sumo',
@@ -1542,6 +1543,39 @@ void main() {
             toName: 'Cherrapunji',
             distanceKm: 54,
             lastSyncedAt: DateTime(2026, 9, 26),
+            // Your own numbers, as a sheet with coordinates leaves them: one
+            // on the road with its source in the note, and the arrival stop
+            // led by the hospital. One confirmed, so both trust states show.
+            onTheWay: [
+              LegContact(
+                contact: diaryContact(
+                  id: 1,
+                  name: 'Laitlyngkot PHC',
+                  category: ContactCategory.hospital,
+                  phone: '+91 90000 00011',
+                  note: '24x7. Govt source: East Khasi Hills District',
+                ),
+                alongRouteKm: 22,
+                offRouteKm: 0.2,
+              ),
+            ],
+            atDestination: [
+              diaryContact(
+                id: 2,
+                name: 'Sohra Community Health Centre',
+                category: ContactCategory.hospital,
+                phone: '+91 90000 00012',
+                note: 'Nearest govt facility for Nohkalikai and Seven Sisters.',
+                confirmed: true,
+              ),
+              diaryContact(
+                id: 3,
+                name: 'Cherrapunjee Holiday Resort',
+                category: ContactCategory.accommodation,
+                phone: '+91 90000 00013',
+                note: 'Google listing only — not call-tested.',
+              ),
+            ],
             places: [
               corridorPlace(
                 id: 1,
@@ -1694,3 +1728,26 @@ void main() {
     );
   });
 }
+
+/// A diary row for the goldens, with everything the table requires filled.
+Contact diaryContact({
+  required int id,
+  required String name,
+  required String category,
+  required String phone,
+  String? note,
+  bool confirmed = false,
+}) => Contact(
+  id: id,
+  name: name,
+  phoneRaw: phone,
+  category: category,
+  tier: confirmed ? 'userVerified' : 'userEntered',
+  callConfirmed: confirmed,
+  isPinned: false,
+  isEmergency: false,
+  hasWhatsapp: false,
+  callCount: 0,
+  createdAt: DateTime(2026, 9, 22),
+  note: note,
+);

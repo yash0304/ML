@@ -195,4 +195,87 @@ void main() {
       expect(row.isEmergency, isFalse);
     });
   });
+
+  group('coordinates (v5)', () {
+    test('Latitude and Longitude headers are matched without asking', () {
+      final t = table('Name,Phone,Latitude,Longitude\nA,+91 90000 00001,1,2\n');
+      final m = autoMatchColumns(t.headers);
+      expect(m[ImportField.latitude], 2);
+      expect(m[ImportField.longitude], 3);
+    });
+
+    test('the short forms match exactly: lat, lon, lng', () {
+      for (final lonHeader in ['lon', 'lng']) {
+        final t = table('name,phone,lat,$lonHeader\nA,1,1,2\n');
+        final m = autoMatchColumns(t.headers);
+        expect(m[ImportField.latitude], 2);
+        expect(m[ImportField.longitude], 3, reason: lonHeader);
+      }
+    });
+
+    test('a three-letter alias never claims a longer header by containment',
+        () {
+      // "salon" contains "lon" and "plate" contains "lat". Neither is a
+      // coordinate, and neither may be taken for one.
+      final t = table('name,phone,salon,plate\nA,1,x,y\n');
+      final m = autoMatchColumns(t.headers);
+      expect(m.containsKey(ImportField.latitude), isFalse);
+      expect(m.containsKey(ImportField.longitude), isFalse);
+    });
+
+    test('a good pair is carried onto the row', () {
+      final row = run(
+        'name,phone,latitude,longitude\nPynursla SDH,+91 90000 00001,'
+        '25.3089,91.9120\n',
+      ).rows.single;
+      expect(row.lat, 25.3089);
+      expect(row.lon, 91.9120);
+      expect(row.state, RowState.ready);
+    });
+
+    test('a decimal comma is read as a decimal point', () {
+      // How a sheet saved with a European locale writes 25.3089. Quoted, so
+      // the comma is data rather than a delimiter.
+      final row = run(
+        'name,phone,latitude,longitude\n'
+        'A,+91 90000 00001,"25,3089","91,9120"\n',
+      ).rows.single;
+      expect(row.lat, 25.3089);
+      expect(row.lon, 91.9120);
+    });
+
+    test('BOTH OR NEITHER — half a position is no position', () {
+      final row = run(
+        'name,phone,latitude,longitude\nA,+91 90000 00001,25.3,\n',
+      ).rows.single;
+      expect(row.lat, isNull);
+      expect(row.lon, isNull);
+      expect(row.messages.single, contains('without a position'));
+      // The row itself still imports: a bad position costs the place its
+      // spot on the road, never the number.
+      expect(row.selected, isTrue);
+    });
+
+    test('0,0 is refused: it is a blank cell, not the Gulf of Guinea', () {
+      final row = run(
+        'name,phone,latitude,longitude\nA,+91 90000 00001,0,0\n',
+      ).rows.single;
+      expect(row.lat, isNull);
+      expect(row.messages.single, contains('0, 0'));
+    });
+
+    test('out of range is refused', () {
+      final row = run(
+        'name,phone,latitude,longitude\nA,+91 90000 00001,125,91\n',
+      ).rows.single;
+      expect(row.lat, isNull);
+      expect(row.messages.single, contains('not a place on Earth'));
+    });
+
+    test('no coordinate columns at all is not a warning', () {
+      final row = run('name,phone\nA,+91 90000 00001\n').rows.single;
+      expect(row.lat, isNull);
+      expect(row.messages, isEmpty);
+    });
+  });
 }

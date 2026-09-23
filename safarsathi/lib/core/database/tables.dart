@@ -216,6 +216,16 @@ class Contacts extends Table {
     onDelete: KeyAction.setNull,
   )();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  /// Where the place is, when the source said (v5).
+  ///
+  /// Lets a number be put on a leg at its real distance along the road —
+  /// "Pynursla hospital, 38 km" — rather than only under a stop. Nullable
+  /// and never guessed: a contact typed by hand has no position, and one
+  /// invented from its stop's coordinates would sit at the wrong kilometre
+  /// on every leg it touched.
+  RealColumn get lat => real().nullable()();
+  RealColumn get lon => real().nullable()();
 }
 
 /// Every outbound action, including `copy`.

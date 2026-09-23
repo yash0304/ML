@@ -118,7 +118,7 @@ class DiaryEntry extends StatelessWidget {
                             duration: Motion.d(context, Motion.quick),
                             child: trusted
                                 ? const SizedBox.shrink()
-                                : const _TrustDot(),
+                                : const TrustDot(),
                           ),
                         ],
                       ),
@@ -347,8 +347,14 @@ class _Margin extends StatelessWidget {
   }
 }
 
-class _TrustDot extends StatelessWidget {
-  const _TrustDot();
+/// The amber dot: imported or typed, not yet confirmed by a call.
+///
+/// Public so every screen that shows a diary number marks trust the same way.
+/// Two hand-rolled dots drift — different size, different label, one with a
+/// tooltip and one without — and the trust signal is the one thing in this
+/// app that must read identically everywhere.
+class TrustDot extends StatelessWidget {
+  const TrustDot({super.key});
 
   @override
   Widget build(BuildContext context) {

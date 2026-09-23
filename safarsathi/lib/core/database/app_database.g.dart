@@ -3878,6 +3878,24 @@ class $ContactsTable extends Contacts with TableInfo<$ContactsTable, Contact> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _latMeta = const VerificationMeta('lat');
+  @override
+  late final GeneratedColumn<double> lat = GeneratedColumn<double>(
+    'lat',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lonMeta = const VerificationMeta('lon');
+  @override
+  late final GeneratedColumn<double> lon = GeneratedColumn<double>(
+    'lon',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3898,6 +3916,8 @@ class $ContactsTable extends Contacts with TableInfo<$ContactsTable, Contact> {
     callCount,
     importBatchId,
     createdAt,
+    lat,
+    lon,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4038,6 +4058,18 @@ class $ContactsTable extends Contacts with TableInfo<$ContactsTable, Contact> {
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('lat')) {
+      context.handle(
+        _latMeta,
+        lat.isAcceptableOrUnknown(data['lat']!, _latMeta),
+      );
+    }
+    if (data.containsKey('lon')) {
+      context.handle(
+        _lonMeta,
+        lon.isAcceptableOrUnknown(data['lon']!, _lonMeta),
+      );
+    }
     return context;
   }
 
@@ -4119,6 +4151,14 @@ class $ContactsTable extends Contacts with TableInfo<$ContactsTable, Contact> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      lat: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lat'],
+      ),
+      lon: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lon'],
+      ),
     );
   }
 
@@ -4157,6 +4197,16 @@ class Contact extends DataClass implements Insertable<Contact> {
   final int callCount;
   final int? importBatchId;
   final DateTime createdAt;
+
+  /// Where the place is, when the source said (v5).
+  ///
+  /// Lets a number be put on a leg at its real distance along the road —
+  /// "Pynursla hospital, 38 km" — rather than only under a stop. Nullable
+  /// and never guessed: a contact typed by hand has no position, and one
+  /// invented from its stop's coordinates would sit at the wrong kilometre
+  /// on every leg it touched.
+  final double? lat;
+  final double? lon;
   const Contact({
     required this.id,
     this.tripId,
@@ -4176,6 +4226,8 @@ class Contact extends DataClass implements Insertable<Contact> {
     required this.callCount,
     this.importBatchId,
     required this.createdAt,
+    this.lat,
+    this.lon,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4212,6 +4264,12 @@ class Contact extends DataClass implements Insertable<Contact> {
       map['import_batch_id'] = Variable<int>(importBatchId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || lat != null) {
+      map['lat'] = Variable<double>(lat);
+    }
+    if (!nullToAbsent || lon != null) {
+      map['lon'] = Variable<double>(lon);
+    }
     return map;
   }
 
@@ -4247,6 +4305,8 @@ class Contact extends DataClass implements Insertable<Contact> {
           ? const Value.absent()
           : Value(importBatchId),
       createdAt: Value(createdAt),
+      lat: lat == null && nullToAbsent ? const Value.absent() : Value(lat),
+      lon: lon == null && nullToAbsent ? const Value.absent() : Value(lon),
     );
   }
 
@@ -4274,6 +4334,8 @@ class Contact extends DataClass implements Insertable<Contact> {
       callCount: serializer.fromJson<int>(json['callCount']),
       importBatchId: serializer.fromJson<int?>(json['importBatchId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      lat: serializer.fromJson<double?>(json['lat']),
+      lon: serializer.fromJson<double?>(json['lon']),
     );
   }
   @override
@@ -4298,6 +4360,8 @@ class Contact extends DataClass implements Insertable<Contact> {
       'callCount': serializer.toJson<int>(callCount),
       'importBatchId': serializer.toJson<int?>(importBatchId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'lat': serializer.toJson<double?>(lat),
+      'lon': serializer.toJson<double?>(lon),
     };
   }
 
@@ -4320,6 +4384,8 @@ class Contact extends DataClass implements Insertable<Contact> {
     int? callCount,
     Value<int?> importBatchId = const Value.absent(),
     DateTime? createdAt,
+    Value<double?> lat = const Value.absent(),
+    Value<double?> lon = const Value.absent(),
   }) => Contact(
     id: id ?? this.id,
     tripId: tripId.present ? tripId.value : this.tripId,
@@ -4341,6 +4407,8 @@ class Contact extends DataClass implements Insertable<Contact> {
         ? importBatchId.value
         : this.importBatchId,
     createdAt: createdAt ?? this.createdAt,
+    lat: lat.present ? lat.value : this.lat,
+    lon: lon.present ? lon.value : this.lon,
   );
   Contact copyWithCompanion(ContactsCompanion data) {
     return Contact(
@@ -4374,6 +4442,8 @@ class Contact extends DataClass implements Insertable<Contact> {
           ? data.importBatchId.value
           : this.importBatchId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      lat: data.lat.present ? data.lat.value : this.lat,
+      lon: data.lon.present ? data.lon.value : this.lon,
     );
   }
 
@@ -4397,7 +4467,9 @@ class Contact extends DataClass implements Insertable<Contact> {
           ..write('lastCalledAt: $lastCalledAt, ')
           ..write('callCount: $callCount, ')
           ..write('importBatchId: $importBatchId, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('lat: $lat, ')
+          ..write('lon: $lon')
           ..write(')'))
         .toString();
   }
@@ -4422,6 +4494,8 @@ class Contact extends DataClass implements Insertable<Contact> {
     callCount,
     importBatchId,
     createdAt,
+    lat,
+    lon,
   );
   @override
   bool operator ==(Object other) =>
@@ -4444,7 +4518,9 @@ class Contact extends DataClass implements Insertable<Contact> {
           other.lastCalledAt == this.lastCalledAt &&
           other.callCount == this.callCount &&
           other.importBatchId == this.importBatchId &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.lat == this.lat &&
+          other.lon == this.lon);
 }
 
 class ContactsCompanion extends UpdateCompanion<Contact> {
@@ -4466,6 +4542,8 @@ class ContactsCompanion extends UpdateCompanion<Contact> {
   final Value<int> callCount;
   final Value<int?> importBatchId;
   final Value<DateTime> createdAt;
+  final Value<double?> lat;
+  final Value<double?> lon;
   const ContactsCompanion({
     this.id = const Value.absent(),
     this.tripId = const Value.absent(),
@@ -4485,6 +4563,8 @@ class ContactsCompanion extends UpdateCompanion<Contact> {
     this.callCount = const Value.absent(),
     this.importBatchId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.lat = const Value.absent(),
+    this.lon = const Value.absent(),
   });
   ContactsCompanion.insert({
     this.id = const Value.absent(),
@@ -4505,6 +4585,8 @@ class ContactsCompanion extends UpdateCompanion<Contact> {
     this.callCount = const Value.absent(),
     this.importBatchId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.lat = const Value.absent(),
+    this.lon = const Value.absent(),
   }) : name = Value(name),
        phoneRaw = Value(phoneRaw);
   static Insertable<Contact> custom({
@@ -4526,6 +4608,8 @@ class ContactsCompanion extends UpdateCompanion<Contact> {
     Expression<int>? callCount,
     Expression<int>? importBatchId,
     Expression<DateTime>? createdAt,
+    Expression<double>? lat,
+    Expression<double>? lon,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -4546,6 +4630,8 @@ class ContactsCompanion extends UpdateCompanion<Contact> {
       if (callCount != null) 'call_count': callCount,
       if (importBatchId != null) 'import_batch_id': importBatchId,
       if (createdAt != null) 'created_at': createdAt,
+      if (lat != null) 'lat': lat,
+      if (lon != null) 'lon': lon,
     });
   }
 
@@ -4568,6 +4654,8 @@ class ContactsCompanion extends UpdateCompanion<Contact> {
     Value<int>? callCount,
     Value<int?>? importBatchId,
     Value<DateTime>? createdAt,
+    Value<double?>? lat,
+    Value<double?>? lon,
   }) {
     return ContactsCompanion(
       id: id ?? this.id,
@@ -4588,6 +4676,8 @@ class ContactsCompanion extends UpdateCompanion<Contact> {
       callCount: callCount ?? this.callCount,
       importBatchId: importBatchId ?? this.importBatchId,
       createdAt: createdAt ?? this.createdAt,
+      lat: lat ?? this.lat,
+      lon: lon ?? this.lon,
     );
   }
 
@@ -4648,6 +4738,12 @@ class ContactsCompanion extends UpdateCompanion<Contact> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (lat.present) {
+      map['lat'] = Variable<double>(lat.value);
+    }
+    if (lon.present) {
+      map['lon'] = Variable<double>(lon.value);
+    }
     return map;
   }
 
@@ -4671,7 +4767,9 @@ class ContactsCompanion extends UpdateCompanion<Contact> {
           ..write('lastCalledAt: $lastCalledAt, ')
           ..write('callCount: $callCount, ')
           ..write('importBatchId: $importBatchId, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('lat: $lat, ')
+          ..write('lon: $lon')
           ..write(')'))
         .toString();
   }
@@ -14814,6 +14912,8 @@ typedef $$ContactsTableCreateCompanionBuilder =
       Value<int> callCount,
       Value<int?> importBatchId,
       Value<DateTime> createdAt,
+      Value<double?> lat,
+      Value<double?> lon,
     });
 typedef $$ContactsTableUpdateCompanionBuilder =
     ContactsCompanion Function({
@@ -14835,6 +14935,8 @@ typedef $$ContactsTableUpdateCompanionBuilder =
       Value<int> callCount,
       Value<int?> importBatchId,
       Value<DateTime> createdAt,
+      Value<double?> lat,
+      Value<double?> lon,
     });
 
 final class $$ContactsTableReferences
@@ -15012,6 +15114,16 @@ class $$ContactsTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lon => $composableBuilder(
+    column: $table.lon,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15219,6 +15331,16 @@ class $$ContactsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lon => $composableBuilder(
+    column: $table.lon,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TripsTableOrderingComposer get tripId {
     final $$TripsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -15352,6 +15474,12 @@ class $$ContactsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<double> get lat =>
+      $composableBuilder(column: $table.lat, builder: (column) => column);
+
+  GeneratedColumn<double> get lon =>
+      $composableBuilder(column: $table.lon, builder: (column) => column);
 
   $$TripsTableAnnotationComposer get tripId {
     final $$TripsTableAnnotationComposer composer = $composerBuilder(
@@ -15525,6 +15653,8 @@ class $$ContactsTableTableManager
                 Value<int> callCount = const Value.absent(),
                 Value<int?> importBatchId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<double?> lat = const Value.absent(),
+                Value<double?> lon = const Value.absent(),
               }) => ContactsCompanion(
                 id: id,
                 tripId: tripId,
@@ -15544,6 +15674,8 @@ class $$ContactsTableTableManager
                 callCount: callCount,
                 importBatchId: importBatchId,
                 createdAt: createdAt,
+                lat: lat,
+                lon: lon,
               ),
           createCompanionCallback:
               ({
@@ -15565,6 +15697,8 @@ class $$ContactsTableTableManager
                 Value<int> callCount = const Value.absent(),
                 Value<int?> importBatchId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<double?> lat = const Value.absent(),
+                Value<double?> lon = const Value.absent(),
               }) => ContactsCompanion.insert(
                 id: id,
                 tripId: tripId,
@@ -15584,6 +15718,8 @@ class $$ContactsTableTableManager
                 callCount: callCount,
                 importBatchId: importBatchId,
                 createdAt: createdAt,
+                lat: lat,
+                lon: lon,
               ),
           withReferenceMapper: (p0) => p0
               .map(

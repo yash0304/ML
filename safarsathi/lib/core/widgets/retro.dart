@@ -30,6 +30,9 @@ class StencilLabel extends StatelessWidget {
 
   const StencilLabel(this.text, {super.key, this.ruled = true, this.color});
 
+  /// The least rule worth drawing beside a label long enough to need capping.
+  static const _minimumRule = 24.0;
+
   @override
   Widget build(BuildContext context) {
     final c = AppTokens.of(context);
@@ -40,20 +43,40 @@ class StencilLabel extends StatelessWidget {
         AppTokens.gutter,
         AppTokens.s8,
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            text.toUpperCase(),
-            style: AppTokens.stencilStyle.copyWith(color: color ?? c.muted),
-          ),
-          if (ruled) ...[
-            const SizedBox(width: AppTokens.s12),
-            Expanded(
-              child: Container(height: AppTokens.hairline, color: c.rule),
+      // A LABEL CAN CARRY A NAME THE USER TYPED — "Your numbers at
+      // Mawlynnong" — and in this tracking a long one ran off the edge of a
+      // phone. The text is capped at the width available, less room for the
+      // rule to show at all, and wraps to a second line past that.
+      //
+      // Not Flexible: a Flexible label beside an Expanded rule splits the
+      // row between them by flex factor, so every heading in the app would
+      // have lost half its rule. Capped like this, a label that fits lays out
+      // exactly as before.
+      child: LayoutBuilder(
+        builder: (context, box) => Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: ruled
+                    ? box.maxWidth - AppTokens.s12 - _minimumRule
+                    : box.maxWidth,
+              ),
+              child: Text(
+                text.toUpperCase(),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTokens.stencilStyle.copyWith(color: color ?? c.muted),
+              ),
             ),
+            if (ruled) ...[
+              const SizedBox(width: AppTokens.s12),
+              Expanded(
+                child: Container(height: AppTokens.hairline, color: c.rule),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

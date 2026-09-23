@@ -14,6 +14,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
 import '../../contacts/data/contacts_dao.dart';
+import '../../contacts/presentation/diary_widgets.dart' show TrustDot;
 import '../../discovery/data/discovery.dart';
 
 class LegDetailScreen extends StatelessWidget {
@@ -26,8 +27,17 @@ class LegDetailScreen extends StatelessWidget {
   final VoidCallback? onSeeAll;
   final void Function(CorridorPlace place)? onOpenPlace;
 
+  /// Opens one of the user's own diary entries, where calling, copying and
+  /// confirming already live.
+  final void Function(Contact contact)? onOpenContact;
+
   /// How many places to show inline before deferring to the full list.
   static const inlineLimit = 5;
+
+  /// How many destination numbers to show before pointing at the diary.
+  /// Enough for the help-first ones to all be visible; not so many that a
+  /// big town pushes the road off the screen.
+  static const destinationLimit = 8;
 
   const LegDetailScreen({
     super.key,
@@ -36,6 +46,7 @@ class LegDetailScreen extends StatelessWidget {
     this.onEditTransport,
     this.onSeeAll,
     this.onOpenPlace,
+    this.onOpenContact,
   });
 
   @override
@@ -65,6 +76,15 @@ class LegDetailScreen extends StatelessWidget {
                     _Transport(
                       transport: transport,
                       onEdit: onEditTransport,
+                    ),
+                    // YOUR NUMBERS BEFORE OPENSTREETMAP'S. These are the ones
+                    // somebody chose, checked against a source and imported
+                    // on purpose; the map data below is whatever happens to
+                    // be tagged near the road.
+                    _YourNumbersOnTheWay(leg: leg, onOpen: onOpenContact),
+                    _YourNumbersAtDestination(
+                      leg: leg,
+                      onOpen: onOpenContact,
                     ),
                     _OnTheRoad(
                       leg: leg,
@@ -393,6 +413,239 @@ class _PlaceRow extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The user's own numbers along this leg, on the same milestone rail as the
+/// map's places, so "the hospital is 38 km in" reads the way the road does.
+class _YourNumbersOnTheWay extends StatelessWidget {
+  final LegDiscovery leg;
+  final void Function(Contact)? onOpen;
+
+  const _YourNumbersOnTheWay({required this.leg, this.onOpen});
+
+  @override
+  Widget build(BuildContext context) {
+    final found = leg.onTheWay;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const StencilLabel('Your numbers on the way'),
+        if (found.isEmpty)
+          _Explain(
+            // Three different empties, and each one says a different thing
+            // to do. Collapsing them into "nothing here" would be the one
+            // answer that is always wrong.
+            !leg.canPlace
+                ? 'This leg has no route and one of its stops has no '
+                      'location, so nothing can be placed along it yet.'
+                : !leg.anyPlaced && leg.unplaced > 0
+                ? '${leg.unplaced} of your '
+                      '${leg.unplaced == 1 ? 'number has' : 'numbers have'} '
+                      'no location saved, so '
+                      '${leg.unplaced == 1 ? 'it' : 'they'} cannot be put on '
+                      'this road. Import from a sheet with Latitude and '
+                      'Longitude columns to place them.'
+                : 'None of your numbers lie along this road.',
+            caution: !leg.canPlace || (!leg.anyPlaced && leg.unplaced > 0),
+          )
+        else
+          for (final (i, hit) in found.indexed)
+            _ContactRow(
+              contact: hit.contact,
+              km: hit.alongRouteKm,
+              first: i == 0,
+              last: i == found.length - 1,
+              onTap: onOpen == null ? null : () => onOpen!(hit.contact),
+            ),
+      ],
+    );
+  }
+}
+
+/// The user's own numbers at the stop this leg arrives at, help first.
+class _YourNumbersAtDestination extends StatelessWidget {
+  final LegDiscovery leg;
+  final void Function(Contact)? onOpen;
+
+  const _YourNumbersAtDestination({required this.leg, this.onOpen});
+
+  @override
+  Widget build(BuildContext context) {
+    final all = leg.atDestination;
+    final shown = all.take(LegDetailScreen.destinationLimit).toList();
+    final more = all.length - shown.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        StencilLabel('Your numbers at ${leg.toName}'),
+        if (all.isEmpty)
+          _Explain('Nothing in your diary at ${leg.toName} yet.')
+        else ...[
+          for (final contact in shown)
+            _ContactRow(
+              contact: contact,
+              onTap: onOpen == null ? null : () => onOpen!(contact),
+            ),
+          if (more > 0)
+            _Explain('$more more at ${leg.toName} — all of them are in the '
+                'diary.'),
+        ],
+        if (leg.nearestHelp.isNotEmpty) ...[
+          StencilLabel('Nearest help to ${leg.toName}'),
+          _Explain(
+            '${leg.toName} has no hospital or pharmacy in your diary. These '
+            'are the closest ones that do — distances are straight-line, and '
+            'the road through these hills is longer.',
+          ),
+          for (final help in leg.nearestHelp)
+            _ContactRow(
+              contact: help.contact,
+              away: help.straightLineKm,
+              onTap: onOpen == null ? null : () => onOpen!(help.contact),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _Explain extends StatelessWidget {
+  final String text;
+  final bool caution;
+  const _Explain(this.text, {this.caution = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTokens.gutter,
+        AppTokens.s8,
+        AppTokens.gutter,
+        AppTokens.s4,
+      ),
+      child: Text(
+        text,
+        style: AppTokens.captionStyle.copyWith(
+          color: caution ? c.cautionMark : c.muted,
+        ),
+      ),
+    );
+  }
+}
+
+/// One diary contact: what it is, the number as the user has it, and the
+/// note — which is where the sheet's hours, source and warnings went.
+///
+/// With [km], it hangs off the milestone rail like a map place. Without, it
+/// is a plain row, because a number at the destination has no distance.
+class _ContactRow extends StatelessWidget {
+  final Contact contact;
+  final double? km;
+
+  /// Straight-line distance from a stop, for nearest-help rows. Shown in the
+  /// second line rather than on the rail: it is not a point on this road.
+  final double? away;
+  final bool first;
+  final bool last;
+  final VoidCallback? onTap;
+
+  const _ContactRow({
+    required this.contact,
+    this.km,
+    this.away,
+    this.first = false,
+    this.last = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    final note = contact.note?.trim();
+    final category =
+        ContactCategory.labels[contact.category] ?? contact.category;
+
+    final text = Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppTokens.s12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            contact.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTokens.rowTitleStyle.copyWith(color: c.ink),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            [
+              category.toUpperCase(),
+              contact.phoneRaw,
+              if (away != null) '${away!.round()} KM AWAY',
+            ].join(' · '),
+            style: AppTokens.stencilStyle.copyWith(fontSize: 9, color: c.muted),
+          ),
+          if (note != null && note.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              note,
+              // Two lines: enough for "24x7. Google listing only — not
+              // call-tested", which is what decides whether to trust the
+              // number. The rest is one tap away.
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTokens.captionStyle.copyWith(color: c.muted),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    return PressScale(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: c.rule, width: AppTokens.hairline),
+          ),
+        ),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (km != null) ...[
+                SizedBox(
+                  width: 48,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '${km!.round()} km',
+                      style: AppTokens.numberStyle.copyWith(color: c.muted),
+                    ),
+                  ),
+                ),
+                _Milestone(first: first, last: last),
+              ],
+              Expanded(child: text),
+              // THE SAME AMBER DOT AS EVERYWHERE ELSE: imported is not
+              // verified. It clears when the number is called and confirmed,
+              // from the entry this row opens.
+              if (!contact.callConfirmed)
+                const Align(
+                  alignment: Alignment.centerRight,
+                  child: TrustDot(),
                 ),
             ],
           ),

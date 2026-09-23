@@ -1,3 +1,4 @@
+import 'dart:io';
 // Issue #2 acceptance. These assert against a real SQLite database rather
 // than against generated Dart, because what matters is the schema sqlite
 // actually creates.
@@ -297,7 +298,61 @@ void main() {
       // then they fail only on the phones that skipped a version.
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
-      expect(db.schemaVersion, 4);
+      expect(db.schemaVersion, 5);
+    });
+
+    test('A REAL v4 DATABASE UPGRADES TO v5 WITH ITS CONTACTS INTACT', () async {
+      // The phone this ships to holds a v4 database with a diary in it. An
+      // in-memory database is created at the current version and never
+      // exercises onUpgrade at all, so this builds a genuine v4 file: create
+      // it, remove what v5 added, stamp it v4, close it, and reopen it with
+      // the current code. That is the exact path an install-over-the-top
+      // takes.
+      final dir = await Directory.systemTemp.createTemp('upgrade');
+      addTearDown(() => dir.delete(recursive: true));
+      final file = File('${dir.path}/v4.sqlite');
+
+      final v4 = AppDatabase(NativeDatabase(file));
+      final tripId = await v4
+          .into(v4.trips)
+          .insert(TripsCompanion.insert(name: 'Meghalaya'));
+      await v4
+          .into(v4.contacts)
+          .insert(
+            ContactsCompanion.insert(
+              tripId: Value(tripId),
+              name: 'Nazareth Hospital',
+              phoneRaw: '0364 222 4052',
+              phoneE164: const Value('+913642224052'),
+              category: const Value('hospital'),
+              callConfirmed: const Value(true),
+            ),
+          );
+      await v4.customStatement('ALTER TABLE contacts DROP COLUMN lat');
+      await v4.customStatement('ALTER TABLE contacts DROP COLUMN lon');
+      await v4.customStatement('PRAGMA user_version = 4');
+      await v4.close();
+
+      final v5 = AppDatabase(NativeDatabase(file));
+      addTearDown(v5.close);
+
+      final rows = await v5.select(v5.contacts).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.name, 'Nazareth Hospital');
+      // A confirmation is the most expensive thing in the diary — a phone
+      // call made on purpose. It must survive the upgrade.
+      expect(rows.single.callConfirmed, isTrue);
+      expect(rows.single.lat, isNull);
+      expect(rows.single.lon, isNull);
+
+      // And the new columns are writable.
+      await (v5.update(v5.contacts)..where((c) => c.id.equals(rows.single.id)))
+          .write(const ContactsCompanion(lat: Value(25.57), lon: Value(91.88)));
+      final after = await v5.select(v5.contacts).getSingle();
+      expect(after.lat, 25.57);
+
+      final version = await v5.customSelect('PRAGMA user_version').getSingle();
+      expect(version.read<int>('user_version'), 5);
     });
 
     test('v3 created app_settings with its key as the primary key', () async {

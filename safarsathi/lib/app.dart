@@ -596,6 +596,19 @@ class _HomeState extends State<_Home> {
         onEditTransport: () => _openLegForm(detailContext, legId),
         onSeeAll: () => _openDiscovery(detailContext, tripId, legId),
         onOpenPlace: (place) => _openPoi(detailContext, tripId, place),
+        // The diary's own entry screen, so a number reached from the road is
+        // called, copied and confirmed exactly as it would be from the diary
+        // — one set of actions, one trust state, not a second copy of either.
+        onOpenContact: (contact) async {
+          final trip = await watchActiveTripContext(widget.db).first;
+          if (trip == null || !detailContext.mounted) return;
+          await _openEntry(
+            detailContext,
+            trip,
+            contact,
+            ContactActions(dao: widget.db.contactsDao, tripId: trip.tripId),
+          );
+        },
       ),
     ),
   );

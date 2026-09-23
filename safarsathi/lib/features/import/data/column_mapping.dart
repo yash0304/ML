@@ -14,6 +14,10 @@ enum ImportField {
   stopName,
   isEmergency,
   whatsapp,
+  // Last, so adding them could not change which column any existing field
+  // claims: matching runs in declaration order.
+  latitude,
+  longitude,
 }
 
 extension ImportFieldInfo on ImportField {
@@ -26,6 +30,8 @@ extension ImportFieldInfo on ImportField {
     ImportField.stopName => 'Stop',
     ImportField.isEmergency => 'Emergency',
     ImportField.whatsapp => 'WhatsApp',
+    ImportField.latitude => 'Latitude',
+    ImportField.longitude => 'Longitude',
   };
 
   /// Only a name and a number make a contact. Everything else is decoration
@@ -104,6 +110,11 @@ extension ImportFieldInfo on ImportField {
       'wa',
       'onwhatsapp',
     ],
+    // The short forms are three letters, so they only ever match exactly:
+    // containment needs four, which keeps `lon` from claiming a column
+    // called `salon` or `lat` one called `plate`.
+    ImportField.latitude => const ['latitude', 'lat'],
+    ImportField.longitude => const ['longitude', 'lon', 'lng'],
   };
 }
 

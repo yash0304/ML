@@ -41,6 +41,10 @@ class ValidatedRow {
   final bool isEmergency;
   final bool hasWhatsapp;
 
+  /// Where the place is, when the sheet said. Both or neither.
+  final double? lat;
+  final double? lon;
+
   final RowState state;
 
   /// One sentence per problem, each naming the specific thing that is wrong.
@@ -63,6 +67,8 @@ class ValidatedRow {
     this.stopName,
     this.isEmergency = false,
     this.hasWhatsapp = false,
+    this.lat,
+    this.lon,
     this.messages = const [],
     this.selected = true,
   });
@@ -219,6 +225,12 @@ ImportPreview validateRows(
       );
     }
 
+    final position = _position(
+      at(ImportField.latitude),
+      at(ImportField.longitude),
+    );
+    if (position.problem != null) messages.add(position.problem!);
+
     final categoryRaw = at(ImportField.category);
     final category = _category(categoryRaw);
     if (categoryRaw.isNotEmpty && category == null) {
@@ -238,6 +250,8 @@ ImportPreview validateRows(
         stopName: match.stopId == null ? null : match.stopName,
         isEmergency: _isTruthy(at(ImportField.isEmergency)),
         hasWhatsapp: _isTruthy(at(ImportField.whatsapp)),
+        lat: position.lat,
+        lon: position.lon,
         // A warning is information, not a veto: these rows arrive selected.
         state: messages.isEmpty ? RowState.ready : RowState.warning,
         messages: messages,
@@ -249,6 +263,50 @@ ImportPreview validateRows(
 }
 
 String? _orNull(String s) => s.isEmpty ? null : s;
+
+/// A coordinate pair from two cells, or a sentence saying why not.
+///
+/// BOTH OR NEITHER, AND NEVER GUESSED. A latitude with no longitude is not
+/// half a position, it is no position; keeping it would put the place on the
+/// equator's meridian. And 0,0 is the Gulf of Guinea, which is where a blank
+/// cell read as a number ends up — so it is refused rather than trusted.
+/// A bad position costs the row its place on the road, never the row itself:
+/// the name and number still import.
+({double? lat, double? lon, String? problem}) _position(
+  String latRaw,
+  String lonRaw,
+) {
+  if (latRaw.isEmpty && lonRaw.isEmpty) {
+    return (lat: null, lon: null, problem: null);
+  }
+  final lat = double.tryParse(latRaw.replaceAll(',', '.'));
+  final lon = double.tryParse(lonRaw.replaceAll(',', '.'));
+  const unplaced = 'Imported without a position, so it will not appear on '
+      'the road between stops.';
+
+  if (lat == null || lon == null) {
+    return (
+      lat: null,
+      lon: null,
+      problem: 'Could not read "$latRaw, $lonRaw" as a location. $unplaced',
+    );
+  }
+  if (lat.abs() > 90 || lon.abs() > 180) {
+    return (
+      lat: null,
+      lon: null,
+      problem: '$lat, $lon is not a place on Earth. $unplaced',
+    );
+  }
+  if (lat == 0 && lon == 0) {
+    return (
+      lat: null,
+      lon: null,
+      problem: '0, 0 is a blank read as a number, not a place. $unplaced',
+    );
+  }
+  return (lat: lat, lon: lon, problem: null);
+}
 
 String _squashName(String s) =>
     s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');

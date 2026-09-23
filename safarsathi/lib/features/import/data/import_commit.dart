@@ -47,6 +47,8 @@ Future<ImportResult> commitImport(
         category: Value(r.category),
         isEmergency: Value(r.isEmergency),
         hasWhatsapp: Value(r.hasWhatsapp),
+        lat: Value(r.lat),
+        lon: Value(r.lon),
       ),
   ];
 

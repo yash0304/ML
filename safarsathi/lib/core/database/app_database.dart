@@ -47,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Exposed as a constant so a backup file can be checked against it
   /// without opening a database.
-  static const currentSchemaVersion = 4;
+  static const currentSchemaVersion = 5;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -81,6 +81,13 @@ class AppDatabase extends _$AppDatabase {
         // v4 adds the MapTiles index (#24). The tiles themselves are files;
         // an empty index simply means nothing has been downloaded yet.
         await m.createTable(mapTiles);
+      }
+      if (from < 5) {
+        // v5 adds Contacts.lat/lon, so a number with a known position can be
+        // placed on a leg at its distance along the road. Existing contacts
+        // get null, which is the truth: nobody recorded where they were.
+        await m.addColumn(contacts, contacts.lat);
+        await m.addColumn(contacts, contacts.lon);
       }
     },
 

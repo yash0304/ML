@@ -5,6 +5,28 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-23 — [TRIP] **When a leg's arrival stop has no hospital or pharmacy in the diary, the leg lists the nearest ones — up to three, within 35 km, labelled straight-line.** (Kongthong has none; the sheet's own advice is "nearest pharmacy and hospital are in Pynursla". Shown only when the stop has none of its own, or Shillong's suburbs would be listed under Shillong. Straight-line is said out loud because 13 km in these hills is not a quarter of an hour.)
+
+2026-09-23 — [TRIP] The "numbers with no location — re-import with coordinates" hint shows only while nothing in the trip's diary has a position. (Found running the real sheet end to end: tourist helplines and an embassy line have no place and never will, so a per-leg count would nag on every leg after the fix had already been done.)
+
+2026-09-23 — [DATA] **Schema v5: Contacts carry an optional lat/lon.** (A sheet of hospitals and homestays with coordinates could only land as a list under a stop; with a position, a number sits on the leg at its real kilometre — "Pynursla SDH, 38 km". Nullable and never guessed: a contact typed by hand has no position, and borrowing its stop's would put it at the wrong kilometre on every leg it touched. Additive migration, pinned by a test that builds a real v4 file and upgrades it; a v4 backup, whose rows have no `lat` key at all, still restores.)
+
+2026-09-23 — [TRIP] **A leg shows the user's own numbers in two groups: on the way (placed by the same corridor as OpenStreetMap results) and at the arrival stop (help first: emergency, hospital, pharmacy, stay, food).** Contacts attached to either end of the leg are left out of "on the way". (Otherwise every leg out of Shillong opens on twenty-seven city numbers at kilometre nought and the one hospital halfway is buried. They are one tap away on the stop.) Your numbers are listed above OpenStreetMap's: one set was chosen and imported on purpose, the other is whatever is tagged near the road.
+
+2026-09-23 — [TRIP] An empty "on the way" says which of three things it means: nothing is there, nothing here has a position, or the leg cannot be measured. (Collapsing them into "nothing here" is the one answer that is always wrong — and it would have been wrong for every contact imported before coordinates were read.)
+
+2026-09-23 — [UI] StencilLabel caps its text at the width available and wraps, rather than overflowing. (Labels now carry names the user typed; "YOUR NUMBERS AT CHERRAPUNJI" ran 7 px off a phone. Not made Flexible, because a Flexible label beside an Expanded rule splits the row by flex factor and every heading would have lost half its rule. Labels that fit are pixel-identical — no other golden moved.)
+
+2026-09-22 — [TRIP] **A stop's note is rendered on the stop screen, unlimited in length, under the header.** (The form has had a Note field since #16 and nothing ever displayed it: written, stored, unreachable. Found only by trying to put something in it.)
+
+2026-09-22 — [CONTACTS] A sheet's own verification grading is carried into each imported contact's note ("Govt source: …", "Google listing only — not call-tested", "SOURCES DISAGREE — verify before dialling"), and its "Do Not Use" rows are never imported. (Every import still lands unconfirmed; the grading is what tells the user which to call-test first.)
+
+2026-09-18 — [NAV] **The app opens on the Trip tab; the map and the legs are on it under "On the road".** Downloading the map stays under More. (Four taps was three too many for the thing the app exists to do. Fetching tiles and looking at them are different jobs on different days.)
+
+2026-09-18 — [MAP] **A tile layer is given the grid size (256), never the image size (512).** (MapTiler @2x tiles are 512 px of detail over the standard 256 px square. Handing flutter_map 512 halves every x/y it asks for, so it requested z12 tiles by z11 numbering and all 3424 downloaded tiles were misses — a complete download rendered as blank paper under a correctly drawn route. Pinned by a test that records what the layer requests and compares it with what tile_math stored.)
+
+2026-09-18 — [MAP] The map opens and clamps inside the downloaded zoom band, using the downloader's own constants, with minNativeZoom/maxNativeZoom set so levels outside it are scaled rather than requested. (It opened at 11 against a 12–15 download: two literals in two files, never compared.)
+
 2026-09-18 — [MAP] **A downloaded map draws whether or not a MapTiler key is present. Tiles are checked before the key, and the order is the whole point.** (`OfflineTileProvider` reads files off the phone and never looks at a key — a key is needed to FETCH tiles and for nothing else. Checking `isConfigured` first meant a phone holding a complete downloaded map refused to draw it and said "maps are off", which is precisely the state somebody is in after restoring a backup onto a new handset: in a valley, with the map they already paid for, being told it is unavailable. Now the key is only mentioned when there is genuinely nothing to draw.)
 
 2026-09-18 — [MAP] **There is now a screen that shows the downloaded map: More → The map.** (`TripMap` was built at #24, tested, and wired to nothing. The app could fetch 346 MB of tiles, count them accurately on the cache screen, and offer no way whatsoever to look at them — Yash asked where the offline map was and the honest answer was "nowhere". A download nobody can see is not an offline map, it is a directory. The old "Offline map" entry is now "Download the map", and "The map" sits above it, because the two are different jobs and one of them was missing.)
