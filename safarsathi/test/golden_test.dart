@@ -490,6 +490,7 @@ void main() {
         onLegs: () {},
         onOpenContact: (_) {},
         onAddStay: (_) {},
+        onSharePlan: () {},
         tonight: Stream.value(
           Tonight(
             kind: TonightKind.tonight,

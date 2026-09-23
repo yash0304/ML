@@ -47,6 +47,9 @@ class TripScreen extends StatelessWidget {
   /// "No stay saved here yet — add one", starting at that stop.
   final void Function(int stopId)? onAddStay;
 
+  /// Sends the plan — each night's stop and stay — to someone at home.
+  final VoidCallback? onSharePlan;
+
   const TripScreen({
     super.key,
     required this.trip,
@@ -58,6 +61,7 @@ class TripScreen extends StatelessWidget {
     this.tonight,
     this.onOpenContact,
     this.onAddStay,
+    this.onSharePlan,
   });
 
   /// The section rule, with a way into the editor when one is wired.
@@ -133,6 +137,14 @@ class TripScreen extends StatelessWidget {
                         onTap: onLegs!,
                       ),
                   ],
+                  if (onSharePlan != null)
+                    _Shortcut(
+                      icon: Icons.send_outlined,
+                      title: 'Send the plan home',
+                      subtitle: 'Each night\'s stop and a number there that '
+                          'is not yours — for when yours is out of signal.',
+                      onTap: onSharePlan!,
+                    ),
                   const SizedBox(height: AppTokens.s16),
                   if (readiness != null)
                     ReadinessPanel(readiness: readiness!)

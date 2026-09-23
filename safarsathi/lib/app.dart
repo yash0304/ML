@@ -53,6 +53,7 @@ import 'features/money/data/money_summary.dart';
 import 'features/money/presentation/expense_form_screen.dart';
 import 'features/money/presentation/travellers_screen.dart';
 import 'features/money/presentation/money_screen.dart';
+import 'features/trips/data/plan_message.dart';
 import 'features/trips/data/tonight.dart';
 import 'features/trips/data/readiness.dart';
 import 'features/trips/data/trip_editor.dart';
@@ -822,6 +823,14 @@ class _HomeState extends State<_Home> {
             tonight: watchTonight(db, trip.tripId),
             onOpenContact: (contact) =>
                 _openEntry(context, trip, contact, actions),
+            onSharePlan: () async {
+              // Plain text through the share sheet: WhatsApp, SMS, email —
+              // whichever the person at home actually reads.
+              final text = await buildPlanMessage(db, trip.tripId);
+              await SharePlus.instance.share(
+                ShareParams(text: text, subject: '${trip.name} — the plan'),
+              );
+            },
             onAddStay: (stopId) => _openForm(
               context,
               trip,

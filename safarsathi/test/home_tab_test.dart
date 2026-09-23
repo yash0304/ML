@@ -84,6 +84,22 @@ void main() {
       expect(legs, 1);
     });
 
+    testWidgets('send the plan home is offered when wired', (tester) async {
+      var sent = 0;
+      await tester.pumpWidget(
+        _wrap(
+          TripScreen(
+            trip: Stream.value(_summary),
+            unconfirmedCount: Stream.value(0),
+            onSharePlan: () => sent++,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Send the plan home'));
+      expect(sent, 1);
+    });
+
     testWidgets('the section is absent rather than dead when unwired', (
       tester,
     ) async {
