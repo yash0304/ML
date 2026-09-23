@@ -7,6 +7,7 @@
 // what that means. A stale forecast that looks current is the failure mode
 // this whole screen is designed against.
 
+import '../../../core/util/sun.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/database/app_database.dart';
@@ -71,7 +72,7 @@ class StopDetailScreen extends StatelessWidget {
               : ListView(
                   padding: const EdgeInsets.only(bottom: AppTokens.s32),
                   children: [
-                    _Header(detail: data),
+                    _Header(detail: data, now: now),
                     _Note(detail: data),
                     _WeatherSection(detail: data, now: now),
                     _WhatIsHere(
@@ -91,12 +92,19 @@ class StopDetailScreen extends StatelessWidget {
 
 class _Header extends StatelessWidget {
   final StopDetail detail;
-  const _Header({required this.detail});
+  final DateTime? now;
+  const _Header({required this.detail, this.now});
 
   @override
   Widget build(BuildContext context) {
     final c = AppTokens.of(context);
     final arrival = detail.stop.arrivalDate;
+    final stop = detail.stop;
+    // For the day you get there, which is the day it decides anything; a
+    // stop with no date yet uses today, so the number is never blank.
+    final sun = stop.lat == null || stop.lon == null
+        ? null
+        : sunTimes(stop.lat!, stop.lon!, arrival ?? now ?? DateTime.now());
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -115,6 +123,8 @@ class _Header extends StatelessWidget {
                     '${detail.stop.nights == 1 ? 'night' : 'nights'}'
               : 'passing through',
           if (!detail.hasCoordinates) 'no coordinates yet',
+          if (sun?.sunrise != null) 'sunrise ${clockTime(sun!.sunrise!)}',
+          if (sun?.sunset != null) 'sunset ${clockTime(sun!.sunset!)}',
         ].join(' · '),
         style: AppTokens.captionStyle.copyWith(
           color: detail.hasCoordinates ? c.muted : c.cautionMark,

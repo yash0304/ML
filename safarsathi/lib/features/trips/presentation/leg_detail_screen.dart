@@ -13,6 +13,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
+import '../../../core/util/sun.dart';
 import '../../contacts/data/contacts_dao.dart';
 import '../../contacts/presentation/diary_widgets.dart' show TrustDot;
 import '../../discovery/data/discovery.dart';
@@ -108,13 +109,34 @@ class LegTransport {
   final bool isBooked;
   final String? note;
 
+  /// The light at each end, on the day of each end. Null where a stop has no
+  /// coordinates or there is no date to reckon from.
+  final SunTimes? departSun;
+  final SunTimes? arriveSun;
+
+  /// Where the arrival sunset is measured, for the row that shows it.
+  final String? toName;
+
   const LegTransport({
     this.mode,
     this.plannedDeparture,
     this.plannedArrival,
     this.isBooked = false,
     this.note,
+    this.departSun,
+    this.arriveSun,
+    this.toName,
   });
+
+  /// "Leaves 40 min after sunset — in the dark." Null when the times are fine
+  /// or unknown.
+  String? get departureWarning => plannedDeparture == null || departSun == null
+      ? null
+      : daylightWarning(plannedDeparture!, departSun!, verb: 'Leaves');
+
+  String? get arrivalWarning => plannedArrival == null || arriveSun == null
+      ? null
+      : daylightWarning(plannedArrival!, arriveSun!, verb: 'Arrives');
 
   bool get isEmpty =>
       mode == null &&
@@ -122,22 +144,55 @@ class LegTransport {
       plannedArrival == null &&
       note == null;
 
-  factory LegTransport.fromRow(Leg leg) => LegTransport(
-    mode: leg.mode,
-    plannedDeparture: leg.plannedDeparture,
-    plannedArrival: leg.plannedArrival,
-    isBooked: leg.isBooked,
-    note: leg.note,
-  );
+  factory LegTransport.fromRow(Leg leg, {Stop? from, Stop? to}) {
+    SunTimes? sunAt(Stop? stop, DateTime? day) =>
+        stop?.lat == null || stop?.lon == null || day == null
+        ? null
+        : sunTimes(stop!.lat!, stop.lon!, day);
+
+    return LegTransport(
+      mode: leg.mode,
+      plannedDeparture: leg.plannedDeparture,
+      plannedArrival: leg.plannedArrival,
+      isBooked: leg.isBooked,
+      note: leg.note,
+      departSun: sunAt(from, leg.plannedDeparture),
+      // With no arrival time typed, the day of departure — or failing that
+      // the day the destination stop begins — still gives a sunset worth
+      // knowing before setting off.
+      arriveSun: sunAt(
+        to,
+        leg.plannedArrival ?? leg.plannedDeparture ?? to?.arrivalDate,
+      ),
+      toName: to?.name,
+    );
+  }
 }
 
 /// The typed half of one leg. Separate from [watchLegDiscovery] because the
 /// two halves change for different reasons: this one only when a person edits
 /// it, the other when a download lands.
-Stream<LegTransport> watchLegTransport(AppDatabase db, int legId) =>
-    (db.select(db.legs)..where((l) => l.id.equals(legId)))
-        .watchSingle()
-        .map(LegTransport.fromRow);
+///
+/// Reads stops too, for their coordinates, so it ticks on both tables: a
+/// stream that watched only `legs` would keep an old sunset after a stop was
+/// moved.
+Stream<LegTransport> watchLegTransport(AppDatabase db, int legId) => db
+    .customSelect('SELECT 1', readsFrom: {db.legs, db.stops})
+    .watch()
+    .asyncMap((_) async {
+      final leg = await (db.select(
+        db.legs,
+      )..where((l) => l.id.equals(legId))).getSingle();
+      final stops = await (db.select(
+        db.stops,
+      )..where((s) => s.id.isIn([leg.fromStopId, leg.toStopId]))).get();
+      final byId = {for (final s in stops) s.id: s};
+      return LegTransport.fromRow(
+        leg,
+        from: byId[leg.fromStopId],
+        to: byId[leg.toStopId],
+      );
+    });
 
 class _Transport extends StatelessWidget {
   final Stream<LegTransport> transport;
@@ -208,6 +263,32 @@ class _Transport extends StatelessWidget {
                     : _time(t.plannedArrival!),
               ),
               _Field(label: 'Booked', value: t.isBooked ? 'Yes' : 'Not yet'),
+            ],
+            // THE LIGHT, SHOWN EVEN WITH NOTHING TYPED. Whether the leg can
+            // be done before dark is worth knowing before the times are
+            // decided — that is when it changes the decision.
+            if (t.arriveSun?.sunset != null)
+              _Field(
+                label: t.toName == null ? 'Sunset' : 'Sunset, ${t.toName}',
+                value: clockTime(t.arriveSun!.sunset!),
+              ),
+            for (final warning in [t.departureWarning, t.arrivalWarning])
+              if (warning != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTokens.gutter,
+                    AppTokens.s8,
+                    AppTokens.gutter,
+                    0,
+                  ),
+                  child: Text(
+                    warning,
+                    style: AppTokens.captionStyle.copyWith(
+                      color: c.cautionMark,
+                    ),
+                  ),
+                ),
+            if (!t.isEmpty) ...[
               if (t.note != null)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(

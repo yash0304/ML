@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:safarsathi/core/database/app_database.dart';
 import 'package:safarsathi/core/theme/app_tokens.dart';
+import 'package:safarsathi/core/util/sun.dart' show clockOffsetOverride;
 import 'package:safarsathi/features/contacts/data/contacts_dao.dart';
 import 'package:safarsathi/features/contacts/data/entry_draft.dart';
 import 'package:safarsathi/features/contacts/presentation/diary_screen.dart';
@@ -206,6 +207,11 @@ Stream<List<Contact>> Function(ContactFilter) feed(List<Contact> rows) {
 }
 
 void main() {
+  // Clock times in the images are Indian time on every machine — see
+  // clockOffsetOverride.
+  setUpAll(() => clockOffsetOverride = const Duration(hours: 5, minutes: 30));
+  tearDownAll(() => clockOffsetOverride = null);
+
   setUpAll(loadRealFonts);
 
   Future<void> shoot(
