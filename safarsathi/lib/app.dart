@@ -13,6 +13,7 @@ import 'core/database/app_database.dart';
 import 'core/theme/app_tokens.dart';
 import 'core/theme/motion.dart';
 import 'core/widgets/app_shell.dart';
+import 'features/contacts/data/phone_contact_picker.dart';
 import 'features/contacts/data/contact_actions.dart';
 import 'features/contacts/data/entry_draft.dart';
 import 'features/contacts/presentation/diary_screen.dart';
@@ -704,6 +705,7 @@ class _HomeState extends State<_Home> {
     BuildContext context,
     ActiveTripContext trip, {
     Contact? existing,
+    bool pickOnOpen = false,
   }) async {
     final db = widget.db;
     final stops =
@@ -717,6 +719,8 @@ class _HomeState extends State<_Home> {
       MaterialPageRoute<void>(
         builder: (_) => EntryFormScreen(
           existing: existing,
+          pickFromPhone: const PhoneContactPicker().pick,
+          pickOnOpen: pickOnOpen,
           stops: [for (final s in stops) StopOption(s.id, s.name)],
           // A European trip crosses borders mid-itinerary, so the country to
           // normalise against comes from the stop, not the trip.
@@ -869,6 +873,7 @@ class _HomeState extends State<_Home> {
             onSync: () => _openSync(context, trip.tripId),
             onSettings: () => _openSettings(context, trip.tripId),
             onMultiAdd: () => _openMultiAdd(context, trip.tripId),
+            onPickFromPhone: () => _openForm(context, trip, pickOnOpen: true),
             onBackup: () => _openBackup(context),
             onImport: () async {
               await ImportFlow(db: db, tripId: trip.tripId).start(context);

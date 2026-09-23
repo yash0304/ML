@@ -13,6 +13,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
+import '../data/phone_contact_picker.dart';
 import '../data/contacts_dao.dart';
 import '../data/entry_draft.dart';
 import '../data/phone_normaliser.dart';
@@ -39,6 +40,14 @@ class EntryFormScreen extends StatefulWidget {
 
   final Future<void> Function(EntryDraft) onSave;
 
+  /// Fills name and number from the phone's own contacts app. Null hides the
+  /// option — editing an existing entry, or a build with no picker.
+  final Future<PickedContact?> Function()? pickFromPhone;
+
+  /// Opens the picker as soon as the form appears, for the "From my phone's
+  /// contacts" entry on More, where picking is the whole point of coming in.
+  final bool pickOnOpen;
+
   const EntryFormScreen({
     super.key,
     this.existing,
@@ -46,6 +55,8 @@ class EntryFormScreen extends StatefulWidget {
     this.country = IsoCode.IN,
     this.findDuplicate,
     required this.onSave,
+    this.pickFromPhone,
+    this.pickOnOpen = false,
   });
 
   @override
@@ -79,6 +90,35 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
     _stopId = e?.stopId;
     _hasWhatsapp = e?.hasWhatsapp ?? false;
     if (e != null) _renormalise(e.phoneRaw);
+    if (widget.pickOnOpen && _canPick) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _pick());
+    }
+  }
+
+  bool get _canPick => widget.pickFromPhone != null && !_isEdit;
+
+  Future<void> _pick() async {
+    final PickedContact? picked;
+    try {
+      picked = await widget.pickFromPhone!();
+    } on ContactPickException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
+      return;
+    }
+    // Backed out of the picker: leave whatever was already typed alone.
+    if (picked == null || !mounted) return;
+
+    setState(() {
+      // The phone's name is kept as it is. Renaming "Driver Bah Kyn" to
+      // something tidier is the user's call, made in the field below.
+      if (picked!.name.isNotEmpty) _name.text = picked.name;
+      _phone.text = picked.number;
+      _nameError = null;
+      _phoneError = null;
+    });
+    await _renormalise(picked.number);
   }
 
   @override
@@ -156,6 +196,11 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
                   padding: const EdgeInsets.only(bottom: AppTokens.s24),
                   children: [
                     const StencilLabel('The number'),
+                    if (_canPick)
+                      _PickRow(
+                        key: const Key('pick-from-phone'),
+                        onTap: _pick,
+                      ),
                     _TextField(
                       key: const Key('field-name'),
                       label: 'Name',
@@ -539,6 +584,56 @@ class _SaveButton extends StatelessWidget {
             fontSize: 11.5,
             color: c.paper,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "From my phone's contacts" — fills the two fields below it.
+class _PickRow extends StatelessWidget {
+  final VoidCallback onTap;
+  const _PickRow({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppTokens.gutter,
+          AppTokens.s4,
+          AppTokens.gutter,
+          AppTokens.s12,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Icon(Icons.contacts_outlined, size: 18, color: c.signal),
+            ),
+            const SizedBox(width: AppTokens.s8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'From my phone\'s contacts',
+                    style: AppTokens.rowTitleStyle.copyWith(color: c.signal),
+                  ),
+                  Text(
+                    // Said on the button, because it is the first thing a
+                    // careful person wonders before tapping it. Under the
+                    // label, not beside it: beside it ran 21 px off a phone.
+                    'Picks one number. The app reads nothing else.',
+                    style: AppTokens.captionStyle.copyWith(color: c.muted),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

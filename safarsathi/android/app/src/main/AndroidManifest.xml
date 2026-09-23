@@ -73,6 +73,13 @@
             <data android:mimeType="text/plain"/>
         </intent>
         <!-- Opening the dialer, with a number and without one. -->
+        <!-- The system contact picker, for "From my phone's contacts". It
+             returns one chosen number with a one-time read grant, which is
+             why there is no READ_CONTACTS permission anywhere in this file. -->
+        <intent>
+            <action android:name="android.intent.action.PICK"/>
+            <data android:mimeType="vnd.android.cursor.dir/phone_v2"/>
+        </intent>
         <intent>
             <action android:name="android.intent.action.DIAL"/>
             <data android:scheme="tel"/>

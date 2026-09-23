@@ -698,6 +698,7 @@ void main() {
         onSync: () {},
         onImport: () {},
         onMultiAdd: () {},
+        onPickFromPhone: () {},
         onBackup: () {},
         onHistory: () {},
         onTemplate: () {},

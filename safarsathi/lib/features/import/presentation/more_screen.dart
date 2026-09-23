@@ -25,6 +25,9 @@ class MoreScreen extends StatelessWidget {
   final VoidCallback onImport;
   final VoidCallback onHistory;
   final VoidCallback onMultiAdd;
+
+  /// One number from the phone's own contacts app, into the entry form.
+  final VoidCallback onPickFromPhone;
   final VoidCallback onBackup;
   final VoidCallback onTemplate;
 
@@ -45,6 +48,7 @@ class MoreScreen extends StatelessWidget {
     required this.onImport,
     required this.onHistory,
     required this.onMultiAdd,
+    required this.onPickFromPhone,
     required this.onBackup,
     required this.onTemplate,
     required this.contactCount,
@@ -129,6 +133,14 @@ class MoreScreen extends StatelessWidget {
             ),
             const StencilLabel('Contacts'),
             _Item(
+              icon: Icons.contacts_outlined,
+              title: 'From my phone\'s contacts',
+              subtitle:
+                  'Pick one saved number — the driver, the homestay — and '
+                  'file it under a stop. The app sees only the one you pick.',
+              onTap: onPickFromPhone,
+            ),
+            _Item(
               icon: Icons.playlist_add,
               title: 'Add several at once',
               subtitle:
@@ -210,11 +222,19 @@ class MoreScreen extends StatelessWidget {
                 horizontal: AppTokens.gutter,
               ),
               child: Text(
-                'The route-discovery screen that shows what is along each '
-                'leg (#27, #28). The GPS timeline (#30). Trusted-contact '
-                'check-ins (#33, #34).\n\n'
-                'This app makes no network call at any point. The release '
-                'build does not even ask for permission to.',
+                // THIS USED TO SAY THE APP MAKES NO NETWORK CALL AND THE
+                // RELEASE BUILD DOES NOT EVEN ASK FOR PERMISSION TO. Both were
+                // false from the day maps, routes and weather were added: the
+                // manifest holds INTERNET and "Download everything" uses it. It
+                // also listed the leg screen as unbuilt, long after it was.
+                // A screen whose job is to be honest about the app has to be.
+                'The GPS timeline (#30). Trusted-contact check-ins (#33, '
+                '#34).\n\n'
+                'The app uses the internet only when you ask it to, on a '
+                'screen that says what it will fetch: Download everything, '
+                'Download the map, and Weather. On the road it asks for '
+                'nothing — the map, routes, places and forecasts are read '
+                'from this phone.',
                 style: AppTokens.captionStyle.copyWith(color: c.muted),
               ),
             ),
