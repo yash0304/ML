@@ -101,7 +101,16 @@ jobs:
       - name: Build release APK
         env:
           MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
-        run: flutter build apk --release --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
+        # EVERY BUILD GETS ITS OWN NUMBER. It was 0.1.0+1 for every build
+        # ever made, so Settings → Apps → SafarSathi could not say which one
+        # was on the phone — and "which build is installed?" is the first
+        # question when an install is refused. The run number only rises, so
+        # each build is an upgrade of the last.
+        run: |
+          flutter build apk --release \
+            --build-name="0.1.${{ github.run_number }}" \
+            --build-number="${{ github.run_number }}" \
+            --dart-define=MAPTILER_KEY="$MAPTILER_KEY"
 
       - name: Report whether maps are enabled in this build
         env:
@@ -119,6 +128,15 @@ jobs:
           if [ -f android/key.properties ]; then
             echo "Signed with the RELEASE key. This installs over the"
             echo "previous build and keeps everything already in the app."
+            # WHICH release key. "A key was present" is not "the same key as
+            # last time": a replaced keystore secret passes every check above
+            # and surfaces only as "package conflicts" on the phone. This is
+            # the certificate actually inside the APK, read back by the SDK's
+            # own verifier. The 18 Sep 2026 key is CAF8E289…A058A04F43.
+            APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner
+            "$APKSIGNER" verify --print-certs \
+              build/app/outputs/flutter-apk/app-release.apk \
+              | grep -E "certificate (DN|SHA-256)"
           else
             echo "::warning::No ANDROID_KEYSTORE_BASE64 secret, so this APK is"
             echo "::warning::signed with throwaway debug keys. Installing it"
@@ -168,7 +186,7 @@ jobs:
             --target "$GITHUB_SHA" \
             --prerelease \
             --title "SafarSathi — latest build" \
-            --notes "$(printf '%s\n\n%s\n\n%s\n\nBuilt from `%s`.' \
-              "$(git log -1 --pretty=%s)" "$SIGNED" "$MAPS" "${GITHUB_SHA:0:7}")"
+            --notes "$(printf '%s\n\n%s\n\n%s\n\nVersion 0.1.%s — after installing, Settings → Apps → SafarSathi should show this number.\n\nBuilt from `%s`.' \
+              "$(git log -1 --pretty=%s)" "$SIGNED" "$MAPS" "${{ github.run_number }}" "${GITHUB_SHA:0:7}")"
 
           echo "Download: https://github.com/$GITHUB_REPOSITORY/releases/download/latest-apk/safarsathi.apk"

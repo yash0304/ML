@@ -147,6 +147,35 @@ that one time, in this order:
 If the installed build is old enough not to offer "With the map", take the
 plain backup and plan to re-download the map afterwards.
 
+### "Package conflicts" after the release key was already set up
+
+Every build since 18 Sep 2026 is signed with the same key:
+
+```
+CN=safar, OU=sathi · created 18 Sep 2026 11:46 GMT
+SHA-256 CAF8E28961F14D1C3F656CDA0D6077F6424910C523401D1B32AC10A058A04F43
+```
+
+The build log's "Report how this build was signed" step prints the
+certificate actually inside each APK. If it matches the line above, the new
+APK is fine and the conflict is with **what is on the phone** — almost always
+an older `safarsathi (n).apk` from before that date, tapped from Downloads by
+mistake or installed at some point. Before anything else:
+
+1. **Do not uninstall.** That deletes the diary and the downloaded map.
+2. Files → Downloads → delete every `safarsathi*.apk`.
+3. Download the latest build again and open it from the browser's own
+   "download complete" notice, not from the file manager.
+
+Each build now carries its own version, `0.1.<run number>`, shown in the
+release notes and in Settings → Apps → SafarSathi — so "which build is on
+this phone?" has an answer.
+
+If it still conflicts, the installed copy itself is signed with some other
+key and the only way forward is an uninstall — so first take **More → Backup
+and restore → With the map**, move the file off the phone, and restore it
+after installing.
+
 ## The MapTiler key
 
 Maps need a key. **It is never committed.** A build without one still runs —
