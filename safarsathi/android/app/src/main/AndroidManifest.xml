@@ -105,6 +105,11 @@
             <action android:name="android.intent.action.SENDTO"/>
             <data android:scheme="smsto"/>
         </intent>
+        <!-- The SOS text: url_launcher opens sms: with VIEW, not SENDTO. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="sms"/>
+        </intent>
         <intent>
             <action android:name="android.intent.action.SENDTO"/>
             <data android:scheme="sms"/>

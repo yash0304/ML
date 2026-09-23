@@ -31,6 +31,10 @@ class EmergencyScreen extends StatelessWidget {
   final Future<void> Function(String number)? onCall;
   final Future<void> Function(String number)? onCopy;
 
+  /// "Text my location", first on the tab. Optional so the screen's own
+  /// tests and goldens can render without a location source.
+  final Widget? sosPanel;
+
   const EmergencyScreen({
     super.key,
     required this.helplines,
@@ -38,6 +42,7 @@ class EmergencyScreen extends StatelessWidget {
     this.placeLabel,
     this.onCall,
     this.onCopy,
+    this.sosPanel,
   });
 
   @override
@@ -53,6 +58,10 @@ class EmergencyScreen extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: AppTokens.s24),
           children: [
             _header(c),
+            // FIRST, ABOVE THE HELPLINES. 112 is one tap below either way;
+            // telling your own people where you are is the thing no
+            // helpline can do for you.
+            ?sosPanel,
             _officialSection(c),
             _localSection(c),
             _stateNote(c),

@@ -18,6 +18,8 @@ import 'package:safarsathi/core/theme/app_tokens.dart';
 import 'package:safarsathi/core/util/sun.dart'
     show clockOffsetOverride, sunTimes;
 import 'package:safarsathi/features/trips/data/tonight.dart';
+import 'package:safarsathi/features/emergency/presentation/sos_panel.dart';
+import 'package:safarsathi/features/map/data/here.dart';
 import 'package:safarsathi/features/contacts/data/contacts_dao.dart';
 import 'package:safarsathi/features/contacts/data/entry_draft.dart';
 import 'package:safarsathi/features/contacts/presentation/diary_screen.dart';
@@ -445,6 +447,25 @@ void main() {
       'emergency',
       EmergencyScreen(
         placeLabel: 'India · Kongthong',
+        sosPanel: SosPanel(
+          trusted: Stream.value(const [
+            TrustedContact(
+              id: 1,
+              name: 'Mummy',
+              phoneE164: '+919825012345',
+              notifyOnArrival: false,
+              escalate: false,
+              escalateAfterMinutes: 30,
+            ),
+          ]),
+          location: const _NoLocation(),
+          nearStop: () async => 'Kongthong',
+          openSms: (_) async => true,
+          share: (_) async {},
+          pickPerson: () async => null,
+          addPerson: (_, _) async {},
+          removePerson: (_) async {},
+        ),
         helplines: Stream.value([
           h(
             '112',
@@ -1791,3 +1812,18 @@ Contact diaryContact({
   createdAt: DateTime(2026, 9, 22),
   note: note,
 );
+
+/// A location source for the goldens that never finds anything.
+class _NoLocation implements LocationSource {
+  const _NoLocation();
+  @override
+  Future<HereState> check({bool ask = false}) async => HereState.notAsked;
+  @override
+  Stream<HereFix> watch() => const Stream.empty();
+  @override
+  Future<HereFix?> once({Duration timeout = Duration.zero}) async => null;
+  @override
+  Future<void> openAppSettings() async {}
+  @override
+  Future<void> openLocationSettings() async {}
+}

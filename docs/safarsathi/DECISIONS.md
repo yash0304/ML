@@ -5,6 +5,16 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-23 — [SAFETY] **The SOS text opens the phone's SMS app with the message written; the person presses Send. It never sends by itself, and it never waits on the GPS.** (SMS gets through on one bar with no data, where WhatsApp does not. An SOS that fires unseen fires by accident. With no fix — refused, switched off, a slow valley, or "Send without it" after at most 12 s — it goes anyway, saying so and naming the planned stop. The people who get it are stored for every trip, not per trip: family does not change between holidays. A number that will not normalise is refused, because an SOS to it would be believed sent.)
+
+2026-09-23 — [SAFETY] **Location permission: fine + coarse, asked only on a tap, only while the app is open; no background location.** (GPS needs no signal, which is what makes "you are here" possible offline. Opening the map never prompts. The position is drawn on the map and leaves the phone only in a text the person sends. The accuracy circle is drawn at the fix's own stated radius so a ±200 m fix does not look like a ±5 m one.)
+
+2026-09-23 — [TRIP] "Tonight" goes by the night, not the day: the stop whose nights include tonight. (On a travel day the current stop is where you wake; tonight's bed is the next one's. A stop passed through is never tonight, and a night with no bed on the plan shows no card rather than someone else's.)
+
+2026-09-23 — [TRIP] Sunrise and sunset from NOAA's equations, offline, verified against astral to within two minutes across India. Warn when a planned departure or arrival is after dark or within 30 minutes of sunset. (Hill roads after dark are the real hazard of the trip, and whether a leg can be done in daylight is decided before the times are typed — so the destination's sunset shows even on an empty leg.)
+
+2026-09-23 — [TRIP] "Send the plan home" shares only what was typed: each night's stop and stay with its number, and the legs. A night with no stay says "not saved yet". (Someone at home reading a town with nothing under it would assume it was arranged.)
+
 2026-09-23 — [TRIP] **When a leg's arrival stop has no hospital or pharmacy in the diary, the leg lists the nearest ones — up to three, within 35 km, labelled straight-line.** (Kongthong has none; the sheet's own advice is "nearest pharmacy and hospital are in Pynursla". Shown only when the stop has none of its own, or Shillong's suburbs would be listed under Shillong. Straight-line is said out loud because 13 km in these hills is not a quarter of an hour.)
 
 2026-09-23 — [TRIP] The "numbers with no location — re-import with coordinates" hint shows only while nothing in the trip's diary has a position. (Found running the real sheet end to end: tourist helplines and an embassy line have no place and never will, so a per-leg count would nag on every leg after the fix had already been done.)

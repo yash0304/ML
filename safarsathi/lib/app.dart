@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
@@ -31,6 +32,8 @@ import 'features/checklist/data/checklist_dao.dart';
 import 'features/checklist/data/checklist_generator.dart';
 import 'features/checklist/presentation/checklist_screen.dart';
 import 'features/dev/dev_seed.dart';
+import 'features/emergency/data/sos.dart';
+import 'features/emergency/presentation/sos_panel.dart';
 import 'features/emergency/presentation/emergency_screen.dart';
 import 'features/import/data/import_commit.dart';
 import 'features/import/presentation/import_flow.dart';
@@ -883,6 +886,19 @@ class _HomeState extends State<_Home> {
                 : 'India · ${trip.currentStopName}',
             onCall: actions.callNumber,
             onCopy: actions.copyNumber,
+            sosPanel: SosPanel(
+              trusted: watchTrusted(db),
+              location: const DeviceLocation(),
+              nearStop: () async => trip.currentStopName,
+              openSms: (uri) =>
+                  launchUrl(uri, mode: LaunchMode.externalApplication),
+              share: (text) => SharePlus.instance.share(
+                ShareParams(text: text, subject: 'SOS'),
+              ),
+              pickPerson: const PhoneContactPicker().pick,
+              addPerson: (name, phone) => addTrusted(db, name, phone),
+              removePerson: (person) => removeTrusted(db, person.id),
+            ),
           ),
         ),
         ShellDestination(
