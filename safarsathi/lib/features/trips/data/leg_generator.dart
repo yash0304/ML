@@ -109,6 +109,20 @@ Future<LegPlan> regenerateLegs(AppDatabase db, int tripId) async {
       ],
     );
 
+    // PLANNED STOPS OUTLIVE THEIR LEG. A stop inserted between Shillong and
+    // Sohra replaces that leg with two; the viewpoint planned on it belongs
+    // on the first new one (same start), or else the one with the same end.
+    // Remembered before the delete, because the delete nulls their legId.
+    final gone = {
+      for (final l in existing)
+        if (plan.delete.contains(l.id)) l.id: l,
+    };
+    final orphans = gone.isEmpty
+        ? const <PlannedStop>[]
+        : await (db.select(db.plannedStops)
+                ..where((p) => p.legId.isIn(gone.keys.toList())))
+              .get();
+
     for (final id in plan.delete) {
       await (db.delete(db.legs)..where((l) => l.id.equals(id))).go();
     }
@@ -126,6 +140,31 @@ Future<LegPlan> regenerateLegs(AppDatabase db, int tripId) async {
           sequenceOrder: i.order,
         ),
       );
+    }
+
+    if (orphans.isNotEmpty) {
+      final now =
+          await (db.select(db.legs)..where((l) => l.tripId.equals(tripId)))
+              .get();
+      for (final p in orphans) {
+        final old = gone[p.legId]!;
+        Leg? home;
+        for (final l in now) {
+          if (l.fromStopId == old.fromStopId) home = l;
+        }
+        if (home == null) {
+          for (final l in now) {
+            if (l.toStopId == old.toStopId) home = l;
+          }
+        }
+        // No leg shares either end: it stays on the trip, legless, and the
+        // plan still lists it. Losing a planned stop silently is the one
+        // outcome not allowed.
+        if (home != null) {
+          await (db.update(db.plannedStops)..where((x) => x.id.equals(p.id)))
+              .write(PlannedStopsCompanion(legId: Value(home.id)));
+        }
+      }
     }
 
     return plan;

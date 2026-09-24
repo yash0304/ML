@@ -5,6 +5,8 @@
 // OpenStreetMap's tagging is vast and inconsistent. This is a deliberately
 // small slice: the things a driver actually stops for between two towns.
 
+import '../../contacts/data/contacts_dao.dart' show ContactCategory;
+
 /// A category as the app knows it, with the OSM filters that find it.
 class PoiCategory {
   final String key;
@@ -66,10 +68,18 @@ const poiCategories = <PoiCategory>[
     label: 'Toilets',
     filters: ['amenity=toilets'],
   ),
+  // SIGHTS: what a Meghalaya road is driven for. Waterfalls and caves are
+  // tagged apart from viewpoints in OSM (Nohkalikai is waterway=waterfall,
+  // Mawsmai natural=cave_entrance), so all four are asked for.
   PoiCategory(
     key: 'viewpoint',
-    label: 'Viewpoint',
-    filters: ['tourism=viewpoint', 'tourism=attraction'],
+    label: 'Sights',
+    filters: [
+      'tourism=viewpoint',
+      'tourism=attraction',
+      'waterway=waterfall',
+      'natural=cave_entrance',
+    ],
   ),
   PoiCategory(
     key: 'police',
@@ -94,7 +104,15 @@ const defaultPoiCategoryKeys = [
   'restaurant',
   'atm',
   'repair',
+  // Asked for on the phone: viewpoints between stops, to plan and send
+  // home. Last, so a slow query has already fetched the help it needs.
+  'viewpoint',
 ];
+
+/// What a place's category reads as on screen: the diary's word where the
+/// diary has one, else this file's ("Sights", "Cash").
+String placeCategoryLabel(String key) =>
+    ContactCategory.labels[key] ?? poiCategoryByKey(key)?.label ?? key;
 
 PoiCategory? poiCategoryByKey(String key) {
   for (final c in poiCategories) {

@@ -18,6 +18,8 @@ import '../../contacts/data/contacts_dao.dart';
 import '../../contacts/presentation/diary_widgets.dart' show TrustDot;
 import '../../discovery/data/place_details.dart' show foodLine;
 import '../../discovery/data/discovery.dart';
+import '../data/planned_stops.dart' show PlannedOnTheWay;
+import '../../discovery/data/poi_category.dart' show placeCategoryLabel;
 
 class LegDetailScreen extends StatelessWidget {
   final Stream<LegDiscovery> discovery;
@@ -32,6 +34,15 @@ class LegDetailScreen extends StatelessWidget {
   /// Opens one of the user's own diary entries, where calling, copying and
   /// confirming already live.
   final void Function(Contact contact)? onOpenContact;
+
+  /// Adds a stop on the way by name. Null hides the button.
+  final VoidCallback? onAddPlanned;
+
+  /// Takes a planned stop out of the plan.
+  final Future<void> Function(PlannedStop stop)? onRemovePlanned;
+
+  /// Directions to a planned stop that has a position.
+  final void Function(PlannedStop stop)? onDirectionsTo;
 
   /// How many places to show inline before deferring to the full list.
   static const inlineLimit = 5;
@@ -49,6 +60,9 @@ class LegDetailScreen extends StatelessWidget {
     this.onSeeAll,
     this.onOpenPlace,
     this.onOpenContact,
+    this.onAddPlanned,
+    this.onRemovePlanned,
+    this.onDirectionsTo,
   });
 
   @override
@@ -78,6 +92,15 @@ class LegDetailScreen extends StatelessWidget {
                     _Transport(
                       transport: transport,
                       onEdit: onEditTransport,
+                    ),
+                    // WHAT YOU MEAN TO STOP FOR, right under how you are
+                    // travelling: it is the plan for the day, and what goes
+                    // home in the message.
+                    _Planned(
+                      leg: leg,
+                      onAdd: onAddPlanned,
+                      onRemove: onRemovePlanned,
+                      onDirections: onDirectionsTo,
                     ),
                     // BETWEEN THE STOPS FIRST, THEN THE DESTINATION. Your own
                     // numbers on the way lead, being the ones chosen and
@@ -478,8 +501,7 @@ class _PlaceRow extends StatelessWidget {
                         // map knows it — what decides the stop — and the bare
                         // category when it does not.
                         foodLine(place.tags) ??
-                            ContactCategory.labels[place.category] ??
-                            place.category,
+                            placeCategoryLabel(place.category),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTokens.stencilStyle.copyWith(
@@ -507,6 +529,139 @@ class _PlaceRow extends StatelessWidget {
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Stops planned on this road — picked from the places along it, or typed.
+class _Planned extends StatelessWidget {
+  final LegDiscovery leg;
+  final VoidCallback? onAdd;
+  final Future<void> Function(PlannedStop)? onRemove;
+  final void Function(PlannedStop)? onDirections;
+
+  const _Planned({
+    required this.leg,
+    this.onAdd,
+    this.onRemove,
+    this.onDirections,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    final planned = leg.planned;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            const Expanded(child: StencilLabel('Planned stops on the way')),
+            if (onAdd != null)
+              Padding(
+                padding: const EdgeInsets.only(
+                  right: AppTokens.gutter,
+                  top: AppTokens.s16,
+                ),
+                child: PressScale(
+                  key: const Key('leg-add-planned'),
+                  onTap: onAdd,
+                  child: Text(
+                    'ADD',
+                    style: AppTokens.stencilStyle.copyWith(
+                      fontSize: 10.5,
+                      color: c.signal,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (planned.isEmpty)
+          const _Explain(
+            'None yet. Tap a viewpoint or any place under "On the road" and '
+            'add it to the plan, or add one by name. They go home in the '
+            'plan you send.',
+          )
+        else
+          for (final p in planned)
+            _PlannedRow(
+              planned: p,
+              onRemove: onRemove == null ? null : () => onRemove!(p.stop),
+              onDirections:
+                  onDirections == null ||
+                      p.stop.lat == null ||
+                      p.stop.lon == null
+                  ? null
+                  : () => onDirections!(p.stop),
+            ),
+      ],
+    );
+  }
+}
+
+class _PlannedRow extends StatelessWidget {
+  final PlannedOnTheWay planned;
+  final VoidCallback? onRemove;
+  final VoidCallback? onDirections;
+
+  const _PlannedRow({required this.planned, this.onRemove, this.onDirections});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    final s = planned.stop;
+    final km = planned.alongRouteKm;
+    final detail = [
+      if (km != null) '${km.round()} km in',
+      if (s.category != null) placeCategoryLabel(s.category!),
+      if (s.note != null) s.note!,
+    ].join(' · ');
+
+    return InkWell(
+      onTap: onDirections,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppTokens.gutter,
+          AppTokens.s8,
+          AppTokens.s8,
+          AppTokens.s8,
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.flag_outlined, size: 18, color: c.signal),
+            const SizedBox(width: AppTokens.s12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    s.name,
+                    style: AppTokens.rowTitleStyle.copyWith(color: c.ink),
+                  ),
+                  if (detail.isNotEmpty)
+                    Text(
+                      detail,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTokens.captionStyle.copyWith(color: c.muted),
+                    ),
+                ],
+              ),
+            ),
+            if (onDirections != null)
+              Icon(Icons.directions, size: 18, color: c.muted),
+            if (onRemove != null)
+              IconButton(
+                key: Key('planned-remove-${s.id}'),
+                tooltip: 'Take out of the plan',
+                onPressed: onRemove,
+                icon: Icon(Icons.close, size: 18, color: c.muted),
+              ),
+          ],
         ),
       ),
     );

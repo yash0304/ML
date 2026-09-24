@@ -14,9 +14,9 @@ import '../../../core/database/app_database.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
-import '../../contacts/data/contacts_dao.dart';
 import '../data/place_details.dart';
 import '../data/discovery.dart';
+import '../data/poi_category.dart' show placeCategoryLabel;
 
 class PoiDetailScreen extends StatelessWidget {
   final CorridorPlace place;
@@ -32,6 +32,13 @@ class PoiDetailScreen extends StatelessWidget {
   /// does not offer to save it twice.
   final bool alreadySaved;
 
+  /// Whether this place is in the plan for its leg.
+  final bool planned;
+
+  /// Puts it in the leg's plan (true) or takes it out (false). Null hides
+  /// the button.
+  final Future<void> Function(bool plan)? onTogglePlan;
+
   const PoiDetailScreen({
     super.key,
     required this.place,
@@ -40,6 +47,8 @@ class PoiDetailScreen extends StatelessWidget {
     required this.onSave,
     this.onOpenMaps,
     this.alreadySaved = false,
+    this.planned = false,
+    this.onTogglePlan,
   });
 
   @override
@@ -49,7 +58,7 @@ class PoiDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: c.paper,
       appBar: AppBar(
-        title: Text(ContactCategory.labels[place.category] ?? 'Place'),
+        title: Text(placeCategoryLabel(place.category)),
         backgroundColor: c.paper,
         foregroundColor: c.ink,
         elevation: 0,
@@ -69,6 +78,8 @@ class PoiDetailScreen extends StatelessWidget {
               style: AppTokens.titleStyle.copyWith(color: c.ink),
             ),
           ),
+          if (onTogglePlan != null)
+            _PlanToggle(planned: planned, onToggle: onTogglePlan!),
 
           if (_hasFood(place)) ...[
             const StencilLabel('What they serve'),
@@ -415,3 +426,75 @@ bool _hasFood(CorridorPlace place) =>
     vegOf(place.tags) != null ||
     jainOf(place.tags) != null ||
     hoursOf(place.tags) != null;
+
+/// "Add to the plan for this leg" — a viewpoint, a lunch stop — or, once
+/// added, the way back out. Holds its own state so the tap shows at once.
+class _PlanToggle extends StatefulWidget {
+  final bool planned;
+  final Future<void> Function(bool plan) onToggle;
+  const _PlanToggle({required this.planned, required this.onToggle});
+
+  @override
+  State<_PlanToggle> createState() => _PlanToggleState();
+}
+
+class _PlanToggleState extends State<_PlanToggle> {
+  late bool _planned = widget.planned;
+  bool _busy = false;
+
+  Future<void> _tap() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    await widget.onToggle(!_planned);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _planned = !_planned;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTokens.gutter,
+        AppTokens.s12,
+        AppTokens.gutter,
+        0,
+      ),
+      child: PressScale(
+        key: const Key('poi-plan-toggle'),
+        onTap: _tap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: AppTokens.s12),
+          decoration: BoxDecoration(
+            color: _planned ? null : c.signal,
+            border: Border.all(color: _planned ? c.rule : c.ink),
+            borderRadius: BorderRadius.circular(AppTokens.radiusSoft),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _planned ? Icons.check : Icons.flag_outlined,
+                size: 16,
+                color: _planned ? c.signal : c.paper,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                _planned
+                    ? 'In the plan · tap to take out'
+                    : 'Add to the plan for this leg',
+                style: AppTokens.stencilStyle.copyWith(
+                  fontSize: 10.5,
+                  color: _planned ? c.signal : c.paper,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

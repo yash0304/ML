@@ -11,10 +11,10 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
-import '../../contacts/data/contacts_dao.dart';
 import '../data/place_details.dart'
     show foodLine, servesJain, servesVeg;
 import '../data/discovery.dart';
+import '../data/poi_category.dart' show placeCategoryLabel;
 
 class DiscoveryScreen extends StatefulWidget {
   final Stream<LegDiscovery> discovery;
@@ -110,7 +110,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                     ),
                     for (final key in categories)
                       _Chip(
-                        label: ContactCategory.labels[key] ?? key,
+                        label: placeCategoryLabel(key),
                         on: _category == key,
                         onTap: () => setState(
                           () => _category = _category == key ? null : key,
@@ -134,7 +134,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
 
               const StencilLabel('Coming up'),
               for (final place in shown)
-                _PlaceRow(place: place, onTap: () => widget.onOpen(place)),
+                _PlaceRow(
+                  place: place,
+                  planned: leg.plannedOsmIds.contains(place.osmId),
+                  onTap: () => widget.onOpen(place),
+                ),
 
               if (shown.isEmpty)
                 Padding(
@@ -173,7 +177,15 @@ class _PlaceRow extends StatelessWidget {
   final CorridorPlace place;
   final VoidCallback onTap;
 
-  const _PlaceRow({required this.place, required this.onTap});
+  /// In the leg's plan: marked, so the list reads as a plan and not only
+  /// as a catalogue.
+  final bool planned;
+
+  const _PlaceRow({
+    required this.place,
+    required this.onTap,
+    this.planned = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +210,7 @@ class _PlaceRow extends StatelessWidget {
             // idiom the Trip screen uses for the next leg.
             MilestoneMarker(
               numeral: '${place.alongRouteKm.round()}',
-              place: ContactCategory.labels[place.category] ?? place.category,
+              place: placeCategoryLabel(place.category),
             ),
             const SizedBox(width: AppTokens.s16),
             Expanded(
@@ -233,6 +245,14 @@ class _PlaceRow extends StatelessWidget {
                         ),
                     ],
                   ),
+                  if (planned)
+                    Text(
+                      'IN THE PLAN',
+                      style: AppTokens.stencilStyle.copyWith(
+                        fontSize: 9,
+                        color: c.signal,
+                      ),
+                    ),
                   if (foodLine(place.tags) != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),

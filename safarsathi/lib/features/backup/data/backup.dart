@@ -124,6 +124,7 @@ const backupTableOrder = [
   'trips',
   'stops',
   'legs',
+  'plannedStops',
   'importBatches',
   'contacts',
   'callLogs',
@@ -175,6 +176,10 @@ Future<List<Map<String, dynamic>>> _readTable(
                 lastSyncedAt: const Value(null),
               )
               .toJson(),
+      ];
+    case 'plannedStops':
+      return [
+        for (final r in await db.select(db.plannedStops).get()) r.toJson(),
       ];
     case 'importBatches':
       return [
@@ -343,6 +348,8 @@ Future<void> _clearTable(AppDatabase db, String name) async {
       await db.delete(db.stops).go();
     case 'legs':
       await db.delete(db.legs).go();
+    case 'plannedStops':
+      await db.delete(db.plannedStops).go();
     case 'importBatches':
       await db.delete(db.importBatches).go();
     case 'contacts':
@@ -389,6 +396,12 @@ Future<void> _writeTable(
     case 'legs':
       await db.batch(
         (b) => b.insertAll(db.legs, [for (final r in rows) Leg.fromJson(r)]),
+      );
+    case 'plannedStops':
+      await db.batch(
+        (b) => b.insertAll(db.plannedStops, [
+          for (final r in rows) PlannedStop.fromJson(r),
+        ]),
       );
     case 'importBatches':
       await db.batch(

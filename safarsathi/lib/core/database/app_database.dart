@@ -23,6 +23,7 @@ part 'app_database.g.dart';
     Trips,
     Stops,
     Legs,
+    PlannedStops,
     Pois,
     PoiContacts,
     Contacts,
@@ -47,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Exposed as a constant so a backup file can be checked against it
   /// without opening a database.
-  static const currentSchemaVersion = 6;
+  static const currentSchemaVersion = 7;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -94,6 +95,11 @@ class AppDatabase extends _$AppDatabase {
         // at. Existing stops get null — not decided — rather than a guess
         // from whichever accommodation number sorted first.
         await m.addColumn(stops, stops.stayContactId);
+      }
+      if (from < 7) {
+        // v7 adds PlannedStops: viewpoints and other stops on the way that
+        // go home in the plan. A new table; nothing existing changes.
+        await m.createTable(plannedStops);
       }
     },
 

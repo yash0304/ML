@@ -10,6 +10,7 @@ import 'place_details.dart';
 import 'corridor.dart';
 import 'geo.dart';
 import 'polyline.dart';
+import '../../trips/data/planned_stops.dart';
 
 /// One place on the corridor, with everything the list and detail need.
 class CorridorPlace {
@@ -115,6 +116,9 @@ class LegDiscovery {
   /// nearest is in Pynursla" is the sentence this exists to say.
   final List<NearbyHelp> nearestHelp;
 
+  /// Stops you said you would make on this road, in road order.
+  final List<PlannedOnTheWay> planned;
+
   const LegDiscovery({
     required this.legId,
     required this.fromName,
@@ -128,9 +132,16 @@ class LegDiscovery {
     this.unplaced = 0,
     this.anyPlaced = false,
     this.nearestHelp = const [],
+    this.planned = const [],
   });
 
   bool get isSynced => lastSyncedAt != null;
+
+  /// Downloaded places already in the plan, to mark them in the list.
+  Set<String> get plannedOsmIds => {
+    for (final p in planned)
+      if (p.stop.osmId != null) p.stop.osmId!,
+  };
 
   /// Only the categories this leg actually has. Offering eleven chips when
   /// four match anything is a filter that mostly disappoints.
@@ -154,7 +165,14 @@ Stream<LegDiscovery> watchLegDiscovery(AppDatabase db, int legId) {
         // or editing a note all change what this leg shows, and a Drift
         // stream only fires for the tables it names — leave this out and the
         // leg screen goes stale with no error anywhere.
-        readsFrom: {db.legs, db.stops, db.pois, db.poiContacts, db.contacts},
+        readsFrom: {
+          db.legs,
+          db.stops,
+          db.pois,
+          db.poiContacts,
+          db.contacts,
+          db.plannedStops,
+        },
       )
       .watch();
 
@@ -234,6 +252,12 @@ Stream<LegDiscovery> watchLegDiscovery(AppDatabase db, int legId) {
       ),
       anyPlaced: diary.any((c) => c.lat != null && c.lon != null),
       nearestHelp: nearestHelpTo(stopById[leg.toStopId], diary),
+      planned: orderPlanned(
+        await (db.select(
+          db.plannedStops,
+        )..where((p) => p.legId.equals(legId))).get(),
+        corridor,
+      ),
     );
   });
 }

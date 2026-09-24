@@ -2093,6 +2093,605 @@ class LegsCompanion extends UpdateCompanion<Leg> {
   }
 }
 
+class $PlannedStopsTable extends PlannedStops
+    with TableInfo<$PlannedStopsTable, PlannedStop> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PlannedStopsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _tripIdMeta = const VerificationMeta('tripId');
+  @override
+  late final GeneratedColumn<int> tripId = GeneratedColumn<int>(
+    'trip_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES trips (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _legIdMeta = const VerificationMeta('legId');
+  @override
+  late final GeneratedColumn<int> legId = GeneratedColumn<int>(
+    'leg_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES legs (id) ON DELETE SET NULL',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _latMeta = const VerificationMeta('lat');
+  @override
+  late final GeneratedColumn<double> lat = GeneratedColumn<double>(
+    'lat',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lonMeta = const VerificationMeta('lon');
+  @override
+  late final GeneratedColumn<double> lon = GeneratedColumn<double>(
+    'lon',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _osmIdMeta = const VerificationMeta('osmId');
+  @override
+  late final GeneratedColumn<String> osmId = GeneratedColumn<String>(
+    'osm_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tripId,
+    legId,
+    name,
+    category,
+    lat,
+    lon,
+    osmId,
+    note,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'planned_stops';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PlannedStop> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('trip_id')) {
+      context.handle(
+        _tripIdMeta,
+        tripId.isAcceptableOrUnknown(data['trip_id']!, _tripIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tripIdMeta);
+    }
+    if (data.containsKey('leg_id')) {
+      context.handle(
+        _legIdMeta,
+        legId.isAcceptableOrUnknown(data['leg_id']!, _legIdMeta),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    }
+    if (data.containsKey('lat')) {
+      context.handle(
+        _latMeta,
+        lat.isAcceptableOrUnknown(data['lat']!, _latMeta),
+      );
+    }
+    if (data.containsKey('lon')) {
+      context.handle(
+        _lonMeta,
+        lon.isAcceptableOrUnknown(data['lon']!, _lonMeta),
+      );
+    }
+    if (data.containsKey('osm_id')) {
+      context.handle(
+        _osmIdMeta,
+        osmId.isAcceptableOrUnknown(data['osm_id']!, _osmIdMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PlannedStop map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PlannedStop(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      tripId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}trip_id'],
+      )!,
+      legId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}leg_id'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      ),
+      lat: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lat'],
+      ),
+      lon: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}lon'],
+      ),
+      osmId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}osm_id'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PlannedStopsTable createAlias(String alias) {
+    return $PlannedStopsTable(attachedDatabase, alias);
+  }
+}
+
+class PlannedStop extends DataClass implements Insertable<PlannedStop> {
+  final int id;
+  final int tripId;
+
+  /// SET NULL, NOT CASCADE. Inserting a stop mid-trip replaces the leg that
+  /// spanned it; regenerateLegs moves these onto the new leg, and one it
+  /// cannot place stays on the trip rather than vanishing with the old road.
+  final int? legId;
+  final String name;
+
+  /// The downloaded place's category (viewpoint, restaurant…), or null when
+  /// typed.
+  final String? category;
+  final double? lat;
+  final double? lon;
+
+  /// "node/123" when picked from OpenStreetMap, so the same place is
+  /// recognised as already planned. Pois are replaced wholesale on every
+  /// download, so their row ids cannot be kept.
+  final String? osmId;
+  final String? note;
+  final DateTime createdAt;
+  const PlannedStop({
+    required this.id,
+    required this.tripId,
+    this.legId,
+    required this.name,
+    this.category,
+    this.lat,
+    this.lon,
+    this.osmId,
+    this.note,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['trip_id'] = Variable<int>(tripId);
+    if (!nullToAbsent || legId != null) {
+      map['leg_id'] = Variable<int>(legId);
+    }
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || category != null) {
+      map['category'] = Variable<String>(category);
+    }
+    if (!nullToAbsent || lat != null) {
+      map['lat'] = Variable<double>(lat);
+    }
+    if (!nullToAbsent || lon != null) {
+      map['lon'] = Variable<double>(lon);
+    }
+    if (!nullToAbsent || osmId != null) {
+      map['osm_id'] = Variable<String>(osmId);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PlannedStopsCompanion toCompanion(bool nullToAbsent) {
+    return PlannedStopsCompanion(
+      id: Value(id),
+      tripId: Value(tripId),
+      legId: legId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(legId),
+      name: Value(name),
+      category: category == null && nullToAbsent
+          ? const Value.absent()
+          : Value(category),
+      lat: lat == null && nullToAbsent ? const Value.absent() : Value(lat),
+      lon: lon == null && nullToAbsent ? const Value.absent() : Value(lon),
+      osmId: osmId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(osmId),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PlannedStop.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PlannedStop(
+      id: serializer.fromJson<int>(json['id']),
+      tripId: serializer.fromJson<int>(json['tripId']),
+      legId: serializer.fromJson<int?>(json['legId']),
+      name: serializer.fromJson<String>(json['name']),
+      category: serializer.fromJson<String?>(json['category']),
+      lat: serializer.fromJson<double?>(json['lat']),
+      lon: serializer.fromJson<double?>(json['lon']),
+      osmId: serializer.fromJson<String?>(json['osmId']),
+      note: serializer.fromJson<String?>(json['note']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'tripId': serializer.toJson<int>(tripId),
+      'legId': serializer.toJson<int?>(legId),
+      'name': serializer.toJson<String>(name),
+      'category': serializer.toJson<String?>(category),
+      'lat': serializer.toJson<double?>(lat),
+      'lon': serializer.toJson<double?>(lon),
+      'osmId': serializer.toJson<String?>(osmId),
+      'note': serializer.toJson<String?>(note),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PlannedStop copyWith({
+    int? id,
+    int? tripId,
+    Value<int?> legId = const Value.absent(),
+    String? name,
+    Value<String?> category = const Value.absent(),
+    Value<double?> lat = const Value.absent(),
+    Value<double?> lon = const Value.absent(),
+    Value<String?> osmId = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+    DateTime? createdAt,
+  }) => PlannedStop(
+    id: id ?? this.id,
+    tripId: tripId ?? this.tripId,
+    legId: legId.present ? legId.value : this.legId,
+    name: name ?? this.name,
+    category: category.present ? category.value : this.category,
+    lat: lat.present ? lat.value : this.lat,
+    lon: lon.present ? lon.value : this.lon,
+    osmId: osmId.present ? osmId.value : this.osmId,
+    note: note.present ? note.value : this.note,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  PlannedStop copyWithCompanion(PlannedStopsCompanion data) {
+    return PlannedStop(
+      id: data.id.present ? data.id.value : this.id,
+      tripId: data.tripId.present ? data.tripId.value : this.tripId,
+      legId: data.legId.present ? data.legId.value : this.legId,
+      name: data.name.present ? data.name.value : this.name,
+      category: data.category.present ? data.category.value : this.category,
+      lat: data.lat.present ? data.lat.value : this.lat,
+      lon: data.lon.present ? data.lon.value : this.lon,
+      osmId: data.osmId.present ? data.osmId.value : this.osmId,
+      note: data.note.present ? data.note.value : this.note,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlannedStop(')
+          ..write('id: $id, ')
+          ..write('tripId: $tripId, ')
+          ..write('legId: $legId, ')
+          ..write('name: $name, ')
+          ..write('category: $category, ')
+          ..write('lat: $lat, ')
+          ..write('lon: $lon, ')
+          ..write('osmId: $osmId, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    tripId,
+    legId,
+    name,
+    category,
+    lat,
+    lon,
+    osmId,
+    note,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PlannedStop &&
+          other.id == this.id &&
+          other.tripId == this.tripId &&
+          other.legId == this.legId &&
+          other.name == this.name &&
+          other.category == this.category &&
+          other.lat == this.lat &&
+          other.lon == this.lon &&
+          other.osmId == this.osmId &&
+          other.note == this.note &&
+          other.createdAt == this.createdAt);
+}
+
+class PlannedStopsCompanion extends UpdateCompanion<PlannedStop> {
+  final Value<int> id;
+  final Value<int> tripId;
+  final Value<int?> legId;
+  final Value<String> name;
+  final Value<String?> category;
+  final Value<double?> lat;
+  final Value<double?> lon;
+  final Value<String?> osmId;
+  final Value<String?> note;
+  final Value<DateTime> createdAt;
+  const PlannedStopsCompanion({
+    this.id = const Value.absent(),
+    this.tripId = const Value.absent(),
+    this.legId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.category = const Value.absent(),
+    this.lat = const Value.absent(),
+    this.lon = const Value.absent(),
+    this.osmId = const Value.absent(),
+    this.note = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  PlannedStopsCompanion.insert({
+    this.id = const Value.absent(),
+    required int tripId,
+    this.legId = const Value.absent(),
+    required String name,
+    this.category = const Value.absent(),
+    this.lat = const Value.absent(),
+    this.lon = const Value.absent(),
+    this.osmId = const Value.absent(),
+    this.note = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : tripId = Value(tripId),
+       name = Value(name);
+  static Insertable<PlannedStop> custom({
+    Expression<int>? id,
+    Expression<int>? tripId,
+    Expression<int>? legId,
+    Expression<String>? name,
+    Expression<String>? category,
+    Expression<double>? lat,
+    Expression<double>? lon,
+    Expression<String>? osmId,
+    Expression<String>? note,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tripId != null) 'trip_id': tripId,
+      if (legId != null) 'leg_id': legId,
+      if (name != null) 'name': name,
+      if (category != null) 'category': category,
+      if (lat != null) 'lat': lat,
+      if (lon != null) 'lon': lon,
+      if (osmId != null) 'osm_id': osmId,
+      if (note != null) 'note': note,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  PlannedStopsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? tripId,
+    Value<int?>? legId,
+    Value<String>? name,
+    Value<String?>? category,
+    Value<double?>? lat,
+    Value<double?>? lon,
+    Value<String?>? osmId,
+    Value<String?>? note,
+    Value<DateTime>? createdAt,
+  }) {
+    return PlannedStopsCompanion(
+      id: id ?? this.id,
+      tripId: tripId ?? this.tripId,
+      legId: legId ?? this.legId,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      lat: lat ?? this.lat,
+      lon: lon ?? this.lon,
+      osmId: osmId ?? this.osmId,
+      note: note ?? this.note,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (tripId.present) {
+      map['trip_id'] = Variable<int>(tripId.value);
+    }
+    if (legId.present) {
+      map['leg_id'] = Variable<int>(legId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (lat.present) {
+      map['lat'] = Variable<double>(lat.value);
+    }
+    if (lon.present) {
+      map['lon'] = Variable<double>(lon.value);
+    }
+    if (osmId.present) {
+      map['osm_id'] = Variable<String>(osmId.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlannedStopsCompanion(')
+          ..write('id: $id, ')
+          ..write('tripId: $tripId, ')
+          ..write('legId: $legId, ')
+          ..write('name: $name, ')
+          ..write('category: $category, ')
+          ..write('lat: $lat, ')
+          ..write('lon: $lon, ')
+          ..write('osmId: $osmId, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PoisTable extends Pois with TableInfo<$PoisTable, Poi> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -10177,6 +10776,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TripsTable trips = $TripsTable(this);
   late final $StopsTable stops = $StopsTable(this);
   late final $LegsTable legs = $LegsTable(this);
+  late final $PlannedStopsTable plannedStops = $PlannedStopsTable(this);
   late final $PoisTable pois = $PoisTable(this);
   late final $PoiContactsTable poiContacts = $PoiContactsTable(this);
   late final $ImportBatchesTable importBatches = $ImportBatchesTable(this);
@@ -10208,6 +10808,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     trips,
     stops,
     legs,
+    plannedStops,
     pois,
     poiContacts,
     importBatches,
@@ -10253,6 +10854,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('legs', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'trips',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('planned_stops', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'legs',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('planned_stops', kind: UpdateKind.update)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -10476,6 +11091,24 @@ final class $$TripsTableReferences
     ).filter((f) => f.tripId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_legsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$PlannedStopsTable, List<PlannedStop>>
+  _plannedStopsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.plannedStops,
+    aliasName: 'trips__id__planned_stops__trip_id',
+  );
+
+  $$PlannedStopsTableProcessedTableManager get plannedStopsRefs {
+    final manager = $$PlannedStopsTableTableManager(
+      $_db,
+      $_db.plannedStops,
+    ).filter((f) => f.tripId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_plannedStopsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -10736,6 +11369,31 @@ class $$TripsTableFilterComposer extends Composer<_$AppDatabase, $TripsTable> {
           }) => $$LegsTableFilterComposer(
             $db: $db,
             $table: $db.legs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> plannedStopsRefs(
+    Expression<bool> Function($$PlannedStopsTableFilterComposer f) f,
+  ) {
+    final $$PlannedStopsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.plannedStops,
+      getReferencedColumn: (t) => t.tripId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlannedStopsTableFilterComposer(
+            $db: $db,
+            $table: $db.plannedStops,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -11098,6 +11756,31 @@ class $$TripsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> plannedStopsRefs<T extends Object>(
+    Expression<T> Function($$PlannedStopsTableAnnotationComposer a) f,
+  ) {
+    final $$PlannedStopsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.plannedStops,
+      getReferencedColumn: (t) => t.tripId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlannedStopsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.plannedStops,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> poisRefs<T extends Object>(
     Expression<T> Function($$PoisTableAnnotationComposer a) f,
   ) {
@@ -11340,6 +12023,7 @@ class $$TripsTableTableManager
           PrefetchHooks Function({
             bool stopsRefs,
             bool legsRefs,
+            bool plannedStopsRefs,
             bool poisRefs,
             bool importBatchesRefs,
             bool contactsRefs,
@@ -11410,6 +12094,7 @@ class $$TripsTableTableManager
               ({
                 stopsRefs = false,
                 legsRefs = false,
+                plannedStopsRefs = false,
                 poisRefs = false,
                 importBatchesRefs = false,
                 contactsRefs = false,
@@ -11425,6 +12110,7 @@ class $$TripsTableTableManager
                   explicitlyWatchedTables: [
                     if (stopsRefs) db.stops,
                     if (legsRefs) db.legs,
+                    if (plannedStopsRefs) db.plannedStops,
                     if (poisRefs) db.pois,
                     if (importBatchesRefs) db.importBatches,
                     if (contactsRefs) db.contacts,
@@ -11458,6 +12144,27 @@ class $$TripsTableTableManager
                               ._legsRefsTable(db),
                           managerFromTypedResult: (p0) =>
                               $$TripsTableReferences(db, table, p0).legsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.tripId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (plannedStopsRefs)
+                        await $_getPrefetchedData<
+                          Trip,
+                          $TripsTable,
+                          PlannedStop
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TripsTableReferences
+                              ._plannedStopsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TripsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).plannedStopsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.tripId == item.id,
@@ -11652,6 +12359,7 @@ typedef $$TripsTableProcessedTableManager =
       PrefetchHooks Function({
         bool stopsRefs,
         bool legsRefs,
+        bool plannedStopsRefs,
         bool poisRefs,
         bool importBatchesRefs,
         bool contactsRefs,
@@ -12785,6 +13493,24 @@ final class $$LegsTableReferences
     );
   }
 
+  static MultiTypedResultKey<$PlannedStopsTable, List<PlannedStop>>
+  _plannedStopsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.plannedStops,
+    aliasName: 'legs__id__planned_stops__leg_id',
+  );
+
+  $$PlannedStopsTableProcessedTableManager get plannedStopsRefs {
+    final manager = $$PlannedStopsTableTableManager(
+      $_db,
+      $_db.plannedStops,
+    ).filter((f) => f.legId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_plannedStopsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$PoisTable, List<Poi>> _poisRefsTable(
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
@@ -12935,6 +13661,31 @@ class $$LegsTableFilterComposer extends Composer<_$AppDatabase, $LegsTable> {
           ),
     );
     return composer;
+  }
+
+  Expression<bool> plannedStopsRefs(
+    Expression<bool> Function($$PlannedStopsTableFilterComposer f) f,
+  ) {
+    final $$PlannedStopsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.plannedStops,
+      getReferencedColumn: (t) => t.legId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlannedStopsTableFilterComposer(
+            $db: $db,
+            $table: $db.plannedStops,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<bool> poisRefs(
@@ -13221,6 +13972,31 @@ class $$LegsTableAnnotationComposer
     return composer;
   }
 
+  Expression<T> plannedStopsRefs<T extends Object>(
+    Expression<T> Function($$PlannedStopsTableAnnotationComposer a) f,
+  ) {
+    final $$PlannedStopsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.plannedStops,
+      getReferencedColumn: (t) => t.legId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlannedStopsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.plannedStops,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> poisRefs<T extends Object>(
     Expression<T> Function($$PoisTableAnnotationComposer a) f,
   ) {
@@ -13264,6 +14040,7 @@ class $$LegsTableTableManager
             bool tripId,
             bool fromStopId,
             bool toStopId,
+            bool plannedStopsRefs,
             bool poisRefs,
           })
         > {
@@ -13355,11 +14132,15 @@ class $$LegsTableTableManager
                 tripId = false,
                 fromStopId = false,
                 toStopId = false,
+                plannedStopsRefs = false,
                 poisRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
-                  explicitlyWatchedTables: [if (poisRefs) db.pois],
+                  explicitlyWatchedTables: [
+                    if (plannedStopsRefs) db.plannedStops,
+                    if (poisRefs) db.pois,
+                  ],
                   addJoins:
                       <
                         T extends TableManagerState<
@@ -13420,6 +14201,22 @@ class $$LegsTableTableManager
                       },
                   getPrefetchedDataCallback: (items) async {
                     return [
+                      if (plannedStopsRefs)
+                        await $_getPrefetchedData<Leg, $LegsTable, PlannedStop>(
+                          currentTable: table,
+                          referencedTable: $$LegsTableReferences
+                              ._plannedStopsRefsTable(db),
+                          managerFromTypedResult: (p0) => $$LegsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).plannedStopsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.legId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (poisRefs)
                         await $_getPrefetchedData<Leg, $LegsTable, Poi>(
                           currentTable: table,
@@ -13458,8 +14255,501 @@ typedef $$LegsTableProcessedTableManager =
         bool tripId,
         bool fromStopId,
         bool toStopId,
+        bool plannedStopsRefs,
         bool poisRefs,
       })
+    >;
+typedef $$PlannedStopsTableCreateCompanionBuilder =
+    PlannedStopsCompanion Function({
+      Value<int> id,
+      required int tripId,
+      Value<int?> legId,
+      required String name,
+      Value<String?> category,
+      Value<double?> lat,
+      Value<double?> lon,
+      Value<String?> osmId,
+      Value<String?> note,
+      Value<DateTime> createdAt,
+    });
+typedef $$PlannedStopsTableUpdateCompanionBuilder =
+    PlannedStopsCompanion Function({
+      Value<int> id,
+      Value<int> tripId,
+      Value<int?> legId,
+      Value<String> name,
+      Value<String?> category,
+      Value<double?> lat,
+      Value<double?> lon,
+      Value<String?> osmId,
+      Value<String?> note,
+      Value<DateTime> createdAt,
+    });
+
+final class $$PlannedStopsTableReferences
+    extends BaseReferences<_$AppDatabase, $PlannedStopsTable, PlannedStop> {
+  $$PlannedStopsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $TripsTable _tripIdTable(_$AppDatabase db) =>
+      db.trips.createAlias('planned_stops__trip_id__trips__id');
+
+  $$TripsTableProcessedTableManager get tripId {
+    final $_column = $_itemColumn<int>('trip_id')!;
+
+    final manager = $$TripsTableTableManager(
+      $_db,
+      $_db.trips,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_tripIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LegsTable _legIdTable(_$AppDatabase db) =>
+      db.legs.createAlias('planned_stops__leg_id__legs__id');
+
+  $$LegsTableProcessedTableManager? get legId {
+    final $_column = $_itemColumn<int>('leg_id');
+    if ($_column == null) return null;
+    final manager = $$LegsTableTableManager(
+      $_db,
+      $_db.legs,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_legIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PlannedStopsTableFilterComposer
+    extends Composer<_$AppDatabase, $PlannedStopsTable> {
+  $$PlannedStopsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lon => $composableBuilder(
+    column: $table.lon,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get osmId => $composableBuilder(
+    column: $table.osmId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TripsTableFilterComposer get tripId {
+    final $$TripsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tripId,
+      referencedTable: $db.trips,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TripsTableFilterComposer(
+            $db: $db,
+            $table: $db.trips,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LegsTableFilterComposer get legId {
+    final $$LegsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.legId,
+      referencedTable: $db.legs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LegsTableFilterComposer(
+            $db: $db,
+            $table: $db.legs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlannedStopsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlannedStopsTable> {
+  $$PlannedStopsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lat => $composableBuilder(
+    column: $table.lat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lon => $composableBuilder(
+    column: $table.lon,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get osmId => $composableBuilder(
+    column: $table.osmId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TripsTableOrderingComposer get tripId {
+    final $$TripsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tripId,
+      referencedTable: $db.trips,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TripsTableOrderingComposer(
+            $db: $db,
+            $table: $db.trips,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LegsTableOrderingComposer get legId {
+    final $$LegsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.legId,
+      referencedTable: $db.legs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LegsTableOrderingComposer(
+            $db: $db,
+            $table: $db.legs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlannedStopsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlannedStopsTable> {
+  $$PlannedStopsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<double> get lat =>
+      $composableBuilder(column: $table.lat, builder: (column) => column);
+
+  GeneratedColumn<double> get lon =>
+      $composableBuilder(column: $table.lon, builder: (column) => column);
+
+  GeneratedColumn<String> get osmId =>
+      $composableBuilder(column: $table.osmId, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$TripsTableAnnotationComposer get tripId {
+    final $$TripsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tripId,
+      referencedTable: $db.trips,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TripsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.trips,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LegsTableAnnotationComposer get legId {
+    final $$LegsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.legId,
+      referencedTable: $db.legs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LegsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.legs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlannedStopsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PlannedStopsTable,
+          PlannedStop,
+          $$PlannedStopsTableFilterComposer,
+          $$PlannedStopsTableOrderingComposer,
+          $$PlannedStopsTableAnnotationComposer,
+          $$PlannedStopsTableCreateCompanionBuilder,
+          $$PlannedStopsTableUpdateCompanionBuilder,
+          (PlannedStop, $$PlannedStopsTableReferences),
+          PlannedStop,
+          PrefetchHooks Function({bool tripId, bool legId})
+        > {
+  $$PlannedStopsTableTableManager(_$AppDatabase db, $PlannedStopsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PlannedStopsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlannedStopsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlannedStopsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> tripId = const Value.absent(),
+                Value<int?> legId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> category = const Value.absent(),
+                Value<double?> lat = const Value.absent(),
+                Value<double?> lon = const Value.absent(),
+                Value<String?> osmId = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => PlannedStopsCompanion(
+                id: id,
+                tripId: tripId,
+                legId: legId,
+                name: name,
+                category: category,
+                lat: lat,
+                lon: lon,
+                osmId: osmId,
+                note: note,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int tripId,
+                Value<int?> legId = const Value.absent(),
+                required String name,
+                Value<String?> category = const Value.absent(),
+                Value<double?> lat = const Value.absent(),
+                Value<double?> lon = const Value.absent(),
+                Value<String?> osmId = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => PlannedStopsCompanion.insert(
+                id: id,
+                tripId: tripId,
+                legId: legId,
+                name: name,
+                category: category,
+                lat: lat,
+                lon: lon,
+                osmId: osmId,
+                note: note,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PlannedStopsTable, PlannedStop>(table),
+                  $$PlannedStopsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({tripId = false, legId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (tripId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.tripId,
+                                referencedTable: $$PlannedStopsTableReferences
+                                    ._tripIdTable(db),
+                                referencedColumn: $$PlannedStopsTableReferences
+                                    ._tripIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (legId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.legId,
+                                referencedTable: $$PlannedStopsTableReferences
+                                    ._legIdTable(db),
+                                referencedColumn: $$PlannedStopsTableReferences
+                                    ._legIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PlannedStopsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PlannedStopsTable,
+      PlannedStop,
+      $$PlannedStopsTableFilterComposer,
+      $$PlannedStopsTableOrderingComposer,
+      $$PlannedStopsTableAnnotationComposer,
+      $$PlannedStopsTableCreateCompanionBuilder,
+      $$PlannedStopsTableUpdateCompanionBuilder,
+      (PlannedStop, $$PlannedStopsTableReferences),
+      PlannedStop,
+      PrefetchHooks Function({bool tripId, bool legId})
     >;
 typedef $$PoisTableCreateCompanionBuilder =
     PoisCompanion Function({
@@ -20585,6 +21875,8 @@ class $AppDatabaseManager {
   $$StopsTableTableManager get stops =>
       $$StopsTableTableManager(_db, _db.stops);
   $$LegsTableTableManager get legs => $$LegsTableTableManager(_db, _db.legs);
+  $$PlannedStopsTableTableManager get plannedStops =>
+      $$PlannedStopsTableTableManager(_db, _db.plannedStops);
   $$PoisTableTableManager get pois => $$PoisTableTableManager(_db, _db.pois);
   $$PoiContactsTableTableManager get poiContacts =>
       $$PoiContactsTableTableManager(_db, _db.poiContacts);

@@ -74,6 +74,41 @@ class Stops extends Table {
   IntColumn get stayContactId => integer().nullable()();
 }
 
+/// A place you mean to stop at on the way — a viewpoint, a waterfall, lunch
+/// (v7). Picked from the places downloaded along the leg, or typed by name.
+///
+/// What goes home in the plan, so somebody there knows the road has more on
+/// it than two town names.
+class PlannedStops extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get tripId =>
+      integer().references(Trips, #id, onDelete: KeyAction.cascade)();
+
+  /// SET NULL, NOT CASCADE. Inserting a stop mid-trip replaces the leg that
+  /// spanned it; regenerateLegs moves these onto the new leg, and one it
+  /// cannot place stays on the trip rather than vanishing with the old road.
+  IntColumn get legId => integer().nullable().references(
+    Legs,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
+
+  TextColumn get name => text()();
+
+  /// The downloaded place's category (viewpoint, restaurant…), or null when
+  /// typed.
+  TextColumn get category => text().nullable()();
+  RealColumn get lat => real().nullable()();
+  RealColumn get lon => real().nullable()();
+
+  /// "node/123" when picked from OpenStreetMap, so the same place is
+  /// recognised as already planned. Pois are replaced wholesale on every
+  /// download, so their row ids cannot be kept.
+  TextColumn get osmId => text().nullable()();
+  TextColumn get note => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
 /// A Leg is a first-class entity, not a pointer between two Stops. The
 /// original problem was "what is between A and B", so the connection has to
 /// hold data: mode, planned times, route line, corridor width, its own POIs.

@@ -167,6 +167,20 @@ Diary → tap the row → the number is copied → **Open dialer** → paste →
 
 Or swipe the row right to do the same thing without aiming.
 
+**To plan viewpoints and other stops on the way**
+
+More → **Getting between stops** → tap a leg. Under **On the road**, tap a
+viewpoint, waterfall, cave or any place, then **Add to the plan for this
+leg**. To add one that isn't on the list, tap **ADD** next to **Planned stops
+on the way** and type its name. A location is optional; paste it from Google
+Maps to get the kilometre and directions.
+
+Planned stops show at the top of the leg, in road order, and go home under
+their leg when you tap **Send the plan home**.
+
+Viewpoints, waterfalls and caves come with **Download everything**. If you
+downloaded before this version, run it again on WiFi to get them.
+
 **To get to a place in your diary**
 
 Open the entry. Under **Where it is** there is a small map with the place

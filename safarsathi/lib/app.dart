@@ -41,6 +41,7 @@ import 'features/import/presentation/more_screen.dart';
 import 'features/discovery/data/corridor_sync.dart';
 import 'features/discovery/data/discovery.dart';
 import 'features/discovery/data/geo.dart';
+import 'features/contacts/data/place_location.dart' show directionsUrl;
 import 'features/discovery/data/geocoder.dart';
 import 'features/discovery/presentation/discovery_screen.dart';
 import 'features/discovery/presentation/poi_detail_screen.dart';
@@ -71,6 +72,8 @@ import 'features/settings/presentation/settings_screen.dart';
 import 'features/trips/presentation/itinerary_screen.dart';
 import 'features/trips/presentation/place_picker_sheet.dart';
 import 'features/trips/presentation/stay_picker_sheet.dart';
+import 'features/trips/presentation/planned_stop_dialog.dart';
+import 'features/trips/data/planned_stops.dart';
 import 'features/trips/data/stay.dart';
 import 'features/weather/data/weather_sync.dart';
 import 'features/weather/presentation/weather_screen.dart';
@@ -392,7 +395,7 @@ class _HomeState extends State<_Home> {
     MaterialPageRoute<void>(
       builder: (discoveryContext) => DiscoveryScreen(
         discovery: watchLegDiscovery(widget.db, legId),
-        onOpen: (place) => _openPoi(discoveryContext, tripId, place),
+        onOpen: (place) => _openPoi(discoveryContext, tripId, legId, place),
       ),
     ),
   );
@@ -400,6 +403,7 @@ class _HomeState extends State<_Home> {
   Future<void> _openPoi(
     BuildContext context,
     int tripId,
+    int legId,
     CorridorPlace place,
   ) async {
     final db = widget.db;
@@ -416,6 +420,10 @@ class _HomeState extends State<_Home> {
         break;
       }
     }
+    final osmId = place.osmId;
+    final planned =
+        osmId != null &&
+        await isPlacePlanned(db, legId: legId, osmId: osmId);
     if (!context.mounted) return;
 
     await Navigator.of(context).push(
@@ -423,6 +431,12 @@ class _HomeState extends State<_Home> {
         builder: (poiContext) => PoiDetailScreen(
           place: place,
           alreadySaved: saved,
+          planned: planned,
+          onTogglePlan: (plan) => plan
+              ? planPlace(db, tripId: tripId, legId: legId, place: place)
+              : osmId == null
+              ? Future.value()
+              : unplanPlace(db, legId: legId, osmId: osmId),
           onCopy: (phone) => actions.copyNumber(phone.phoneRaw),
           onOpenDialer: (phone) => actions.openDialerFor(phone.phoneRaw),
           onOpenMaps: () => actions.openMaps(googleMapsUrl(place)),
@@ -617,7 +631,30 @@ class _HomeState extends State<_Home> {
         transport: watchLegTransport(widget.db, legId),
         onEditTransport: () => _openLegForm(detailContext, legId),
         onSeeAll: () => _openDiscovery(detailContext, tripId, legId),
-        onOpenPlace: (place) => _openPoi(detailContext, tripId, place),
+        onOpenPlace: (place) =>
+            _openPoi(detailContext, tripId, legId, place),
+        onAddPlanned: () async {
+          final discovery = await watchLegDiscovery(widget.db, legId).first;
+          if (!detailContext.mounted) return;
+          final input = await showPlannedStopDialog(
+            detailContext,
+            legName: '${discovery.fromName} → ${discovery.toName}',
+          );
+          if (input == null) return;
+          await planStop(
+            widget.db,
+            tripId: tripId,
+            legId: legId,
+            name: input.name,
+            lat: input.lat,
+            lon: input.lon,
+            note: input.note,
+          );
+        },
+        onRemovePlanned: (stop) => unplanStop(widget.db, stop.id),
+        onDirectionsTo: (stop) =>
+            ContactActions(dao: widget.db.contactsDao, tripId: tripId)
+                .openMaps(directionsUrl(LatLng(stop.lat!, stop.lon!))),
         // The diary's own entry screen, so a number reached from the road is
         // called, copied and confirmed exactly as it would be from the diary
         // — one set of actions, one trust state, not a second copy of either.

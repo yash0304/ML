@@ -14,6 +14,8 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../discovery/data/discovery.dart' show legCorridor;
+import 'planned_stops.dart';
 import 'stay.dart' show chosenStay;
 
 const _months = [
@@ -33,6 +35,8 @@ String formatPlan({
   required List<Leg> legs,
   required List<Contact> diary,
   List<Traveller> travellers = const [],
+  Map<int, List<PlannedOnTheWay>> plannedByLeg = const {},
+  List<PlannedStop> plannedElsewhere = const [],
 }) {
   final out = StringBuffer();
   final byId = {for (final s in stops) s.id: s};
@@ -90,6 +94,21 @@ String formatPlan({
         if (l.mode != null && l.mode!.trim().isNotEmpty) l.mode!.trim(),
       ];
       out.writeln(parts.join(' · '));
+      // THE ROAD, NOT ONLY ITS ENDS. Where you mean to stop tells somebody
+      // at home where you will be at two in the afternoon, and which
+      // viewpoint to ask about when you are out of signal.
+      for (final p in plannedByLeg[l.id] ?? const <PlannedOnTheWay>[]) {
+        out.writeln('  - ${_plannedLine(p.stop, p.alongRouteKm)}');
+      }
+    }
+  }
+
+  if (plannedElsewhere.isNotEmpty) {
+    out
+      ..writeln()
+      ..writeln('Also planned:');
+    for (final p in plannedElsewhere) {
+      out.writeln('  - ${_plannedLine(p, null)}');
     }
   }
 
@@ -101,6 +120,13 @@ String formatPlan({
     );
   return out.toString().trimRight();
 }
+
+/// "Mawkdok viewpoint, 14 km in — lunch" — kilometres only where known.
+String _plannedLine(PlannedStop p, double? km) => [
+  p.name,
+  if (km != null) ', ${km.round()} km in',
+  if (p.note != null) ' — ${p.note}',
+].join();
 
 /// The message for [tripId], read from the database.
 Future<String> buildPlanMessage(AppDatabase db, int tripId) async {
@@ -121,12 +147,35 @@ Future<String> buildPlanMessage(AppDatabase db, int tripId) async {
   final travellers = await (db.select(
     db.travellers,
   )..where((t) => t.tripId.equals(tripId))).get();
+  final planned = await (db.select(
+    db.plannedStops,
+  )..where((p) => p.tripId.equals(tripId))).get();
 
+  final stopById = {for (final s in stops) s.id: s};
+  final legIds = {for (final l in legs) l.id};
   return formatPlan(
     trip: trip,
     stops: stops,
     legs: legs,
     diary: diary,
     travellers: travellers,
+    plannedByLeg: {
+      for (final l in legs)
+        l.id: orderPlanned(
+          [
+            for (final p in planned)
+              if (p.legId == l.id) p,
+          ],
+          legCorridor(
+            l,
+            from: stopById[l.fromStopId],
+            to: stopById[l.toStopId],
+          ),
+        ),
+    },
+    plannedElsewhere: [
+      for (final p in planned)
+        if (p.legId == null || !legIds.contains(p.legId)) p,
+    ],
   );
 }
