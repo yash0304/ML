@@ -15,6 +15,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../discovery/data/discovery.dart' show legCorridor;
+import 'driver.dart';
 import 'planned_stops.dart';
 import 'stay.dart' show chosenStay;
 
@@ -91,9 +92,15 @@ String formatPlan({
         if (l.plannedDeparture != null)
           '${_date(l.plannedDeparture!)} ${_time(l.plannedDeparture!)}',
         '${byId[l.fromStopId]!.name} → ${byId[l.toStopId]!.name}',
-        if (l.mode != null && l.mode!.trim().isNotEmpty) l.mode!.trim(),
+        ?rideLine(mode: l.mode, vehicle: l.vehicleNumber),
       ];
       out.writeln(parts.join(' · '));
+      // WHO IS DRIVING, with a number. If the car is late or the phone is
+      // out of signal, this is who somebody at home can ring.
+      final driver = driverOf(l, diary);
+      if (driver != null) {
+        out.writeln('  Driver: ${driver.name}, ${driver.phoneRaw}');
+      }
       // THE ROAD, NOT ONLY ITS ENDS. Where you mean to stop tells somebody
       // at home where you will be at two in the afternoon, and which
       // viewpoint to ask about when you are out of signal.

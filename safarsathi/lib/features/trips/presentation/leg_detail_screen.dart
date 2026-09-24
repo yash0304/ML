@@ -38,6 +38,12 @@ class LegDetailScreen extends StatelessWidget {
   /// Adds a stop on the way by name. Null hides the button.
   final VoidCallback? onAddPlanned;
 
+  /// Choose or change who is driving this leg.
+  final VoidCallback? onChooseDriver;
+
+  /// Opens the driver's diary entry, to call them.
+  final void Function(Contact driver)? onOpenDriver;
+
   /// Takes a planned stop out of the plan.
   final Future<void> Function(PlannedStop stop)? onRemovePlanned;
 
@@ -61,6 +67,8 @@ class LegDetailScreen extends StatelessWidget {
     this.onOpenPlace,
     this.onOpenContact,
     this.onAddPlanned,
+    this.onChooseDriver,
+    this.onOpenDriver,
     this.onRemovePlanned,
     this.onDirectionsTo,
   });
@@ -92,6 +100,8 @@ class LegDetailScreen extends StatelessWidget {
                     _Transport(
                       transport: transport,
                       onEdit: onEditTransport,
+                      onChooseDriver: onChooseDriver,
+                      onOpenDriver: onOpenDriver,
                     ),
                     // WHAT YOU MEAN TO STOP FOR, right under how you are
                     // travelling: it is the plan for the day, and what goes
@@ -144,6 +154,10 @@ class LegTransport {
   /// Where the arrival sunset is measured, for the row that shows it.
   final String? toName;
 
+  /// Who is taking you, and in what.
+  final Contact? driver;
+  final String? vehicleNumber;
+
   const LegTransport({
     this.mode,
     this.plannedDeparture,
@@ -153,6 +167,8 @@ class LegTransport {
     this.departSun,
     this.arriveSun,
     this.toName,
+    this.driver,
+    this.vehicleNumber,
   });
 
   /// "Leaves 40 min after sunset — in the dark." Null when the times are fine
@@ -169,9 +185,15 @@ class LegTransport {
       mode == null &&
       plannedDeparture == null &&
       plannedArrival == null &&
-      note == null;
+      note == null &&
+      vehicleNumber == null;
 
-  factory LegTransport.fromRow(Leg leg, {Stop? from, Stop? to}) {
+  factory LegTransport.fromRow(
+    Leg leg, {
+    Stop? from,
+    Stop? to,
+    Contact? driver,
+  }) {
     SunTimes? sunAt(Stop? stop, DateTime? day) =>
         stop?.lat == null || stop?.lon == null || day == null
         ? null
@@ -192,6 +214,8 @@ class LegTransport {
         leg.plannedArrival ?? leg.plannedDeparture ?? to?.arrivalDate,
       ),
       toName: to?.name,
+      driver: driver,
+      vehicleNumber: leg.vehicleNumber,
     );
   }
 }
@@ -204,7 +228,8 @@ class LegTransport {
 /// stream that watched only `legs` would keep an old sunset after a stop was
 /// moved.
 Stream<LegTransport> watchLegTransport(AppDatabase db, int legId) => db
-    .customSelect('SELECT 1', readsFrom: {db.legs, db.stops})
+    // Contacts too: the driver's name and number come from the diary.
+    .customSelect('SELECT 1', readsFrom: {db.legs, db.stops, db.contacts})
     .watch()
     .asyncMap((_) async {
       final leg = await (db.select(
@@ -218,14 +243,26 @@ Stream<LegTransport> watchLegTransport(AppDatabase db, int legId) => db
         leg,
         from: byId[leg.fromStopId],
         to: byId[leg.toStopId],
+        driver: leg.driverContactId == null
+            ? null
+            : await (db.select(db.contacts)
+                    ..where((c) => c.id.equals(leg.driverContactId!)))
+                  .getSingleOrNull(),
       );
     });
 
 class _Transport extends StatelessWidget {
   final Stream<LegTransport> transport;
   final VoidCallback? onEdit;
+  final VoidCallback? onChooseDriver;
+  final void Function(Contact driver)? onOpenDriver;
 
-  const _Transport({required this.transport, this.onEdit});
+  const _Transport({
+    required this.transport,
+    this.onEdit,
+    this.onChooseDriver,
+    this.onOpenDriver,
+  });
 
   static String _time(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/'
@@ -290,7 +327,16 @@ class _Transport extends StatelessWidget {
                     : _time(t.plannedArrival!),
               ),
               _Field(label: 'Booked', value: t.isBooked ? 'Yes' : 'Not yet'),
+              if (t.vehicleNumber != null)
+                _Field(label: 'Vehicle', value: t.vehicleNumber!),
             ],
+            // WHO IS TAKING YOU — shown even with nothing else typed: the
+            // driver is often known before the times are.
+            _DriverRow(
+              driver: t.driver,
+              onChoose: onChooseDriver,
+              onOpen: onOpenDriver,
+            ),
             // THE LIGHT, SHOWN EVEN WITH NOTHING TYPED. Whether the leg can
             // be done before dark is worth knowing before the times are
             // decided — that is when it changes the decision.
@@ -530,6 +576,97 @@ class _PlaceRow extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DriverRow extends StatelessWidget {
+  final Contact? driver;
+  final VoidCallback? onChoose;
+  final void Function(Contact)? onOpen;
+
+  const _DriverRow({this.driver, this.onChoose, this.onOpen});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    final d = driver;
+    if (d == null && onChoose == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        AppTokens.gutter,
+        AppTokens.s12,
+        AppTokens.gutter,
+        AppTokens.s12,
+      ),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: c.rule, width: AppTokens.hairline),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: d == null
+                ? InkWell(
+                    key: const Key('leg-choose-driver'),
+                    onTap: onChoose,
+                    child: Text(
+                      'Who is taking you? Choose the driver from your diary.',
+                      style: AppTokens.captionStyle.copyWith(
+                        color: c.cautionMark,
+                      ),
+                    ),
+                  )
+                : InkWell(
+                    key: const Key('leg-open-driver'),
+                    onTap: onOpen == null ? null : () => onOpen!(d),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Driver',
+                          style: AppTokens.captionStyle.copyWith(
+                            color: c.muted,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                d.name,
+                                style: AppTokens.rowTitleStyle.copyWith(
+                                  color: c.ink,
+                                ),
+                              ),
+                            ),
+                            if (!d.callConfirmed) const TrustDot(),
+                          ],
+                        ),
+                        Text(
+                          d.phoneRaw,
+                          style: AppTokens.numberStyle.copyWith(color: c.ink),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+          if (d != null && onChoose != null)
+            PressScale(
+              key: const Key('leg-change-driver'),
+              onTap: onChoose,
+              child: Text(
+                'CHANGE',
+                style: AppTokens.stencilStyle.copyWith(
+                  fontSize: 9.5,
+                  color: c.signal,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

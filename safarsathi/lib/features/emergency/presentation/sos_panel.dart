@@ -21,6 +21,9 @@ class SosPanel extends StatefulWidget {
   /// The stop the trip plan says you are at, for when there is no fix.
   final Future<String?> Function() nearStop;
 
+  /// Today's vehicle and driver, when a leg is planned today.
+  final Future<String?> Function()? ride;
+
   /// Opens the SMS app. False when there is none to open.
   final Future<bool> Function(Uri sms) openSms;
 
@@ -41,6 +44,7 @@ class SosPanel extends StatefulWidget {
     required this.trusted,
     required this.location,
     required this.nearStop,
+    this.ride,
     required this.openSms,
     required this.share,
     required this.pickPerson,
@@ -75,7 +79,11 @@ class _SosPanelState extends State<SosPanel> {
         skip.future.then((_) => null),
       ]);
     }
-    return sosMessage(fix: fix, nearStop: await widget.nearStop());
+    return sosMessage(
+      fix: fix,
+      nearStop: await widget.nearStop(),
+      ride: await widget.ride?.call(),
+    );
   }
 
   Future<void> _send(TrustedContact person) async {

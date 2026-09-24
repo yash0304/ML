@@ -74,6 +74,7 @@ import 'features/trips/presentation/place_picker_sheet.dart';
 import 'features/trips/presentation/stay_picker_sheet.dart';
 import 'features/trips/presentation/planned_stop_dialog.dart';
 import 'features/trips/data/planned_stops.dart';
+import 'features/trips/data/driver.dart';
 import 'features/trips/data/stay.dart';
 import 'features/weather/data/weather_sync.dart';
 import 'features/weather/presentation/weather_screen.dart';
@@ -651,6 +652,17 @@ class _HomeState extends State<_Home> {
             note: input.note,
           );
         },
+        onChooseDriver: () => _chooseDriver(detailContext, tripId, legId),
+        onOpenDriver: (driver) async {
+          final trip = await watchActiveTripContext(widget.db).first;
+          if (trip == null || !detailContext.mounted) return;
+          await _openEntry(
+            detailContext,
+            trip,
+            driver,
+            ContactActions(dao: widget.db.contactsDao, tripId: trip.tripId),
+          );
+        },
         onRemovePlanned: (stop) => unplanStop(widget.db, stop.id),
         onDirectionsTo: (stop) =>
             ContactActions(dao: widget.db.contactsDao, tripId: tripId)
@@ -695,6 +707,7 @@ class _HomeState extends State<_Home> {
           plannedArrival: leg.plannedArrival,
           isBooked: leg.isBooked,
           note: leg.note,
+          vehicleNumber: leg.vehicleNumber,
           distanceKm: leg.distanceKm,
           onSave:
               ({
@@ -703,6 +716,7 @@ class _HomeState extends State<_Home> {
                 plannedArrival,
                 required isBooked,
                 note,
+                vehicleNumber,
               }) async {
                 await _editor.updateLeg(
                   legId,
@@ -711,6 +725,7 @@ class _HomeState extends State<_Home> {
                   plannedArrival: plannedArrival,
                   isBooked: isBooked,
                   note: note,
+                  vehicleNumber: vehicleNumber,
                 );
                 if (formContext.mounted) Navigator.of(formContext).pop();
               },
@@ -831,6 +846,90 @@ class _HomeState extends State<_Home> {
         ),
       ),
     );
+  }
+
+  /// "Who is taking you?" for one leg — pick, clear, or add a new number —
+  /// then, since one taxi usually does the whole trip, an offer to use the
+  /// same driver on the legs that have nobody yet.
+  Future<void> _chooseDriver(
+    BuildContext context,
+    int tripId,
+    int legId,
+  ) async {
+    final db = widget.db;
+    Future<Leg?> readLeg() => (db.select(
+      db.legs,
+    )..where((l) => l.id.equals(legId))).getSingleOrNull();
+    final leg = await readLeg();
+    if (leg == null) return;
+    final diary = await (db.select(
+      db.contacts,
+    )..where((c) => c.tripId.equals(tripId))).get();
+    if (!context.mounted) return;
+
+    final choice = await showStayPicker(
+      context,
+      stopName: '',
+      title: 'Who is taking you',
+      explainer:
+          'The driver or operator for this leg, from your diary\'s transport '
+          'and local numbers. Their name and number go in the plan you send '
+          'home, with the vehicle number, and in an SOS text on the day.',
+      addLabel: 'Someone else — add their number',
+      options: driverOptions(diary),
+      currentId: driverOf(leg, diary)?.id,
+    );
+    switch (choice) {
+      case null:
+        return;
+      case StayCleared():
+        await setDriver(db, legId, null);
+        return;
+      case StayPicked(:final contactId):
+        await setDriver(db, legId, contactId);
+      case StayAddNew():
+        final trip = await watchActiveTripContext(db).first;
+        if (trip == null || !context.mounted) return;
+        await _openForm(
+          context,
+          trip,
+          initialCategory: ContactCategory.transport,
+          afterSave: (id) => setDriver(db, legId, id),
+        );
+    }
+
+    final chosen = (await readLeg())?.driverContactId;
+    if (chosen == null) return;
+    final others = await legsWithoutDriver(db, tripId, exceptLegId: legId);
+    if (others.isEmpty || !context.mounted) return;
+    final driver = await (db.select(
+      db.contacts,
+    )..where((c) => c.id.equals(chosen))).getSingleOrNull();
+    if (driver == null || !context.mounted) return;
+
+    final all = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('${driver.name} for the whole trip?'),
+        content: Text(
+          '${others.length} other '
+          '${others.length == 1 ? 'leg has' : 'legs have'} nobody driving '
+          'yet. Legs with a driver already keep theirs.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Just this leg'),
+          ),
+          TextButton(
+            key: const Key('driver-all-legs'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text('All ${others.length + 1} legs'),
+          ),
+        ],
+      ),
+    );
+    if (all == true) await setDriverWhereMissing(db, tripId, chosen);
   }
 
   /// "Where are you staying in Shillong?" — pick, clear, or add a new one.
@@ -1086,6 +1185,21 @@ class _HomeState extends State<_Home> {
               trusted: watchTrusted(db),
               location: const DeviceLocation(),
               nearStop: () async => trip.currentStopName,
+              ride: () async {
+                final legs = await (db.select(
+                  db.legs,
+                )..where((l) => l.tripId.equals(trip.tripId))).get();
+                final leg = legToday(legs);
+                if (leg == null) return null;
+                final diary = await (db.select(
+                  db.contacts,
+                )..where((c) => c.tripId.equals(trip.tripId))).get();
+                return rideLine(
+                  mode: leg.mode,
+                  vehicle: leg.vehicleNumber,
+                  driver: driverOf(leg, diary),
+                );
+              },
               openSms: (uri) =>
                   launchUrl(uri, mode: LaunchMode.externalApplication),
               share: (text) => SharePlus.instance.share(

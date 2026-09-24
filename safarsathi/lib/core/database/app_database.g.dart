@@ -1420,6 +1420,28 @@ class $LegsTable extends Legs with TableInfo<$LegsTable, Leg> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _driverContactIdMeta = const VerificationMeta(
+    'driverContactId',
+  );
+  @override
+  late final GeneratedColumn<int> driverContactId = GeneratedColumn<int>(
+    'driver_contact_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _vehicleNumberMeta = const VerificationMeta(
+    'vehicleNumber',
+  );
+  @override
+  late final GeneratedColumn<String> vehicleNumber = GeneratedColumn<String>(
+    'vehicle_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1436,6 +1458,8 @@ class $LegsTable extends Legs with TableInfo<$LegsTable, Leg> {
     distanceKm,
     corridorKm,
     lastSyncedAt,
+    driverContactId,
+    vehicleNumber,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1556,6 +1580,24 @@ class $LegsTable extends Legs with TableInfo<$LegsTable, Leg> {
         ),
       );
     }
+    if (data.containsKey('driver_contact_id')) {
+      context.handle(
+        _driverContactIdMeta,
+        driverContactId.isAcceptableOrUnknown(
+          data['driver_contact_id']!,
+          _driverContactIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('vehicle_number')) {
+      context.handle(
+        _vehicleNumberMeta,
+        vehicleNumber.isAcceptableOrUnknown(
+          data['vehicle_number']!,
+          _vehicleNumberMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1621,6 +1663,14 @@ class $LegsTable extends Legs with TableInfo<$LegsTable, Leg> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_synced_at'],
       ),
+      driverContactId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}driver_contact_id'],
+      ),
+      vehicleNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}vehicle_number'],
+      ),
     );
   }
 
@@ -1651,6 +1701,16 @@ class Leg extends DataClass implements Insertable<Leg> {
   final double? distanceKm;
   final double corridorKm;
   final DateTime? lastSyncedAt;
+
+  /// Who is taking you: the diary entry for the driver or operator (v8).
+  ///
+  /// No foreign key, for the same reason as Stops.stayContactId: a backup
+  /// writes legs before contacts. A deleted entry reads as nobody chosen.
+  final int? driverContactId;
+
+  /// The registration, as typed: "ML 05 A 1234". The one detail somebody
+  /// at home can act on if the car does not arrive (v8).
+  final String? vehicleNumber;
   const Leg({
     required this.id,
     required this.tripId,
@@ -1666,6 +1726,8 @@ class Leg extends DataClass implements Insertable<Leg> {
     this.distanceKm,
     required this.corridorKm,
     this.lastSyncedAt,
+    this.driverContactId,
+    this.vehicleNumber,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1698,6 +1760,12 @@ class Leg extends DataClass implements Insertable<Leg> {
     if (!nullToAbsent || lastSyncedAt != null) {
       map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
     }
+    if (!nullToAbsent || driverContactId != null) {
+      map['driver_contact_id'] = Variable<int>(driverContactId);
+    }
+    if (!nullToAbsent || vehicleNumber != null) {
+      map['vehicle_number'] = Variable<String>(vehicleNumber);
+    }
     return map;
   }
 
@@ -1727,6 +1795,12 @@ class Leg extends DataClass implements Insertable<Leg> {
       lastSyncedAt: lastSyncedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastSyncedAt),
+      driverContactId: driverContactId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(driverContactId),
+      vehicleNumber: vehicleNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(vehicleNumber),
     );
   }
 
@@ -1752,6 +1826,8 @@ class Leg extends DataClass implements Insertable<Leg> {
       distanceKm: serializer.fromJson<double?>(json['distanceKm']),
       corridorKm: serializer.fromJson<double>(json['corridorKm']),
       lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
+      driverContactId: serializer.fromJson<int?>(json['driverContactId']),
+      vehicleNumber: serializer.fromJson<String?>(json['vehicleNumber']),
     );
   }
   @override
@@ -1772,6 +1848,8 @@ class Leg extends DataClass implements Insertable<Leg> {
       'distanceKm': serializer.toJson<double?>(distanceKm),
       'corridorKm': serializer.toJson<double>(corridorKm),
       'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
+      'driverContactId': serializer.toJson<int?>(driverContactId),
+      'vehicleNumber': serializer.toJson<String?>(vehicleNumber),
     };
   }
 
@@ -1790,6 +1868,8 @@ class Leg extends DataClass implements Insertable<Leg> {
     Value<double?> distanceKm = const Value.absent(),
     double? corridorKm,
     Value<DateTime?> lastSyncedAt = const Value.absent(),
+    Value<int?> driverContactId = const Value.absent(),
+    Value<String?> vehicleNumber = const Value.absent(),
   }) => Leg(
     id: id ?? this.id,
     tripId: tripId ?? this.tripId,
@@ -1811,6 +1891,12 @@ class Leg extends DataClass implements Insertable<Leg> {
     distanceKm: distanceKm.present ? distanceKm.value : this.distanceKm,
     corridorKm: corridorKm ?? this.corridorKm,
     lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
+    driverContactId: driverContactId.present
+        ? driverContactId.value
+        : this.driverContactId,
+    vehicleNumber: vehicleNumber.present
+        ? vehicleNumber.value
+        : this.vehicleNumber,
   );
   Leg copyWithCompanion(LegsCompanion data) {
     return Leg(
@@ -1844,6 +1930,12 @@ class Leg extends DataClass implements Insertable<Leg> {
       lastSyncedAt: data.lastSyncedAt.present
           ? data.lastSyncedAt.value
           : this.lastSyncedAt,
+      driverContactId: data.driverContactId.present
+          ? data.driverContactId.value
+          : this.driverContactId,
+      vehicleNumber: data.vehicleNumber.present
+          ? data.vehicleNumber.value
+          : this.vehicleNumber,
     );
   }
 
@@ -1863,7 +1955,9 @@ class Leg extends DataClass implements Insertable<Leg> {
           ..write('routePolyline: $routePolyline, ')
           ..write('distanceKm: $distanceKm, ')
           ..write('corridorKm: $corridorKm, ')
-          ..write('lastSyncedAt: $lastSyncedAt')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('driverContactId: $driverContactId, ')
+          ..write('vehicleNumber: $vehicleNumber')
           ..write(')'))
         .toString();
   }
@@ -1884,6 +1978,8 @@ class Leg extends DataClass implements Insertable<Leg> {
     distanceKm,
     corridorKm,
     lastSyncedAt,
+    driverContactId,
+    vehicleNumber,
   );
   @override
   bool operator ==(Object other) =>
@@ -1902,7 +1998,9 @@ class Leg extends DataClass implements Insertable<Leg> {
           other.routePolyline == this.routePolyline &&
           other.distanceKm == this.distanceKm &&
           other.corridorKm == this.corridorKm &&
-          other.lastSyncedAt == this.lastSyncedAt);
+          other.lastSyncedAt == this.lastSyncedAt &&
+          other.driverContactId == this.driverContactId &&
+          other.vehicleNumber == this.vehicleNumber);
 }
 
 class LegsCompanion extends UpdateCompanion<Leg> {
@@ -1920,6 +2018,8 @@ class LegsCompanion extends UpdateCompanion<Leg> {
   final Value<double?> distanceKm;
   final Value<double> corridorKm;
   final Value<DateTime?> lastSyncedAt;
+  final Value<int?> driverContactId;
+  final Value<String?> vehicleNumber;
   const LegsCompanion({
     this.id = const Value.absent(),
     this.tripId = const Value.absent(),
@@ -1935,6 +2035,8 @@ class LegsCompanion extends UpdateCompanion<Leg> {
     this.distanceKm = const Value.absent(),
     this.corridorKm = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
+    this.driverContactId = const Value.absent(),
+    this.vehicleNumber = const Value.absent(),
   });
   LegsCompanion.insert({
     this.id = const Value.absent(),
@@ -1951,6 +2053,8 @@ class LegsCompanion extends UpdateCompanion<Leg> {
     this.distanceKm = const Value.absent(),
     this.corridorKm = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
+    this.driverContactId = const Value.absent(),
+    this.vehicleNumber = const Value.absent(),
   }) : tripId = Value(tripId),
        fromStopId = Value(fromStopId),
        toStopId = Value(toStopId),
@@ -1970,6 +2074,8 @@ class LegsCompanion extends UpdateCompanion<Leg> {
     Expression<double>? distanceKm,
     Expression<double>? corridorKm,
     Expression<DateTime>? lastSyncedAt,
+    Expression<int>? driverContactId,
+    Expression<String>? vehicleNumber,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1986,6 +2092,8 @@ class LegsCompanion extends UpdateCompanion<Leg> {
       if (distanceKm != null) 'distance_km': distanceKm,
       if (corridorKm != null) 'corridor_km': corridorKm,
       if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
+      if (driverContactId != null) 'driver_contact_id': driverContactId,
+      if (vehicleNumber != null) 'vehicle_number': vehicleNumber,
     });
   }
 
@@ -2004,6 +2112,8 @@ class LegsCompanion extends UpdateCompanion<Leg> {
     Value<double?>? distanceKm,
     Value<double>? corridorKm,
     Value<DateTime?>? lastSyncedAt,
+    Value<int?>? driverContactId,
+    Value<String?>? vehicleNumber,
   }) {
     return LegsCompanion(
       id: id ?? this.id,
@@ -2020,6 +2130,8 @@ class LegsCompanion extends UpdateCompanion<Leg> {
       distanceKm: distanceKm ?? this.distanceKm,
       corridorKm: corridorKm ?? this.corridorKm,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      driverContactId: driverContactId ?? this.driverContactId,
+      vehicleNumber: vehicleNumber ?? this.vehicleNumber,
     );
   }
 
@@ -2068,6 +2180,12 @@ class LegsCompanion extends UpdateCompanion<Leg> {
     if (lastSyncedAt.present) {
       map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
     }
+    if (driverContactId.present) {
+      map['driver_contact_id'] = Variable<int>(driverContactId.value);
+    }
+    if (vehicleNumber.present) {
+      map['vehicle_number'] = Variable<String>(vehicleNumber.value);
+    }
     return map;
   }
 
@@ -2087,7 +2205,9 @@ class LegsCompanion extends UpdateCompanion<Leg> {
           ..write('routePolyline: $routePolyline, ')
           ..write('distanceKm: $distanceKm, ')
           ..write('corridorKm: $corridorKm, ')
-          ..write('lastSyncedAt: $lastSyncedAt')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('driverContactId: $driverContactId, ')
+          ..write('vehicleNumber: $vehicleNumber')
           ..write(')'))
         .toString();
   }
@@ -13419,6 +13539,8 @@ typedef $$LegsTableCreateCompanionBuilder =
       Value<double?> distanceKm,
       Value<double> corridorKm,
       Value<DateTime?> lastSyncedAt,
+      Value<int?> driverContactId,
+      Value<String?> vehicleNumber,
     });
 typedef $$LegsTableUpdateCompanionBuilder =
     LegsCompanion Function({
@@ -13436,6 +13558,8 @@ typedef $$LegsTableUpdateCompanionBuilder =
       Value<double?> distanceKm,
       Value<double> corridorKm,
       Value<DateTime?> lastSyncedAt,
+      Value<int?> driverContactId,
+      Value<String?> vehicleNumber,
     });
 
 final class $$LegsTableReferences
@@ -13591,6 +13715,16 @@ class $$LegsTableFilterComposer extends Composer<_$AppDatabase, $LegsTable> {
 
   ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
     column: $table.lastSyncedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get driverContactId => $composableBuilder(
+    column: $table.driverContactId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get vehicleNumber => $composableBuilder(
+    column: $table.vehicleNumber,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13777,6 +13911,16 @@ class $$LegsTableOrderingComposer extends Composer<_$AppDatabase, $LegsTable> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get driverContactId => $composableBuilder(
+    column: $table.driverContactId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get vehicleNumber => $composableBuilder(
+    column: $table.vehicleNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TripsTableOrderingComposer get tripId {
     final $$TripsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -13900,6 +14044,16 @@ class $$LegsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get lastSyncedAt => $composableBuilder(
     column: $table.lastSyncedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get driverContactId => $composableBuilder(
+    column: $table.driverContactId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get vehicleNumber => $composableBuilder(
+    column: $table.vehicleNumber,
     builder: (column) => column,
   );
 
@@ -14071,6 +14225,8 @@ class $$LegsTableTableManager
                 Value<double?> distanceKm = const Value.absent(),
                 Value<double> corridorKm = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<int?> driverContactId = const Value.absent(),
+                Value<String?> vehicleNumber = const Value.absent(),
               }) => LegsCompanion(
                 id: id,
                 tripId: tripId,
@@ -14086,6 +14242,8 @@ class $$LegsTableTableManager
                 distanceKm: distanceKm,
                 corridorKm: corridorKm,
                 lastSyncedAt: lastSyncedAt,
+                driverContactId: driverContactId,
+                vehicleNumber: vehicleNumber,
               ),
           createCompanionCallback:
               ({
@@ -14103,6 +14261,8 @@ class $$LegsTableTableManager
                 Value<double?> distanceKm = const Value.absent(),
                 Value<double> corridorKm = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<int?> driverContactId = const Value.absent(),
+                Value<String?> vehicleNumber = const Value.absent(),
               }) => LegsCompanion.insert(
                 id: id,
                 tripId: tripId,
@@ -14118,6 +14278,8 @@ class $$LegsTableTableManager
                 distanceKm: distanceKm,
                 corridorKm: corridorKm,
                 lastSyncedAt: lastSyncedAt,
+                driverContactId: driverContactId,
+                vehicleNumber: vehicleNumber,
               ),
           withReferenceMapper: (p0) => p0
               .map(

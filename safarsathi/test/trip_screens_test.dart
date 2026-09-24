@@ -249,6 +249,7 @@ void main() {
                   plannedArrival,
                   required isBooked,
                   note,
+                  vehicleNumber,
                 }) async {},
           ),
         ),
@@ -273,6 +274,7 @@ void main() {
                   plannedArrival,
                   required isBooked,
                   note,
+                  vehicleNumber,
                 }) async {
                   savedMode = mode;
                   savedBooked = isBooked;

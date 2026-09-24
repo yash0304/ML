@@ -167,6 +167,21 @@ Diary → tap the row → the number is copied → **Open dialer** → paste →
 
 Or swipe the row right to do the same thing without aiming.
 
+**Who is taking you between stops**
+
+More → **Getting between stops** → tap a leg.
+
+- **Transport → EDIT:** the mode (taxi, sumo, bus), the times, whether it's
+  booked, and the **vehicle number** (e.g. ML 05 A 1234).
+- **Who is taking you? → Choose:** pick the driver from your diary's transport
+  or local numbers. Or add them with **Someone else — add their number**. If
+  the same taxi does the whole trip, answer **All legs** when asked. Legs
+  that already have a different driver keep theirs.
+
+Tap the driver's name to call them. The vehicle and driver go in **Send the
+plan home**. On a travel day they also go in the **SOS** text, so whoever gets
+it knows what car you are in and who is driving.
+
 **To plan viewpoints and other stops on the way**
 
 More → **Getting between stops** → tap a leg. Under **On the road**, tap a

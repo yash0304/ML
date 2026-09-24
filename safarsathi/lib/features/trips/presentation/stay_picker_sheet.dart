@@ -40,6 +40,9 @@ Future<StayChoice?> showStayPicker(
   required String stopName,
   required List<Contact> options,
   int? currentId,
+  String? title,
+  String? explainer,
+  String? addLabel,
 }) {
   final c = AppTokens.of(context);
   return showModalBottomSheet<StayChoice>(
@@ -55,6 +58,9 @@ Future<StayChoice?> showStayPicker(
           stopName: stopName,
           options: options,
           currentId: currentId,
+          title: title,
+          explainer: explainer,
+          addLabel: addLabel,
           onChoice: (choice) => Navigator.of(sheetContext).pop(choice),
         ),
       ),
@@ -69,12 +75,20 @@ class StayPickerList extends StatelessWidget {
   final int? currentId;
   final ValueChanged<StayChoice> onChoice;
 
+  /// The same list picks a driver for a leg; these replace the stay wording.
+  final String? title;
+  final String? explainer;
+  final String? addLabel;
+
   const StayPickerList({
     super.key,
     required this.stopName,
     required this.options,
     required this.onChoice,
     this.currentId,
+    this.title,
+    this.explainer,
+    this.addLabel,
   });
 
   @override
@@ -86,7 +100,7 @@ class StayPickerList extends StatelessWidget {
       shrinkWrap: true,
       padding: const EdgeInsets.only(bottom: AppTokens.s16),
       children: [
-        StencilLabel('Staying in $stopName'),
+        StencilLabel(title ?? 'Staying in $stopName'),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppTokens.gutter,
@@ -95,10 +109,11 @@ class StayPickerList extends StatelessWidget {
             AppTokens.s8,
           ),
           child: Text(
-            'The one you pick is tonight\'s bed on the Trip page, the stay '
-            'in the plan you send home, and the number that has to be '
-            'confirmed before the trip is ready. The others stay in the '
-            'diary.',
+            explainer ??
+                'The one you pick is tonight\'s bed on the Trip page, the '
+                    'stay in the plan you send home, and the number that has '
+                    'to be confirmed before the trip is ready. The others '
+                    'stay in the diary.',
             style: caption,
           ),
         ),
@@ -112,7 +127,7 @@ class StayPickerList extends StatelessWidget {
         _Action(
           key: const Key('stay-add-new'),
           icon: Icons.add,
-          label: 'Somewhere else — add it',
+          label: addLabel ?? 'Somewhere else — add it',
           color: c.signal,
           onTap: () => onChoice(const StayAddNew()),
         ),

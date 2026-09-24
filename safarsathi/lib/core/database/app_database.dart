@@ -48,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Exposed as a constant so a backup file can be checked against it
   /// without opening a database.
-  static const currentSchemaVersion = 7;
+  static const currentSchemaVersion = 8;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -100,6 +100,12 @@ class AppDatabase extends _$AppDatabase {
         // v7 adds PlannedStops: viewpoints and other stops on the way that
         // go home in the plan. A new table; nothing existing changes.
         await m.createTable(plannedStops);
+      }
+      if (from < 8) {
+        // v8 adds who is driving each leg and the vehicle's number. Existing
+        // legs get neither: nobody recorded them.
+        await m.addColumn(legs, legs.driverContactId);
+        await m.addColumn(legs, legs.vehicleNumber);
       }
     },
 

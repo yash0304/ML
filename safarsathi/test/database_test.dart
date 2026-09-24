@@ -300,7 +300,7 @@ void main() {
       // then they fail only on the phones that skipped a version.
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
-      expect(db.schemaVersion, 7);
+      expect(db.schemaVersion, 8);
     });
 
     test('A REAL v4 DATABASE UPGRADES TO v5 WITH ITS CONTACTS INTACT', () async {
@@ -335,6 +335,8 @@ void main() {
       // And what v6 added, or the v6 step finds its column already there.
       await v4.customStatement('ALTER TABLE stops DROP COLUMN stay_contact_id');
       await v4.customStatement('DROP TABLE planned_stops');
+      await v4.customStatement('ALTER TABLE legs DROP COLUMN driver_contact_id');
+      await v4.customStatement('ALTER TABLE legs DROP COLUMN vehicle_number');
       await v4.customStatement('PRAGMA user_version = 4');
       await v4.close();
 
@@ -357,7 +359,7 @@ void main() {
       expect(after.lat, 25.57);
 
       final version = await v5.customSelect('PRAGMA user_version').getSingle();
-      expect(version.read<int>('user_version'), 7);
+      expect(version.read<int>('user_version'), 8);
     });
 
     test('A REAL v5 DATABASE UPGRADES: stops kept, no stay chosen',
@@ -395,6 +397,8 @@ void main() {
       );
       await v5.customStatement('ALTER TABLE stops DROP COLUMN stay_contact_id');
       await v5.customStatement('DROP TABLE planned_stops');
+      await v5.customStatement('ALTER TABLE legs DROP COLUMN driver_contact_id');
+      await v5.customStatement('ALTER TABLE legs DROP COLUMN vehicle_number');
       await v5.customStatement('PRAGMA user_version = 5');
       await v5.close();
 
@@ -414,7 +418,7 @@ void main() {
           contact.id);
 
       final version = await v6.customSelect('PRAGMA user_version').getSingle();
-      expect(version.read<int>('user_version'), 7);
+      expect(version.read<int>('user_version'), 8);
     });
 
     test('v3 created app_settings with its key as the primary key', () async {

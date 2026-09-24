@@ -351,6 +351,7 @@ class TripEditor {
     DateTime? plannedArrival,
     required bool isBooked,
     String? note,
+    String? vehicleNumber,
   }) => (db.update(db.legs)..where((l) => l.id.equals(legId))).write(
     LegsCompanion(
       mode: Value(mode),
@@ -358,6 +359,7 @@ class TripEditor {
       plannedArrival: Value(plannedArrival),
       isBooked: Value(isBooked),
       note: Value(note),
+      vehicleNumber: Value(vehicleNumber),
     ),
   );
 }

@@ -40,8 +40,11 @@ class LegFormScreen extends StatefulWidget {
     DateTime? plannedArrival,
     required bool isBooked,
     String? note,
+    String? vehicleNumber,
   })
   onSave;
+
+  final String? vehicleNumber;
 
   const LegFormScreen({
     super.key,
@@ -54,6 +57,7 @@ class LegFormScreen extends StatefulWidget {
     this.isBooked = false,
     this.note,
     this.distanceKm,
+    this.vehicleNumber,
   });
 
   @override
@@ -66,11 +70,15 @@ class _LegFormScreenState extends State<LegFormScreen> {
   late DateTime? _arrival = widget.plannedArrival;
   late bool _booked = widget.isBooked;
   late final _note = TextEditingController(text: widget.note ?? '');
+  late final _vehicle = TextEditingController(
+    text: widget.vehicleNumber ?? '',
+  );
   bool _saving = false;
 
   @override
   void dispose() {
     _note.dispose();
+    _vehicle.dispose();
     super.dispose();
   }
 
@@ -108,6 +116,9 @@ class _LegFormScreenState extends State<LegFormScreen> {
       plannedArrival: _arrival,
       isBooked: _booked,
       note: _note.text.trim().isEmpty ? null : _note.text.trim(),
+      vehicleNumber: _vehicle.text.trim().isEmpty
+          ? null
+          : _vehicle.text.trim().toUpperCase(),
     );
     if (mounted) setState(() => _saving = false);
   }
@@ -237,6 +248,27 @@ class _LegFormScreenState extends State<LegFormScreen> {
                     style: AppTokens.rowTitleStyle.copyWith(color: c.ink),
                   ),
                 ],
+              ),
+            ),
+          ),
+
+          const StencilLabel('Vehicle number'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
+            child: TextField(
+              key: const Key('leg-vehicle'),
+              controller: _vehicle,
+              textCapitalization: TextCapitalization.characters,
+              style: AppTokens.numberStyle.copyWith(color: c.ink),
+              decoration: InputDecoration(
+                hintText: 'ML 05 A 1234',
+                hintStyle: AppTokens.captionStyle.copyWith(color: c.rule),
+                helperText:
+                    'Goes in the plan you send home, and in an SOS text on '
+                    'the day. The driver is chosen on the leg\'s page.',
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(color: c.rule),
+                ),
               ),
             ),
           ),

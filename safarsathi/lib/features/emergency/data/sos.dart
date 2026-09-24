@@ -20,7 +20,17 @@ import '../../contacts/data/phone_normaliser.dart';
 import '../../map/data/here.dart';
 
 /// The message. Pure, so every case is pinned by a test.
-String sosMessage({HereFix? fix, String? nearStop, DateTime? now}) {
+///
+/// [ride] is today's vehicle and driver when a leg is planned today —
+/// "Taxi ML 05 A 1234 · driver Anthony, +91 98560 12345". On a road with no
+/// signal it is often the fastest way anyone can find you: the driver may
+/// have a bar where you do not, and a registration can be asked about.
+String sosMessage({
+  HereFix? fix,
+  String? nearStop,
+  String? ride,
+  DateTime? now,
+}) {
   final out = StringBuffer('SOS — I need help.\n');
 
   if (fix != null) {
@@ -39,6 +49,7 @@ String sosMessage({HereFix? fix, String? nearStop, DateTime? now}) {
           : 'Near $nearStop on our trip plan.',
     );
   }
+  if (ride != null) out.writeln('Travelling: $ride');
   out.write('Sent from SafarSathi.');
   return out.toString();
 }

@@ -5,6 +5,8 @@ Never delete a superseded decision — add a new dated line above it.
 
 ---
 
+2026-09-24 — [TRIP] **Each leg records who is driving (Legs.driverContactId, a diary entry) and the vehicle number (schema v8).** They show in the leg's Transport section, go in the plan sent home ("Taxi ML 05 A 1234" plus "Driver: Anthony, +91…"), and go in an SOS text on a day with a leg planned ("Travelling: …"). The driver is picked from the diary's transport and local numbers, or added new. After a pick, the app offers to use the same driver on every leg that has none, never overwriting a leg that already has one: one taxi usually does the whole Meghalaya trip. No foreign key, for the same backup-order reason as the stay. (Asked for: "who is taking us from one stop to another.")
+
 2026-09-24 — [TRIP] **Stops planned on the way (PlannedStops, schema v7) go home in the plan, under their leg, in road order.** A stop is picked from the places downloaded along the leg ("Add to the plan for this leg") or typed by name with an optional pasted location. Picked places are matched by OSM id, not Poi row id, because Pois are replaced wholesale on every download. Placed stops are ordered by kilometre, and typed ones without a position follow in the order added, still listed. (Asked for: "in between stops as well as view points… where we can send the same to home as well.")
 
 2026-09-24 — [DATA] PlannedStops.legId is SET NULL, not cascade. When a stop is inserted mid-trip, regenerateLegs moves planned stops onto the new leg that has the same start, or failing that the same end. One with no home stays on the trip and is sent as "Also planned". A planned stop never disappears because the itinerary was edited. Backups carry the table, and a v6 backup (no section) restores.

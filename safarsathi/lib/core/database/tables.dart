@@ -136,6 +136,16 @@ class Legs extends Table {
   RealColumn get distanceKm => real().nullable()();
   RealColumn get corridorKm => real().withDefault(const Constant(3.0))();
   DateTimeColumn get lastSyncedAt => dateTime().nullable()();
+
+  /// Who is taking you: the diary entry for the driver or operator (v8).
+  ///
+  /// No foreign key, for the same reason as Stops.stayContactId: a backup
+  /// writes legs before contacts. A deleted entry reads as nobody chosen.
+  IntColumn get driverContactId => integer().nullable()();
+
+  /// The registration, as typed: "ML 05 A 1234". The one detail somebody
+  /// at home can act on if the car does not arrive (v8).
+  TextColumn get vehicleNumber => text().nullable()();
 }
 
 // ---------------------------------------------------------------------------
