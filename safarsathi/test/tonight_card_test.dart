@@ -51,6 +51,7 @@ void main() {
     Tonight? t, {
     void Function(Contact)? onOpen,
     void Function(int)? onAdd,
+    void Function(int)? onChoose,
   }) async {
     tester.view.physicalSize = const Size(420, 1400);
     tester.view.devicePixelRatio = 1.0;
@@ -64,6 +65,7 @@ void main() {
           tonight: Stream.value(t),
           onOpenContact: onOpen,
           onAddStay: onAdd,
+          onChooseStay: onChoose,
         ),
       ),
     );
@@ -71,21 +73,22 @@ void main() {
     await tester.pump();
   }
 
-  Tonight tonight({List<Contact> stays = const [],
+  Tonight tonight({Contact? chosen, List<Contact> options = const [],
       TonightKind kind = TonightKind.tonight}) => Tonight(
     kind: kind,
     stop: stop('Mawlynnong'),
     night: DateTime(2026, 10, 4),
-    stays: stays,
+    stay: chosen,
+    options: options,
     sun: sunTimes(25.2027, 91.9146, DateTime(2026, 10, 4)),
   );
 
   testWidgets('tonight names the stop, the stay, the number and the note',
       (tester) async {
-    await pump(tester, tonight(stays: [
-      stay(1, 'Iartong Guest House', confirmed: true,
+    await pump(tester, tonight(
+      chosen: stay(1, 'Iartong Guest House', confirmed: true,
           note: 'Owner Bah Iar. Pay cash.'),
-    ]));
+    ));
     expect(find.text('TONIGHT · MAWLYNNONG'), findsOneWidget);
     expect(find.text('Iartong Guest House'), findsOneWidget);
     expect(find.text('+91 90000 00001'), findsOneWidget);
@@ -112,18 +115,44 @@ void main() {
 
   testWidgets('tapping a stay opens it', (tester) async {
     Contact? opened;
-    await pump(tester, tonight(stays: [stay(3, 'Nangroi Homestay')]),
+    await pump(tester, tonight(chosen: stay(3, 'Nangroi Homestay')),
         onOpen: (c) => opened = c);
     await tester.tap(find.text('Nangroi Homestay'));
     expect(opened?.id, 3);
   });
 
-  testWidgets('at most two stays on the first screen', (tester) async {
-    await pump(tester, tonight(stays: [
-      for (var i = 1; i <= 4; i++) stay(i, 'Stay $i'),
-    ]));
-    expect(find.text('Stay 2'), findsOneWidget);
-    expect(find.text('Stay 3'), findsNothing);
+  testWidgets('SAVED OPTIONS ARE NOT SHOWN AS YOUR BED — it asks which', (
+    tester,
+  ) async {
+    // Found on the phone: Bramhome Guest House showed as the Shillong stay
+    // because it sorted first, for somebody not staying there.
+    int? choosingAt;
+    await pump(
+      tester,
+      tonight(options: [stay(1, 'Bramhome Guest House'), stay(2, 'J P')]),
+      onChoose: (id) => choosingAt = id,
+    );
+    expect(find.text('Bramhome Guest House'), findsNothing);
+    expect(
+      find.text('Where are you staying in Mawlynnong? 2 places are saved '
+          'there — choose yours.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('tonight-choose-stay')));
+    expect(choosingAt, 5);
+  });
+
+  testWidgets('a chosen stay can be changed from the card', (tester) async {
+    int? choosingAt;
+    await pump(
+      tester,
+      tonight(chosen: stay(2, 'J P'), options: [stay(1, 'B'), stay(2, 'J P')]),
+      onChoose: (id) => choosingAt = id,
+    );
+    expect(find.text('J P'), findsOneWidget);
+    expect(find.text('B'), findsNothing);
+    await tester.tap(find.byKey(const Key('tonight-change-stay')));
+    expect(choosingAt, 5);
   });
 
   testWidgets('no night on the plan means no card at all', (tester) async {

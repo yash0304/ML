@@ -600,6 +600,17 @@ class $StopsTable extends Stops with TableInfo<$StopsTable, Stop> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _stayContactIdMeta = const VerificationMeta(
+    'stayContactId',
+  );
+  @override
+  late final GeneratedColumn<int> stayContactId = GeneratedColumn<int>(
+    'stay_contact_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -614,6 +625,7 @@ class $StopsTable extends Stops with TableInfo<$StopsTable, Stop> {
     lat,
     lon,
     note,
+    stayContactId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -719,6 +731,15 @@ class $StopsTable extends Stops with TableInfo<$StopsTable, Stop> {
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('stay_contact_id')) {
+      context.handle(
+        _stayContactIdMeta,
+        stayContactId.isAcceptableOrUnknown(
+          data['stay_contact_id']!,
+          _stayContactIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -776,6 +797,10 @@ class $StopsTable extends Stops with TableInfo<$StopsTable, Stop> {
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      stayContactId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}stay_contact_id'],
+      ),
     );
   }
 
@@ -805,6 +830,19 @@ class Stop extends DataClass implements Insertable<Stop> {
   final double? lat;
   final double? lon;
   final String? note;
+
+  /// The diary entry for where you actually sleep here (v6).
+  ///
+  /// A stop can hold several accommodation numbers — options from a sheet,
+  /// a backup, the one you booked — and until this existed the app showed
+  /// whichever sorted first as "tonight". Null means not decided, which is
+  /// said, never guessed.
+  ///
+  /// NO FOREIGN KEY, on purpose. A backup restores stops before contacts,
+  /// so a reference would fail every restore of a trip with a stay chosen.
+  /// A deleted contact leaves an id that matches nothing, and every reader
+  /// treats that as not decided.
+  final int? stayContactId;
   const Stop({
     required this.id,
     required this.tripId,
@@ -818,6 +856,7 @@ class Stop extends DataClass implements Insertable<Stop> {
     this.lat,
     this.lon,
     this.note,
+    this.stayContactId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -844,6 +883,9 @@ class Stop extends DataClass implements Insertable<Stop> {
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    if (!nullToAbsent || stayContactId != null) {
+      map['stay_contact_id'] = Variable<int>(stayContactId);
+    }
     return map;
   }
 
@@ -865,6 +907,9 @@ class Stop extends DataClass implements Insertable<Stop> {
       lat: lat == null && nullToAbsent ? const Value.absent() : Value(lat),
       lon: lon == null && nullToAbsent ? const Value.absent() : Value(lon),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      stayContactId: stayContactId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stayContactId),
     );
   }
 
@@ -886,6 +931,7 @@ class Stop extends DataClass implements Insertable<Stop> {
       lat: serializer.fromJson<double?>(json['lat']),
       lon: serializer.fromJson<double?>(json['lon']),
       note: serializer.fromJson<String?>(json['note']),
+      stayContactId: serializer.fromJson<int?>(json['stayContactId']),
     );
   }
   @override
@@ -904,6 +950,7 @@ class Stop extends DataClass implements Insertable<Stop> {
       'lat': serializer.toJson<double?>(lat),
       'lon': serializer.toJson<double?>(lon),
       'note': serializer.toJson<String?>(note),
+      'stayContactId': serializer.toJson<int?>(stayContactId),
     };
   }
 
@@ -920,6 +967,7 @@ class Stop extends DataClass implements Insertable<Stop> {
     Value<double?> lat = const Value.absent(),
     Value<double?> lon = const Value.absent(),
     Value<String?> note = const Value.absent(),
+    Value<int?> stayContactId = const Value.absent(),
   }) => Stop(
     id: id ?? this.id,
     tripId: tripId ?? this.tripId,
@@ -935,6 +983,9 @@ class Stop extends DataClass implements Insertable<Stop> {
     lat: lat.present ? lat.value : this.lat,
     lon: lon.present ? lon.value : this.lon,
     note: note.present ? note.value : this.note,
+    stayContactId: stayContactId.present
+        ? stayContactId.value
+        : this.stayContactId,
   );
   Stop copyWithCompanion(StopsCompanion data) {
     return Stop(
@@ -960,6 +1011,9 @@ class Stop extends DataClass implements Insertable<Stop> {
       lat: data.lat.present ? data.lat.value : this.lat,
       lon: data.lon.present ? data.lon.value : this.lon,
       note: data.note.present ? data.note.value : this.note,
+      stayContactId: data.stayContactId.present
+          ? data.stayContactId.value
+          : this.stayContactId,
     );
   }
 
@@ -977,7 +1031,8 @@ class Stop extends DataClass implements Insertable<Stop> {
           ..write('activityTags: $activityTags, ')
           ..write('lat: $lat, ')
           ..write('lon: $lon, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('stayContactId: $stayContactId')
           ..write(')'))
         .toString();
   }
@@ -996,6 +1051,7 @@ class Stop extends DataClass implements Insertable<Stop> {
     lat,
     lon,
     note,
+    stayContactId,
   );
   @override
   bool operator ==(Object other) =>
@@ -1012,7 +1068,8 @@ class Stop extends DataClass implements Insertable<Stop> {
           other.activityTags == this.activityTags &&
           other.lat == this.lat &&
           other.lon == this.lon &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.stayContactId == this.stayContactId);
 }
 
 class StopsCompanion extends UpdateCompanion<Stop> {
@@ -1028,6 +1085,7 @@ class StopsCompanion extends UpdateCompanion<Stop> {
   final Value<double?> lat;
   final Value<double?> lon;
   final Value<String?> note;
+  final Value<int?> stayContactId;
   const StopsCompanion({
     this.id = const Value.absent(),
     this.tripId = const Value.absent(),
@@ -1041,6 +1099,7 @@ class StopsCompanion extends UpdateCompanion<Stop> {
     this.lat = const Value.absent(),
     this.lon = const Value.absent(),
     this.note = const Value.absent(),
+    this.stayContactId = const Value.absent(),
   });
   StopsCompanion.insert({
     this.id = const Value.absent(),
@@ -1055,6 +1114,7 @@ class StopsCompanion extends UpdateCompanion<Stop> {
     this.lat = const Value.absent(),
     this.lon = const Value.absent(),
     this.note = const Value.absent(),
+    this.stayContactId = const Value.absent(),
   }) : tripId = Value(tripId),
        name = Value(name),
        sequenceOrder = Value(sequenceOrder),
@@ -1072,6 +1132,7 @@ class StopsCompanion extends UpdateCompanion<Stop> {
     Expression<double>? lat,
     Expression<double>? lon,
     Expression<String>? note,
+    Expression<int>? stayContactId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1086,6 +1147,7 @@ class StopsCompanion extends UpdateCompanion<Stop> {
       if (lat != null) 'lat': lat,
       if (lon != null) 'lon': lon,
       if (note != null) 'note': note,
+      if (stayContactId != null) 'stay_contact_id': stayContactId,
     });
   }
 
@@ -1102,6 +1164,7 @@ class StopsCompanion extends UpdateCompanion<Stop> {
     Value<double?>? lat,
     Value<double?>? lon,
     Value<String?>? note,
+    Value<int?>? stayContactId,
   }) {
     return StopsCompanion(
       id: id ?? this.id,
@@ -1116,6 +1179,7 @@ class StopsCompanion extends UpdateCompanion<Stop> {
       lat: lat ?? this.lat,
       lon: lon ?? this.lon,
       note: note ?? this.note,
+      stayContactId: stayContactId ?? this.stayContactId,
     );
   }
 
@@ -1158,6 +1222,9 @@ class StopsCompanion extends UpdateCompanion<Stop> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (stayContactId.present) {
+      map['stay_contact_id'] = Variable<int>(stayContactId.value);
+    }
     return map;
   }
 
@@ -1175,7 +1242,8 @@ class StopsCompanion extends UpdateCompanion<Stop> {
           ..write('activityTags: $activityTags, ')
           ..write('lat: $lat, ')
           ..write('lon: $lon, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('stayContactId: $stayContactId')
           ..write(')'))
         .toString();
   }
@@ -11609,6 +11677,7 @@ typedef $$StopsTableCreateCompanionBuilder =
       Value<double?> lat,
       Value<double?> lon,
       Value<String?> note,
+      Value<int?> stayContactId,
     });
 typedef $$StopsTableUpdateCompanionBuilder =
     StopsCompanion Function({
@@ -11624,6 +11693,7 @@ typedef $$StopsTableUpdateCompanionBuilder =
       Value<double?> lat,
       Value<double?> lon,
       Value<String?> note,
+      Value<int?> stayContactId,
     });
 
 final class $$StopsTableReferences
@@ -11823,6 +11893,11 @@ class $$StopsTableFilterComposer extends Composer<_$AppDatabase, $StopsTable> {
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get stayContactId => $composableBuilder(
+    column: $table.stayContactId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12064,6 +12139,11 @@ class $$StopsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get stayContactId => $composableBuilder(
+    column: $table.stayContactId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TripsTableOrderingComposer get tripId {
     final $$TripsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -12139,6 +12219,11 @@ class $$StopsTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<int> get stayContactId => $composableBuilder(
+    column: $table.stayContactId,
+    builder: (column) => column,
+  );
 
   $$TripsTableAnnotationComposer get tripId {
     final $$TripsTableAnnotationComposer composer = $composerBuilder(
@@ -12362,6 +12447,7 @@ class $$StopsTableTableManager
                 Value<double?> lat = const Value.absent(),
                 Value<double?> lon = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<int?> stayContactId = const Value.absent(),
               }) => StopsCompanion(
                 id: id,
                 tripId: tripId,
@@ -12375,6 +12461,7 @@ class $$StopsTableTableManager
                 lat: lat,
                 lon: lon,
                 note: note,
+                stayContactId: stayContactId,
               ),
           createCompanionCallback:
               ({
@@ -12390,6 +12477,7 @@ class $$StopsTableTableManager
                 Value<double?> lat = const Value.absent(),
                 Value<double?> lon = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<int?> stayContactId = const Value.absent(),
               }) => StopsCompanion.insert(
                 id: id,
                 tripId: tripId,
@@ -12403,6 +12491,7 @@ class $$StopsTableTableManager
                 lat: lat,
                 lon: lon,
                 note: note,
+                stayContactId: stayContactId,
               ),
           withReferenceMapper: (p0) => p0
               .map(

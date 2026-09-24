@@ -15,6 +15,7 @@ import 'package:drift/drift.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/util/streams.dart';
 import '../../contacts/data/contacts_dao.dart';
+import 'stay.dart';
 
 /// One reason the trip is not ready yet.
 class ReadinessItem {
@@ -65,6 +66,23 @@ Readiness computeReadiness(List<Stop> stops, List<Contact> contacts) {
           c,
     ];
 
+    // THE STAY YOU CHOSE IS THE ONE THAT HAS TO WORK. A confirmed number
+    // for a guest house you are not sleeping at clears nothing.
+    final chosen = chosenStay(stop, contacts);
+    if (chosen != null) {
+      if (chosen.callConfirmed) continue;
+      items.add(
+        ReadinessItem(
+          stopId: stop.id,
+          stopName: stop.name,
+          contactId: chosen.id,
+          label: 'Call and confirm ${chosen.name}, where you are staying in '
+              '${stop.name}.',
+        ),
+      );
+      continue;
+    }
+
     if (atStop.isEmpty) {
       items.add(
         ReadinessItem(
@@ -77,16 +95,18 @@ Readiness computeReadiness(List<Stop> stops, List<Contact> contacts) {
       continue;
     }
 
-    // One confirmed number clears the stop. A second unconfirmed number for
-    // the same homestay is not a second problem.
-    if (atStop.any((c) => c.callConfirmed)) continue;
-
+    // Saved and none chosen: which one you sleep at is the open question,
+    // and confirming a number does not answer it. Even one saved option is
+    // not a choice — a sheet of options puts one at most stops.
     items.add(
       ReadinessItem(
         stopId: stop.id,
         stopName: stop.name,
-        contactId: atStop.first.id,
-        label: 'Call and confirm the ${stop.name} accommodation number.',
+        label: atStop.length == 1
+            ? 'Choose where you are staying in ${stop.name} — is it '
+                  '${atStop.single.name}?'
+            : 'Choose where you are staying in ${stop.name} — '
+                  '${atStop.length} places are saved there.',
       ),
     );
   }

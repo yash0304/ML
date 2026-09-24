@@ -47,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Exposed as a constant so a backup file can be checked against it
   /// without opening a database.
-  static const currentSchemaVersion = 5;
+  static const currentSchemaVersion = 6;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -88,6 +88,12 @@ class AppDatabase extends _$AppDatabase {
         // get null, which is the truth: nobody recorded where they were.
         await m.addColumn(contacts, contacts.lat);
         await m.addColumn(contacts, contacts.lon);
+      }
+      if (from < 6) {
+        // v6 adds Stops.stayContactId: which saved stay is the one you sleep
+        // at. Existing stops get null — not decided — rather than a guess
+        // from whichever accommodation number sorted first.
+        await m.addColumn(stops, stops.stayContactId);
       }
     },
 

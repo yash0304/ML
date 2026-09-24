@@ -298,7 +298,7 @@ void main() {
       // then they fail only on the phones that skipped a version.
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
-      expect(db.schemaVersion, 5);
+      expect(db.schemaVersion, 6);
     });
 
     test('A REAL v4 DATABASE UPGRADES TO v5 WITH ITS CONTACTS INTACT', () async {
@@ -330,6 +330,8 @@ void main() {
           );
       await v4.customStatement('ALTER TABLE contacts DROP COLUMN lat');
       await v4.customStatement('ALTER TABLE contacts DROP COLUMN lon');
+      // And what v6 added, or the v6 step finds its column already there.
+      await v4.customStatement('ALTER TABLE stops DROP COLUMN stay_contact_id');
       await v4.customStatement('PRAGMA user_version = 4');
       await v4.close();
 
@@ -352,7 +354,63 @@ void main() {
       expect(after.lat, 25.57);
 
       final version = await v5.customSelect('PRAGMA user_version').getSingle();
-      expect(version.read<int>('user_version'), 5);
+      expect(version.read<int>('user_version'), 6);
+    });
+
+    test('A REAL v5 DATABASE UPGRADES TO v6: stops kept, no stay chosen',
+        () async {
+      // The phone holds a v5 trip with stops, guest houses and positions.
+      // The upgrade must keep every one and choose nothing: a stay picked
+      // from whatever sorted first is the bug v6 exists to fix.
+      final dir = await Directory.systemTemp.createTemp('upgrade6');
+      addTearDown(() => dir.delete(recursive: true));
+      final file = File('${dir.path}/v5.sqlite');
+
+      final v5 = AppDatabase(NativeDatabase(file));
+      final tripId = await v5
+          .into(v5.trips)
+          .insert(TripsCompanion.insert(name: 'Meghalaya'));
+      final stopId = await v5.into(v5.stops).insert(
+        StopsCompanion.insert(
+          tripId: tripId,
+          name: 'Shillong',
+          sequenceOrder: 1,
+          countryCode: 'IN',
+          nights: const Value(2),
+        ),
+      );
+      await v5.into(v5.contacts).insert(
+        ContactsCompanion.insert(
+          tripId: Value(tripId),
+          stopId: Value(stopId),
+          name: 'Bramhome Guest House',
+          phoneRaw: '0364 222 6683',
+          category: const Value('accommodation'),
+          lat: const Value(25.575219),
+          lon: const Value(91.882741),
+        ),
+      );
+      await v5.customStatement('ALTER TABLE stops DROP COLUMN stay_contact_id');
+      await v5.customStatement('PRAGMA user_version = 5');
+      await v5.close();
+
+      final v6 = AppDatabase(NativeDatabase(file));
+      addTearDown(v6.close);
+
+      final stop = await v6.select(v6.stops).getSingle();
+      expect(stop.name, 'Shillong');
+      expect(stop.nights, 2);
+      expect(stop.stayContactId, isNull);
+      final contact = await v6.select(v6.contacts).getSingle();
+      expect(contact.lat, 25.575219);
+
+      await (v6.update(v6.stops)..where((s) => s.id.equals(stop.id)))
+          .write(StopsCompanion(stayContactId: Value(contact.id)));
+      expect((await v6.select(v6.stops).getSingle()).stayContactId,
+          contact.id);
+
+      final version = await v6.customSelect('PRAGMA user_version').getSingle();
+      expect(version.read<int>('user_version'), 6);
     });
 
     test('v3 created app_settings with its key as the primary key', () async {

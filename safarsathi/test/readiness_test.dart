@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:safarsathi/core/database/app_database.dart';
 import 'package:safarsathi/features/contacts/data/contacts_dao.dart';
 import 'package:safarsathi/features/trips/data/readiness.dart';
+import 'package:safarsathi/features/trips/data/stay.dart';
 import 'package:safarsathi/features/trips/data/trip_editor.dart';
 
 void main() {
@@ -36,29 +37,35 @@ void main() {
     String name = 'Homestay',
     String category = ContactCategory.accommodation,
     bool confirmed = false,
-  }) => db.into(db.contacts).insert(
-    ContactsCompanion.insert(
-      name: name,
-      phoneRaw: '+91 90000 00001',
-      tripId: Value(tripId),
-      stopId: Value(stopId),
-      category: Value(category),
-      callConfirmed: Value(confirmed),
-    ),
-  );
+    bool stay = false,
+  }) async {
+    final id = await db.into(db.contacts).insert(
+      ContactsCompanion.insert(
+        name: name,
+        phoneRaw: '+91 90000 00001',
+        tripId: Value(tripId),
+        stopId: Value(stopId),
+        category: Value(category),
+        callConfirmed: Value(confirmed),
+      ),
+    );
+    // Where you sleep is chosen, never inferred from what is saved.
+    if (stay) await setStay(db, stopId!, id);
+    return id;
+  }
 
   Future<Readiness> check() => watchReadiness(db, tripId).first;
 
   test('THE ACCEPTANCE TEST: unconfirmed blocks, confirming clears', () async {
     final stop = await overnight('Shillong');
-    final id = await contact(stop);
+    final id = await contact(stop, stay: true);
 
     var readiness = await check();
     expect(readiness.isReady, isFalse);
     expect(readiness.blocking.single.stopName, 'Shillong');
     expect(
       readiness.blocking.single.label,
-      'Call and confirm the Shillong accommodation number.',
+      'Call and confirm Homestay, where you are staying in Shillong.',
     );
 
     await db.contactsDao.markConfirmed(id);
@@ -106,12 +113,36 @@ void main() {
     expect((await check()).blocking.single.missing, isTrue);
   });
 
-  test('one confirmed number clears the stop, however many are unconfirmed',
-      () async {
+  test('SAVED IS NOT CHOSEN: options at a stop ask which one', () async {
+    // A sheet of guest houses is a list of options. Found on the phone:
+    // Bramhome showed as the Shillong bed for somebody staying elsewhere.
     final stop = await overnight('Shillong');
-    await contact(stop, name: 'Old number');
-    await contact(stop, name: 'New number', confirmed: true);
+    await contact(stop, name: 'Bramhome', confirmed: true);
+    await contact(stop, name: 'J P Guest House');
 
+    final item = (await check()).blocking.single;
+    expect(item.label,
+        'Choose where you are staying in Shillong — 2 places are saved there.');
+    expect(item.contactId, isNull);
+  });
+
+  test('even one saved option is a question, not an answer', () async {
+    final stop = await overnight('Sohra');
+    await contact(stop, name: 'Alpha Guest House');
+    expect((await check()).blocking.single.label,
+        'Choose where you are staying in Sohra — is it Alpha Guest House?');
+  });
+
+  test('A CONFIRMED NUMBER YOU ARE NOT STAYING AT CLEARS NOTHING', () async {
+    final stop = await overnight('Shillong');
+    await contact(stop, name: 'Bramhome', confirmed: true);
+    final mine = await contact(stop, name: 'Mine', stay: true);
+
+    final item = (await check()).blocking.single;
+    expect(item.contactId, mine);
+    expect(item.label, contains('Call and confirm Mine'));
+
+    await db.contactsDao.markConfirmed(mine);
     expect((await check()).isReady, isTrue);
   });
 
@@ -119,7 +150,7 @@ void main() {
     final a = await overnight('Shillong');
     await overnight('Cherrapunji');
     await overnight('Dawki');
-    await contact(a, confirmed: true);
+    await contact(a, confirmed: true, stay: true);
 
     final readiness = await check();
     expect(readiness.openCount, 2);
@@ -156,7 +187,7 @@ void main() {
 
     test('an item stops blocking once its number is confirmed', () async {
       final stop = await overnight('Shillong');
-      final id = await contact(stop);
+      final id = await contact(stop, stay: true);
       await syncReadinessChecklist(db, tripId);
 
       await db.contactsDao.markConfirmed(id);
@@ -176,7 +207,14 @@ void main() {
         contains('No accommodation number'),
       );
 
-      await contact(stop);
+      final id = await contact(stop);
+      await syncReadinessChecklist(db, tripId);
+      expect(
+        (await db.select(db.checklistItems).getSingle()).label,
+        contains('Choose where you are staying'),
+      );
+
+      await setStay(db, stop, id);
       await syncReadinessChecklist(db, tripId);
       expect(
         (await db.select(db.checklistItems).getSingle()).label,
@@ -208,7 +246,7 @@ void main() {
 
     test('a user-edited item is not silently ticked off either', () async {
       final stop = await overnight('Shillong');
-      final id = await contact(stop);
+      final id = await contact(stop, stay: true);
       await syncReadinessChecklist(db, tripId);
 
       final item = await db.select(db.checklistItems).getSingle();
@@ -223,7 +261,7 @@ void main() {
 
     test('a blocking item points at the contact it is about', () async {
       final stop = await overnight('Shillong');
-      final id = await contact(stop);
+      final id = await contact(stop, stay: true);
       await syncReadinessChecklist(db, tripId);
 
       final item = await db.select(db.checklistItems).getSingle();

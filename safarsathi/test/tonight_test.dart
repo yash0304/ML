@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:safarsathi/core/database/app_database.dart';
 import 'package:safarsathi/features/contacts/data/contacts_dao.dart';
+import 'package:safarsathi/features/trips/data/stay.dart';
 import 'package:safarsathi/features/trips/data/tonight.dart';
 import 'package:safarsathi/features/trips/data/trip_editor.dart';
 
@@ -86,7 +87,7 @@ void main() {
   });
 
   group('the stays', () {
-    Future<void> stay(String name, int stopId, {bool confirmed = false,
+    Future<int> stay(String name, int stopId, {bool confirmed = false,
         String category = ContactCategory.accommodation}) =>
         db.into(db.contacts).insert(ContactsCompanion.insert(
           tripId: Value(tripId), stopId: Value(stopId), name: name,
@@ -102,14 +103,31 @@ void main() {
       await stay('Somewhere else', shillong);
 
       final t = await on(10, 4);
-      expect(t!.stays.map((c) => c.name),
+      expect(t!.options.map((c) => c.name),
           ['Iartong Guest House', 'Zed Homestay']);
+      // Saved is not chosen: nothing is tonight's bed until you say so.
+      expect(t.stay, isNull);
+    });
+
+    test('THE CHOSEN STAY IS TONIGHT\'S, WHATEVER SORTS FIRST', () async {
+      await stay('Bramhome Guest House', mawlynnong, confirmed: true);
+      final mine = await stay('Zed Homestay', mawlynnong);
+      await setStay(db, mawlynnong, mine);
+      final t = await on(10, 4);
+      expect(t!.stay?.name, 'Zed Homestay');
+    });
+
+    test('a chosen stay since deleted reads as not decided', () async {
+      final mine = await stay('Zed Homestay', mawlynnong);
+      await setStay(db, mawlynnong, mine);
+      await db.contactsDao.deleteContact(mine);
+      expect((await on(10, 4))!.stay, isNull);
     });
 
     test('THE CARD UPDATES WHEN A STAY IS SAVED', () async {
       final seen = <int>[];
       final sub = watchTonight(db, tripId, now: DateTime(2026, 10, 4))
-          .listen((t) => seen.add(t?.stays.length ?? -1));
+          .listen((t) => seen.add(t?.options.length ?? -1));
       await pumpEventQueue();
       await stay('Iartong Guest House', mawlynnong);
       await pumpEventQueue();

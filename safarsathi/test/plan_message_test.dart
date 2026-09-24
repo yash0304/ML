@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:safarsathi/core/database/app_database.dart';
 import 'package:safarsathi/features/contacts/data/contacts_dao.dart';
 import 'package:safarsathi/features/trips/data/plan_message.dart';
+import 'package:safarsathi/features/trips/data/stay.dart';
 import 'package:safarsathi/features/trips/data/trip_editor.dart';
 
 void main() {
@@ -33,11 +34,15 @@ void main() {
   });
   tearDown(() => db.close());
 
-  Future<void> stay(String name, int stopId, String phone) =>
-      db.into(db.contacts).insert(ContactsCompanion.insert(
-        tripId: Value(tripId), stopId: Value(stopId), name: name,
-        phoneRaw: phone, category: const Value(ContactCategory.accommodation),
-      ));
+  Future<int> stay(String name, int stopId, String phone,
+      {bool chosen = true}) async {
+    final id = await db.into(db.contacts).insert(ContactsCompanion.insert(
+      tripId: Value(tripId), stopId: Value(stopId), name: name,
+      phoneRaw: phone, category: const Value(ContactCategory.accommodation),
+    ));
+    if (chosen) await setStay(db, stopId, id);
+    return id;
+  }
 
   test('the whole message, as it will be read', () async {
     await stay('Hotel Pinewood', shillong, '0364 222 3116');
@@ -63,7 +68,7 @@ Where we sleep each night:
 1 Oct · Shillong (2 nights)
   Stay: Hotel Pinewood, 0364 222 3116
 3 Oct · Sohrra (1 night)
-  Stay: not saved yet
+  Stay: not decided yet
 5 Oct · Dawki (passing through)
 
 Getting between them:
@@ -77,7 +82,23 @@ If we do not answer, we are probably out of signal — the number for each night
     // Somebody at home reading "Sohra" with nothing under it would assume
     // it was arranged. It is worth them knowing that it is not.
     expect(await buildPlanMessage(db, tripId),
-        contains('Sohrra (1 night)\n  Stay: not saved yet'));
+        contains('Sohrra (1 night)\n  Stay: not decided yet'));
+  });
+
+  test('OPTIONS SAVED AT A STOP DO NOT GO HOME AS BOOKED', () async {
+    // Someone at home reading two guest house names will ring them.
+    await stay('Bramhome Guest House', shillong, '0364 222 6683',
+        chosen: false);
+    await stay('J P Guest House', shillong, '0690 947 0084', chosen: false);
+    final msg = await buildPlanMessage(db, tripId);
+    expect(msg, contains('Shillong (2 nights)\n  Stay: not decided yet'));
+    expect(msg, isNot(contains('Bramhome')));
+
+    final jp = (await db.select(db.contacts).get())
+        .firstWhere((c) => c.name.startsWith('J P'));
+    await setStay(db, shillong, jp.id);
+    expect(await buildPlanMessage(db, tripId),
+        contains('Stay: J P Guest House, 0690 947 0084'));
   });
 
   test('a stop passed through lists no stay line at all', () async {

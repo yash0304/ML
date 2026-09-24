@@ -29,6 +29,12 @@ class StopDetailScreen extends StatelessWidget {
   /// stated on screen rather than left implied.
   final Future<void> Function(List<String> tags)? onTags;
 
+  /// Choose or change where you sleep here. Null hides the section's action.
+  final VoidCallback? onChooseStay;
+
+  /// Opens the chosen stay's diary entry.
+  final void Function(Contact stay)? onOpenStay;
+
   /// Frozen in tests and goldens so an age never drifts.
   final DateTime? now;
 
@@ -39,6 +45,8 @@ class StopDetailScreen extends StatelessWidget {
     this.onOpenDiary,
     this.onOpenChecklist,
     this.onTags,
+    this.onChooseStay,
+    this.onOpenStay,
     this.now,
   });
 
@@ -74,6 +82,12 @@ class StopDetailScreen extends StatelessWidget {
                   children: [
                     _Header(detail: data, now: now),
                     _Note(detail: data),
+                    if (data.isOvernight)
+                      _StayingAt(
+                        detail: data,
+                        onChoose: onChooseStay,
+                        onOpen: onOpenStay,
+                      ),
                     _WeatherSection(detail: data, now: now),
                     _WhatIsHere(
                       detail: data,
@@ -86,6 +100,92 @@ class StopDetailScreen extends StatelessWidget {
                 ),
         );
       },
+    );
+  }
+}
+
+/// Where you sleep here. Only on a stop with nights; a lunch stop has no bed.
+class _StayingAt extends StatelessWidget {
+  final StopDetail detail;
+  final VoidCallback? onChoose;
+  final void Function(Contact stay)? onOpen;
+
+  const _StayingAt({required this.detail, this.onChoose, this.onOpen});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    final stay = detail.stay;
+    final n = detail.stayOptionCount;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            const Expanded(child: StencilLabel('Staying at')),
+            if (onChoose != null)
+              Padding(
+                padding: const EdgeInsets.only(
+                  right: AppTokens.gutter,
+                  top: AppTokens.s16,
+                ),
+                child: PressScale(
+                  key: const Key('stop-choose-stay'),
+                  onTap: onChoose,
+                  child: Text(
+                    stay == null ? 'CHOOSE' : 'CHANGE',
+                    style: AppTokens.stencilStyle.copyWith(
+                      fontSize: 10.5,
+                      color: c.signal,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (stay != null)
+          InkWell(
+            onTap: onOpen == null ? null : () => onOpen!(stay),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTokens.gutter,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    stay.name,
+                    style: AppTokens.rowTitleStyle.copyWith(color: c.ink),
+                  ),
+                  Text(
+                    stay.phoneRaw,
+                    style: AppTokens.numberStyle.copyWith(color: c.ink),
+                  ),
+                  Text(
+                    stay.callConfirmed
+                        ? 'Confirmed by you.'
+                        : 'Not confirmed yet — call it before you go.',
+                    style: AppTokens.captionStyle.copyWith(
+                      color: stay.callConfirmed ? c.signal : c.caution,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
+            child: Text(
+              n == 0
+                  ? 'Not decided, and no place to stay is saved here yet.'
+                  : 'Not decided. $n ${n == 1 ? 'place is' : 'places are'} '
+                        'saved here — choose the one you are staying at.',
+              style: AppTokens.captionStyle.copyWith(color: c.cautionMark),
+            ),
+          ),
+      ],
     );
   }
 }

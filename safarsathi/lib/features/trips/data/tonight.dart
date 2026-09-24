@@ -13,6 +13,7 @@ import 'package:drift/drift.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/util/sun.dart';
 import '../../contacts/data/contacts_dao.dart';
+import 'stay.dart';
 
 enum TonightKind {
   /// Tonight's bed, during the trip.
@@ -30,8 +31,12 @@ class Tonight {
   /// The night in question — today, or the trip's first night.
   final DateTime night;
 
-  /// Accommodation numbers saved at that stop, confirmed first.
-  final List<Contact> stays;
+  /// Where you said you are sleeping, or null when not decided yet.
+  final Contact? stay;
+
+  /// Accommodation numbers saved at that stop, confirmed first — what can be
+  /// chosen, not where you are staying.
+  final List<Contact> options;
 
   final SunTimes? sun;
 
@@ -39,7 +44,8 @@ class Tonight {
     required this.kind,
     required this.stop,
     required this.night,
-    required this.stays,
+    this.stay,
+    this.options = const [],
     this.sun,
   });
 }
@@ -127,7 +133,8 @@ Stream<Tonight?> watchTonight(AppDatabase db, int tripId, {DateTime? now}) =>
             kind: hit.kind,
             stop: s,
             night: hit.night,
-            stays: staysAt(diary, s.id),
+            stay: chosenStay(s, diary),
+            options: stayOptions(diary, s.id),
             sun: s.lat == null || s.lon == null
                 ? null
                 : sunTimes(s.lat!, s.lon!, hit.night),

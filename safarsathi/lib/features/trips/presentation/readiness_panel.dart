@@ -82,7 +82,9 @@ class ReadinessPanel extends StatelessWidget {
               ),
               child: Text(
                 'The trip does not read ready while any of these are open. '
-                'Call the number, then mark it confirmed in the diary.',
+                'Choose where you are staying at each stop, call that '
+                'number, then mark it confirmed.'
+                '${onOpenStop == null ? '' : ' Tap one to choose.'}',
                 style: AppTokens.captionStyle.copyWith(color: c.muted),
               ),
             ),

@@ -70,6 +70,8 @@ import 'features/sync/presentation/sync_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'features/trips/presentation/itinerary_screen.dart';
 import 'features/trips/presentation/place_picker_sheet.dart';
+import 'features/trips/presentation/stay_picker_sheet.dart';
+import 'features/trips/data/stay.dart';
 import 'features/weather/data/weather_sync.dart';
 import 'features/weather/presentation/weather_screen.dart';
 import 'features/trips/presentation/leg_detail_screen.dart';
@@ -251,6 +253,18 @@ class _HomeState extends State<_Home> {
     MaterialPageRoute<void>(
       builder: (detailContext) => StopDetailScreen(
         detail: watchStopDetail(widget.db, stop.id),
+        onChooseStay: () => _chooseStay(detailContext, tripId, stop.id),
+        onOpenStay: (stay) async {
+          final trip = await watchActiveTripContext(widget.db).first;
+          if (trip != null && detailContext.mounted) {
+            await _openEntry(
+              detailContext,
+              trip,
+              stay,
+              ContactActions(dao: widget.db.contactsDao, tripId: tripId),
+            );
+          }
+        },
         onEdit: () async {
           // Re-read rather than reusing the row this route was opened with:
           // by now the tags may have been edited on this very screen, and the
@@ -685,18 +699,21 @@ class _HomeState extends State<_Home> {
     // LIVE, NOT A SNAPSHOT. The page used to hold the row it was opened
     // with, so a location pasted in Edit did not appear until the page was
     // closed and opened again — and neither did a new name or stop.
-    final live = (db.select(db.contacts)..where((c) => c.id.equals(contact.id)))
-        .watchSingleOrNull()
-        .asyncMap((row) async {
+    // Ticks on stops too: choosing this as the stay is a write to the stop.
+    final live = db
+        .customSelect('SELECT 1', readsFrom: {db.contacts, db.stops})
+        .watch()
+        .asyncMap((_) async {
+          final row = await (db.select(
+            db.contacts,
+          )..where((c) => c.id.equals(contact.id))).getSingleOrNull();
           if (row == null) return null;
-          String? stopName;
-          if (row.stopId != null) {
-            final stop = await (db.select(
-              db.stops,
-            )..where((s) => s.id.equals(row.stopId!))).getSingleOrNull();
-            stopName = stop?.name;
-          }
-          return (contact: row, stopName: stopName);
+          final stop = row.stopId == null
+              ? null
+              : await (db.select(
+                  db.stops,
+                )..where((s) => s.id.equals(row.stopId!))).getSingleOrNull();
+          return (contact: row, stop: stop);
         });
 
     await Navigator.of(context).push(
@@ -720,7 +737,27 @@ class _HomeState extends State<_Home> {
                 '${data.contact.confirmedAt}',
               ),
               contact: data.contact,
-              stopName: data.stopName,
+              stopName: data.stop?.name,
+              // Only a place to stay, at a stop you sleep at.
+              stay:
+                  data.stop != null &&
+                      data.stop!.nights > 0 &&
+                      data.contact.category == ContactCategory.accommodation
+                  ? (
+                      stopName: data.stop!.name,
+                      isStay: data.stop!.stayContactId == data.contact.id,
+                    )
+                  : null,
+              onStayHere: data.stop == null
+                  ? null
+                  : (stayHere) async {
+                      await setStay(
+                        db,
+                        data.stop!.id,
+                        stayHere ? data.contact.id : null,
+                      );
+                      await syncReadinessChecklist(db, trip.tripId);
+                    },
               onCopy: actions.copy,
               onOpenDialer: actions.openDialer,
               onCall: actions.call,
@@ -759,6 +796,46 @@ class _HomeState extends State<_Home> {
     );
   }
 
+  /// "Where are you staying in Shillong?" — pick, clear, or add a new one.
+  Future<void> _chooseStay(BuildContext context, int tripId, int stopId) async {
+    final db = widget.db;
+    final stop = await (db.select(
+      db.stops,
+    )..where((s) => s.id.equals(stopId))).getSingleOrNull();
+    if (stop == null) return;
+    final diary = await (db.select(
+      db.contacts,
+    )..where((c) => c.tripId.equals(tripId))).get();
+    if (!context.mounted) return;
+
+    final choice = await showStayPicker(
+      context,
+      stopName: stop.name,
+      options: stayOptions(diary, stopId),
+      currentId: chosenStay(stop, diary)?.id,
+    );
+    switch (choice) {
+      case null:
+        return;
+      case StayPicked(:final contactId):
+        await setStay(db, stopId, contactId);
+      case StayCleared():
+        await setStay(db, stopId, null);
+      case StayAddNew():
+        final trip = await watchActiveTripContext(db).first;
+        if (trip == null || !context.mounted) return;
+        await _openForm(
+          context,
+          trip,
+          initialStopId: stopId,
+          initialCategory: ContactCategory.accommodation,
+          afterSave: (id) => setStay(db, stopId, id),
+        );
+        return; // The form's save already re-synced readiness.
+    }
+    await syncReadinessChecklist(db, tripId);
+  }
+
   /// The entry form, for a new entry or an existing one. True when the entry
   /// was deleted from it.
   Future<bool> _openForm(
@@ -768,6 +845,7 @@ class _HomeState extends State<_Home> {
     bool pickOnOpen = false,
     int? initialStopId,
     String? initialCategory,
+    Future<void> Function(int id)? afterSave,
   }) async {
     final db = widget.db;
     final stops =
@@ -808,7 +886,16 @@ class _HomeState extends State<_Home> {
           findDuplicate: (e164) =>
               db.contactsDao.findByE164(e164, tripId: trip.tripId),
           onSave: (draft) async {
-            await saveEntry(db.contactsDao, draft, tripId: trip.tripId);
+            final id = await saveEntry(
+              db.contactsDao,
+              draft,
+              tripId: trip.tripId,
+            );
+            if (afterSave != null) {
+              await afterSave(id);
+            } else if (draft.isNew) {
+              await adoptFirstStay(db, id);
+            }
             await syncReadinessChecklist(db, trip.tripId);
           },
         ),
@@ -910,7 +997,10 @@ class _HomeState extends State<_Home> {
               trip,
               initialStopId: stopId,
               initialCategory: ContactCategory.accommodation,
+              // The only stay at a stop with none: it is where you sleep.
+              afterSave: (id) => setStay(db, stopId, id),
             ),
+            onChooseStay: (stopId) => _chooseStay(context, trip.tripId, stopId),
           ),
         ),
         ShellDestination(

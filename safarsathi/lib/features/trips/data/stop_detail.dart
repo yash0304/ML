@@ -6,6 +6,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../weather/data/weather_client.dart';
+import '../../contacts/data/contacts_dao.dart' show ContactCategory;
 import 'trip_editor.dart';
 
 class StopDetail {
@@ -34,6 +35,12 @@ class StopDetail {
   /// When the legs touching this stop were last downloaded.
   final DateTime? lastSyncedAt;
 
+  /// Where you said you sleep here, or null when not decided.
+  final Contact? stay;
+
+  /// Accommodation numbers saved here — what can be chosen.
+  final int stayOptionCount;
+
   const StopDetail({
     required this.stop,
     required this.weather,
@@ -44,6 +51,8 @@ class StopDetail {
     required this.nearbyPlaceCount,
     this.weatherCachedAt,
     this.lastSyncedAt,
+    this.stay,
+    this.stayOptionCount = 0,
   });
 
   List<String> get tags => parseTags(stop.activityTags);
@@ -128,6 +137,16 @@ Stream<StopDetail> watchStopDetail(AppDatabase db, int stopId) {
       checklistDone: checklist.where((i) => i.isDone).length,
       nearbyPlaceCount: places,
       lastSyncedAt: synced,
+      // By id, not among this stop's contacts: a stay whose entry has since
+      // been attached elsewhere is still the stay until changed here.
+      stay: stop.stayContactId == null
+          ? null
+          : await (db.select(
+              db.contacts,
+            )..where((c) => c.id.equals(stop.stayContactId!))).getSingleOrNull(),
+      stayOptionCount: contacts
+          .where((c) => c.category == ContactCategory.accommodation)
+          .length,
     );
   });
 }

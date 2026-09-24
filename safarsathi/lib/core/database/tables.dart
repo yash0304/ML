@@ -59,6 +59,19 @@ class Stops extends Table {
   RealColumn get lat => real().nullable()();
   RealColumn get lon => real().nullable()();
   TextColumn get note => text().nullable()();
+
+  /// The diary entry for where you actually sleep here (v6).
+  ///
+  /// A stop can hold several accommodation numbers — options from a sheet,
+  /// a backup, the one you booked — and until this existed the app showed
+  /// whichever sorted first as "tonight". Null means not decided, which is
+  /// said, never guessed.
+  ///
+  /// NO FOREIGN KEY, on purpose. A backup restores stops before contacts,
+  /// so a reference would fail every restore of a trip with a stay chosen.
+  /// A deleted contact leaves an id that matches nothing, and every reader
+  /// treats that as not decided.
+  IntColumn get stayContactId => integer().nullable()();
 }
 
 /// A Leg is a first-class entity, not a pointer between two Stops. The

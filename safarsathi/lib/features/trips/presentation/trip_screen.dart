@@ -48,6 +48,9 @@ class TripScreen extends StatelessWidget {
   /// "No stay saved here yet — add one", starting at that stop.
   final void Function(int stopId)? onAddStay;
 
+  /// Choose or change where you sleep at that stop.
+  final void Function(int stopId)? onChooseStay;
+
   /// Sends the plan — each night's stop and stay — to someone at home.
   final VoidCallback? onSharePlan;
 
@@ -67,6 +70,7 @@ class TripScreen extends StatelessWidget {
     this.tonight,
     this.onOpenContact,
     this.onAddStay,
+    this.onChooseStay,
     this.onSharePlan,
     this.health,
     this.onRemoveSamples,
@@ -131,6 +135,7 @@ class TripScreen extends StatelessWidget {
                       tonight: tonight!,
                       onOpen: onOpenContact,
                       onAdd: onAddStay,
+                      onChoose: onChooseStay,
                     ),
                   if (data.nextLeg != null) ...[
                     const StencilLabel('Next leg'),
@@ -165,7 +170,12 @@ class TripScreen extends StatelessWidget {
                     ),
                   const SizedBox(height: AppTokens.s16),
                   if (readiness != null)
-                    ReadinessPanel(readiness: readiness!)
+                    ReadinessPanel(
+                      readiness: readiness!,
+                      // Every item is about a stop's bed: choosing it, adding
+                      // it, or checking it is the one you confirmed.
+                      onOpenStop: onChooseStay,
+                    )
                   else
                     ReadinessBanner(unconfirmedCount: unconfirmedCount),
                   _stopsHeader(c),
@@ -475,11 +485,14 @@ class _TonightCard extends StatelessWidget {
   final Stream<Tonight?> tonight;
   final void Function(Contact)? onOpen;
   final void Function(int stopId)? onAdd;
+  final void Function(int stopId)? onChoose;
 
-  const _TonightCard({required this.tonight, this.onOpen, this.onAdd});
-
-  /// Two is enough on the first screen; the rest are one tap into the diary.
-  static const shown = 2;
+  const _TonightCard({
+    required this.tonight,
+    this.onOpen,
+    this.onAdd,
+    this.onChoose,
+  });
 
   static const _months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -506,31 +519,40 @@ class _TonightCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             StencilLabel(label),
-            if (t.stays.isEmpty)
-              InkWell(
-                onTap: onAdd == null ? null : () => onAdd!(t.stop.id),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppTokens.gutter,
-                    0,
-                    AppTokens.gutter,
-                    AppTokens.s8,
-                  ),
-                  child: Text(
-                    'No stay for ${t.stop.name} in your diary yet.'
-                    '${onAdd == null ? '' : ' Add one.'}',
-                    style: AppTokens.captionStyle.copyWith(
-                      color: c.cautionMark,
-                    ),
-                  ),
+            // ONLY THE BED YOU CHOSE. This listed every accommodation number
+            // saved at the stop, so a sheet of options showed Bramhome Guest
+            // House as tonight's bed for somebody staying elsewhere.
+            if (t.stay != null) ...[
+              _StayRow(
+                stay: t.stay!,
+                onTap: onOpen == null ? null : () => onOpen!(t.stay!),
+              ),
+              if (onChoose != null)
+                _CardLink(
+                  key: const Key('tonight-change-stay'),
+                  text: 'Staying somewhere else? Change',
+                  color: c.signal,
+                  onTap: () => onChoose!(t.stop.id),
                 ),
+            ] else if (t.options.isNotEmpty)
+              _CardLink(
+                key: const Key('tonight-choose-stay'),
+                text:
+                    'Where are you staying in ${t.stop.name}? '
+                    '${t.options.length} '
+                    '${t.options.length == 1 ? 'place is' : 'places are'} '
+                    'saved there${onChoose == null ? '.' : ' — choose yours.'}',
+                color: c.cautionMark,
+                onTap: onChoose == null ? null : () => onChoose!(t.stop.id),
               )
             else
-              for (final stay in t.stays.take(shown))
-                _StayRow(
-                  stay: stay,
-                  onTap: onOpen == null ? null : () => onOpen!(stay),
-                ),
+              _CardLink(
+                text:
+                    'No stay for ${t.stop.name} in your diary yet.'
+                    '${onAdd == null ? '' : ' Add one.'}',
+                color: c.cautionMark,
+                onTap: onAdd == null ? null : () => onAdd!(t.stop.id),
+              ),
             if (t.sun?.sunset != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -547,6 +569,35 @@ class _TonightCard extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _CardLink extends StatelessWidget {
+  final String text;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _CardLink({
+    super.key,
+    required this.text,
+    required this.color,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppTokens.gutter,
+          0,
+          AppTokens.gutter,
+          AppTokens.s8,
+        ),
+        child: Text(text, style: AppTokens.captionStyle.copyWith(color: color)),
+      ),
     );
   }
 }

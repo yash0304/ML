@@ -112,6 +112,24 @@ Three ways, depending on how many you have:
   file. The app works out which column is which and shows you every row before
   saving anything.
 
+**Say where you are staying at each stop**
+
+A stop can hold several guest houses: options from a sheet, the one you
+booked, a backup. The app does not guess which is yours. Choose it in any
+of three places:
+
+- **Trip page → Tonight card** → *Where are you staying…? choose yours* (or
+  *Change*).
+- **The stop's page** (More → Edit the itinerary → tap the stop) →
+  **Staying at** → **Choose**.
+- **The guest house's own page** → **I am staying here in …**
+
+The one you choose is tonight's bed on the Trip page, the stay in the plan you
+send home, and the number that has to be confirmed before the trip reads
+ready. The other guest houses stay in the diary. A place you add yourself as
+the first stay at a stop counts as your choice straight away. An imported
+list never chooses itself.
+
 **4. Call each one and confirm it**
 
 This is the step people skip, and it is the one that matters.

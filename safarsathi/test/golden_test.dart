@@ -528,15 +528,13 @@ void main() {
               arrivalDate: DateTime(2026, 10, 3),
             ),
             night: DateTime(2026, 10, 3),
-            stays: [
-              diaryContact(
-                id: 9,
-                name: 'Kongthong Travellers Nest',
-                category: 'accommodation',
-                phone: '+91 90000 00019',
-                note: 'Owner meets the sumo at the village gate.',
-              ),
-            ],
+            stay: diaryContact(
+              id: 9,
+              name: 'Kongthong Travellers Nest',
+              category: 'accommodation',
+              phone: '+91 90000 00019',
+              note: 'Owner meets the sumo at the village gate.',
+            ),
             sun: sunTimes(25.3309, 91.8238, DateTime(2026, 10, 3)),
           ),
         ),

@@ -14,7 +14,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
-import 'tonight.dart' show staysAt;
+import 'stay.dart' show chosenStay;
 
 const _months = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -62,14 +62,15 @@ String formatPlan({
     out.writeln('$when${s.name} ($length)');
 
     if (nights > 0) {
-      final stays = staysAt(diary, s.id);
-      if (stays.isEmpty) {
-        out.writeln('  Stay: not saved yet');
-      } else {
-        for (final stay in stays.take(2)) {
-          out.writeln('  Stay: ${stay.name}, ${stay.phoneRaw}');
-        }
-      }
+      // ONLY THE STAY YOU CHOSE. This listed the first two accommodation
+      // numbers at the stop, so a sheet of options went home as if both
+      // were booked. Somebody at home reading a name will ring it.
+      final stay = chosenStay(s, diary);
+      out.writeln(
+        stay == null
+            ? '  Stay: not decided yet'
+            : '  Stay: ${stay.name}, ${stay.phoneRaw}',
+      );
     }
   }
 

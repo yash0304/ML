@@ -44,6 +44,13 @@ class EntryScreen extends StatefulWidget {
   /// Opens a Google Maps link. Null hides the directions button.
   final Future<void> Function(String url)? onOpenMaps;
 
+  /// For a place to stay at a stop you sleep at: that stop's name, and
+  /// whether this is the one you chose. Null hides the choice.
+  final ({String stopName, bool isStay})? stay;
+
+  /// Makes this the stay (true) or goes back to not decided (false).
+  final Future<void> Function(bool stayHere)? onStayHere;
+
   /// Reads the time a confirmation happened. Injectable because a golden that
   /// confirms a contact would otherwise bake today's date into the image and
   /// fail on every later day — which it duly did.
@@ -61,6 +68,8 @@ class EntryScreen extends StatefulWidget {
     this.onEdit,
     this.placeMap,
     this.onOpenMaps,
+    this.stay,
+    this.onStayHere,
     this.clock = DateTime.now,
   });
 
@@ -140,6 +149,8 @@ class _EntryScreenState extends State<EntryScreen> {
                   _header(c, contact),
                   _number(c, contact),
                   _primaryActions(c, contact),
+                  if (widget.stay != null && widget.onStayHere != null)
+                    _stayRow(c, widget.stay!),
                   const StencilLabel('Where it is'),
                   _where(c, contact),
                   const StencilLabel('Record'),
@@ -378,6 +389,43 @@ class _EntryScreenState extends State<EntryScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _stayRow(AppColors c, ({String stopName, bool isStay}) stay) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTokens.gutter,
+        AppTokens.s12,
+        AppTokens.gutter,
+        0,
+      ),
+      child: InkWell(
+        key: const Key('entry-stay-here'),
+        onTap: () => _run(() => widget.onStayHere!(!stay.isStay)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppTokens.s4),
+          child: Row(
+            children: [
+              Icon(
+                stay.isStay ? Icons.check_circle : Icons.bed_outlined,
+                size: 18,
+                color: c.signal,
+              ),
+              const SizedBox(width: AppTokens.s8),
+              Expanded(
+                child: Text(
+                  stay.isStay
+                      ? 'Where you are staying in ${stay.stopName}. Tap to '
+                            'undo.'
+                      : 'I am staying here in ${stay.stopName}',
+                  style: AppTokens.rowTitleStyle.copyWith(color: c.signal),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
