@@ -270,6 +270,16 @@ notification shows while it runs, and closing the app from Recents stops it.
 With it on, arrivals show the road actually driven, and the map draws your
 track over the planned route.
 
+**The phrasebook**
+
+More → **Phrasebook**. A few phrases (hello, help, call a doctor, where is
+the toilet, the bill, I am vegetarian, no onion no garlic) in Hindi, Bengali,
+German, French, Italian and Spanish, plus Khasi's *Khublei*. The languages of
+your trip's countries come first. Hindi and Bengali show how to say each
+phrase. Tap a phrase to show it full screen to the person you are asking.
+They were written for the app and not checked by a native speaker, and the
+screen says so.
+
 **To tag what each spend was for**
 
 Each expense has a **Tag** row: Food, Stay, Transport, Fuel, Entry &

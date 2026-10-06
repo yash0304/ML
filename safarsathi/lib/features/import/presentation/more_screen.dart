@@ -31,6 +31,9 @@ class MoreScreen extends StatelessWidget {
   final VoidCallback onBackup;
   final VoidCallback onTemplate;
 
+  /// A few phrases per language, offline (#40).
+  final VoidCallback? onPhrasebook;
+
   /// Live count of contacts on this trip, so the tab says something true
   /// about the diary rather than being a menu of verbs.
   final Stream<int> contactCount;
@@ -52,6 +55,7 @@ class MoreScreen extends StatelessWidget {
     required this.onBackup,
     required this.onTemplate,
     required this.contactCount,
+    this.onPhrasebook,
   });
 
   @override
@@ -131,6 +135,16 @@ class MoreScreen extends StatelessWidget {
                   'says how old it is.',
               onTap: onWeather,
             ),
+            if (onPhrasebook != null)
+              _Item(
+                key: const Key('more-phrasebook'),
+                icon: Icons.translate,
+                title: 'Phrasebook',
+                subtitle:
+                    'Help, water, vegetarian, the bill — in the languages of '
+                    'this trip, offline, large enough to show.',
+                onTap: onPhrasebook!,
+              ),
             const StencilLabel('Contacts'),
             _Item(
               icon: Icons.contacts_outlined,
@@ -228,8 +242,10 @@ class MoreScreen extends StatelessWidget {
                 // manifest holds INTERNET and "Download everything" uses it. It
                 // also listed the leg screen as unbuilt, long after it was.
                 // A screen whose job is to be honest about the app has to be.
-                'The GPS timeline (#30). Trusted-contact check-ins (#33, '
-                '#34).\n\n'
+                'State helplines (#37), the European emergency numbers '
+                '(#38), and the national numbers 1930, 1078, 1033 and 104 '
+                '(#36). Each waits on its government source: no number goes '
+                'into this app without one shown beside it.\n\n'
                 'The app uses the internet only when you ask it to, on a '
                 'screen that says what it will fetch: Download everything, '
                 'Download the map, and Weather. On the road it asks for '
@@ -253,6 +269,7 @@ class _Item extends StatelessWidget {
   final VoidCallback onTap;
 
   const _Item({
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,

@@ -381,7 +381,7 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   Manual exchange-rate snapshot per country at setup.
   *Depends on #31.*
 
-- [ ] **#40 Offline phrasebook** — M
+- [x] **#40 Offline phrasebook** — M — *6 Oct; seven languages, the trip's first, tap to show large; not checked by a native speaker and says so — see ISSUE_40_Phrasebook.md*
   Per-country basic phrases. Lower priority than everything above.
 
 ---

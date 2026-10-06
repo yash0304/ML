@@ -100,6 +100,7 @@ import 'features/trips/presentation/trip_form_screen.dart';
 import 'features/trips/presentation/trip_list_screen.dart';
 import 'features/trips/presentation/trip_screen.dart';
 import 'core/database/watch_tables.dart';
+import 'features/phrasebook/presentation/phrasebook_screen.dart';
 
 class SafarSathiApp extends StatelessWidget {
   /// Passed down rather than reached for globally. There is no repository
@@ -1480,6 +1481,17 @@ class _HomeState extends State<_Home> {
             onMultiAdd: () => _openMultiAdd(context, trip.tripId),
             onPickFromPhone: () => _openForm(context, trip, pickOnOpen: true),
             onBackup: () => _openBackup(context),
+            onPhrasebook: () async {
+              final stops = await _editor.stopsOf(trip.tripId);
+              if (!context.mounted) return;
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => PhrasebookScreen(
+                    countries: {for (final s in stops) s.countryCode},
+                  ),
+                ),
+              );
+            },
             onImport: () async {
               await ImportFlow(db: db, tripId: trip.tripId).start(context);
               await syncReadinessChecklist(db, trip.tripId);
