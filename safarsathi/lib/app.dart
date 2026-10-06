@@ -101,6 +101,9 @@ import 'features/trips/presentation/trip_list_screen.dart';
 import 'features/trips/presentation/trip_screen.dart';
 import 'core/database/watch_tables.dart';
 import 'features/phrasebook/presentation/phrasebook_screen.dart';
+import 'features/memories/data/memories.dart';
+import 'features/memories/presentation/add_memories_screen.dart';
+import 'features/memories/presentation/memories_screen.dart';
 
 class SafarSathiApp extends StatelessWidget {
   /// Passed down rather than reached for globally. There is no repository
@@ -996,13 +999,82 @@ class _HomeState extends State<_Home> {
       imageQuality: 85,
     );
     if (picked == null) return null;
+    return (await _keepPhotos([picked])).single;
+  }
+
+  /// Several at once from the phone's photo picker, for Memories.
+  Future<List<String>> _pickMemoryPhotos() async {
+    final picked = await ImagePicker().pickMultiImage(
+      maxWidth: 2048,
+      imageQuality: 85,
+    );
+    return _keepPhotos(picked);
+  }
+
+  /// Copies picked photos into the app's folder; the picker's own files are
+  /// temporary.
+  Future<List<String>> _keepPhotos(List<XFile> picked) async {
     final docs = await getApplicationDocumentsDirectory();
     final dir = Directory('${docs.path}/timeline');
     await dir.create(recursive: true);
-    final name = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-    final copy = await File(picked.path).copy('${dir.path}/$name');
-    return copy.path;
+    final stamp = DateTime.now().millisecondsSinceEpoch;
+    return [
+      for (final (i, p) in picked.indexed)
+        (await File(p.path).copy('${dir.path}/${stamp}_$i.jpg')).path,
+    ];
   }
+
+  static Future<void> _deletePhotos(List<String> paths) async {
+    for (final p in paths) {
+      final f = File(p);
+      if (f.existsSync()) await f.delete();
+    }
+  }
+
+  Future<void> _addMemories(BuildContext context, ActiveTripContext trip) async {
+    final db = widget.db;
+    final stops = await _editor.stopsOf(trip.tripId);
+    if (!context.mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AddMemoriesScreen(
+          stops: stops,
+          initialStopId: trip.currentStopId,
+          pickOnOpen: true,
+          pickMany: _pickMemoryPhotos,
+          takeOne: () => _pickTimelinePhoto(camera: true),
+          thumb: _thumb,
+          onDiscard: _deletePhotos,
+          onSave: (photos, words, stopId) => addTimelineNote(
+            db,
+            tripId: trip.tripId,
+            stopId: stopId,
+            text: words,
+            photoPaths: photos,
+            at: memoryDate(
+              stops.where((s) => s.id == stopId).firstOrNull,
+              DateTime.now(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// A stored photo small, decoded at grid size so a full album does not
+  /// hold every photo at full resolution in memory.
+  static Widget _thumb(String path) => Image.file(
+    File(path),
+    fit: BoxFit.cover,
+    cacheWidth: 360,
+    errorBuilder: (_, _, _) => const Icon(Icons.broken_image_outlined),
+  );
+
+  static Widget _wholePhoto(String path) => Image.file(
+    File(path),
+    fit: BoxFit.contain,
+    errorBuilder: (_, _, _) => const Icon(Icons.broken_image_outlined),
+  );
 
   /// "Reached Sohra safely" — #33. Opens on today's arrival stop.
   Future<void> _openCheckIn(
@@ -1463,6 +1535,33 @@ class _HomeState extends State<_Home> {
               addPerson: (name, phone) => addTrusted(db, name, phone),
               removePerson: (person) => removeTrusted(db, person.id),
             ),
+          ),
+        ),
+        ShellDestination(
+          label: 'Memories',
+          icon: Icons.photo_library_outlined,
+          screen: MemoriesScreen(
+            tripName: trip.name,
+            memories: watchMemories(db, trip.tripId),
+            onAdd: () => _addMemories(context, trip),
+            thumb: _thumb,
+            photo: _wholePhoto,
+            onShare: (m) async {
+              await SharePlus.instance.share(
+                ShareParams(
+                  files: [XFile(m.path)],
+                  text: [
+                    ?m.caption,
+                    ?m.place,
+                  ].join(' — '),
+                ),
+              );
+            },
+            onDelete: (m) async {
+              await removeMemory(db, m);
+              await _deletePhotos([m.path]);
+            },
+            onCaption: (id, text) => setMemoryCaption(db, id, text),
           ),
         ),
         ShellDestination(

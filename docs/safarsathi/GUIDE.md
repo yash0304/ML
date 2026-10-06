@@ -69,14 +69,15 @@ These are deliberate, not missing features.
 
 ## Part 2 — How to use it
 
-### The five buttons at the bottom
+### The six buttons at the bottom
 
 | Button | What it is |
 |---|---|
-| **Diary** | All your phone numbers. |
 | **Trip** | Your route, and whether you are ready to leave. |
+| **Diary** | All your phone numbers. |
 | **Money** | Who paid for what. |
 | **SOS** | Emergency numbers. Deliberately plain. |
+| **Memories** | The trip's photos. |
 | **More** | Everything else. |
 
 ---
@@ -269,6 +270,21 @@ GPS, with no signal needed. It costs about 4% of the battery a day. A
 notification shows while it runs, and closing the app from Recents stops it.
 With it on, arrivals show the road actually driven, and the map draws your
 track over the planned route.
+
+**Memories**
+
+The **Memories** button at the bottom is the trip's photo album, one row of
+photos per day with the places you were. Tap **Add photos**: the phone's
+picker opens, and you can choose several at once (or tap **Take one** for
+the camera). Choose where they were taken, add a few words if you like, and
+tap **Keep**. Added after the trip, they are filed under the day you reached
+that place.
+
+Tap a photo to see it whole. Pinch to zoom, swipe for the next. Tap the words
+under it to change them. **Share** sends it to WhatsApp, Drive or your
+gallery. **Delete** removes the app's copy; the original in your gallery is
+not touched. Photos are kept on this phone only and are not in the backup
+file, so share the ones you want to keep somewhere else.
 
 **The phrasebook**
 

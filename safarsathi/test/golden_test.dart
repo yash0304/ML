@@ -73,6 +73,8 @@ import 'package:safarsathi/features/import/presentation/column_mapping_screen.da
 import 'package:safarsathi/features/import/presentation/import_history_screen.dart';
 import 'package:safarsathi/features/import/presentation/import_preview_screen.dart';
 import 'package:safarsathi/features/import/presentation/more_screen.dart';
+import 'package:safarsathi/features/memories/data/memories.dart';
+import 'package:safarsathi/features/memories/presentation/memories_screen.dart';
 import 'dart:convert';
 
 Future<void> loadRealFonts() async {
@@ -423,6 +425,7 @@ void main() {
     'stop_detail',
     'leg_detail',
     'sync',
+    'memories',
   };
 
   Future<void> shootScreen(
@@ -776,6 +779,63 @@ void main() {
             stillPresent: 7,
           ),
         ]),
+      ),
+    );
+  });
+
+  testWidgets('memories', (tester) async {
+    // Photos stand in as flat tones: the golden is of the album's layout,
+    // not of anyone's pictures.
+    const tones = [
+      Color(0xFF5E7F6B), Color(0xFF8C9A8E), Color(0xFF3F5A4E),
+      Color(0xFFB59B74), Color(0xFF7D8FA3), Color(0xFF4E6A82),
+      Color(0xFF9C8466),
+    ];
+    Widget tone(String path) =>
+        ColoredBox(color: tones[int.parse(path.substring(3, 4)) % 7]);
+    Stop at(int id, String name) => Stop(
+      id: id,
+      tripId: 1,
+      name: name,
+      sequenceOrder: id,
+      countryCode: 'IN',
+      nights: 1,
+      activityTags: '',
+    );
+    TimelineEntry shot(int id, DateTime when, int stopId, String photos,
+            [String? words]) =>
+        TimelineEntry(
+          id: id,
+          tripId: 1,
+          stopId: stopId,
+          kind: 'note',
+          body: words,
+          photoPaths: photos,
+          occurredAt: when,
+        );
+    await shootScreen(
+      tester,
+      'memories',
+      MemoriesScreen(
+        tripName: 'Meghalaya · 1–5 Oct',
+        memories: Stream.value(
+          buildMemories(
+            [
+              shot(1, DateTime(2026, 10, 1, 17), 1, '/p/0.jpg'),
+              shot(2, DateTime(2026, 10, 2, 10), 2,
+                  '/p/1.jpg\n/p/2.jpg\n/p/3.jpg', 'Root bridge'),
+              shot(3, DateTime(2026, 10, 2, 16), 2, '/p/4.jpg'),
+              shot(4, DateTime(2026, 10, 3, 13), 3, '/p/5.jpg\n/p/6.jpg'),
+            ],
+            {1: at(1, 'Shillong'), 2: at(2, 'Cherrapunji'), 3: at(3, 'Dawki')},
+          ),
+        ),
+        onAdd: () {},
+        thumb: tone,
+        photo: tone,
+        onShare: (_) async {},
+        onDelete: (_) async {},
+        onCaption: (_, _) async {},
       ),
     );
   });

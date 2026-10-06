@@ -1,8 +1,8 @@
 // lib/core/widgets/app_shell.dart
 //
-// The five-item bottom bar from SCREENS.md §0. Deferred at #6 because there
-// was only one screen and a bar with four dead destinations is worse than no
-// bar at all.
+// The bottom bar from SCREENS.md §0: five items, six since Memories (#58).
+// Deferred at #6 because there was only one screen and a bar with four dead
+// destinations is worse than no bar at all.
 //
 // RED LEAVES THE EMERGENCY SCREEN EXACTLY ONCE: the SOS item is emergency red
 // while it is the active tab, and muted otherwise. Even then it is pointing

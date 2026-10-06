@@ -403,6 +403,13 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   from what actually landed on disk, not from the archive's word.
   *Depends on #56.*
 
+- [x] **#58 Memories tab** — M — *added 6 Oct, after the first trip: "a memories tab where a few of the photos can be saved"*
+  The trip's photos as an album, by day and place. Add several at once from
+  the phone's picker, or one from the camera, filed under a stop with a few
+  words; tap one to see it whole, swipe, share, delete. No new table: a
+  memory is a timeline note with photos, so it shows on the Timeline too.
+  *Depends on #30. See ISSUE_58_Memories.md.*
+
 ---
 
 ## Parked (revisit only if the constraint changes)
