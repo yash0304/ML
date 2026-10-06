@@ -10,6 +10,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -404,6 +405,26 @@ void main() {
     );
   });
 
+  // #47: these screens are also shot at night, as `<name>_lamp.png`. The
+  // same tree is re-themed in place, so the single-subscription streams
+  // the shots are built on are not listened to twice.
+  const lamp = {
+    'emergency',
+    'trip',
+    'money',
+    'more',
+    'itinerary',
+    'checklist',
+    'expense_form',
+    'settings',
+    'weather',
+    'discovery',
+    'poi_detail',
+    'stop_detail',
+    'leg_detail',
+    'sync',
+  };
+
   Future<void> shootScreen(
     WidgetTester tester,
     String name,
@@ -426,6 +447,24 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/$name.png'),
+    );
+
+    if (!lamp.contains(name)) return;
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: AppTokens.dark,
+        home: screen,
+      ),
+    );
+    // The theme change animates, and the buttons start their own colour
+    // animation only once it has landed.
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    expectNightText(tester, name);
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/${name}_lamp.png'),
     );
   }
 
@@ -657,7 +696,8 @@ void main() {
   // A sheet with everything wrong with it that a real sheet has: a homestay
   // already in the diary, a number Excel mangled into a float, a stop that is
   // not on the trip, a row with no name, and one with no number at all.
-  const messySheet = 'Guest Name,Mobile No.,Type,Place,Remarks\n'
+  const messySheet =
+      'Guest Name,Mobile No.,Type,Place,Remarks\n'
       'Rina Kharkongor,+91 90000 00001,Homestay,Shillong,Blue gate\n'
       'Biren Lyngdoh,9000000002,Driver,Shillong,Innova\n'
       'Dawki Boat,+91 90000 00003,Transport,Dawki,\n'
@@ -1836,4 +1876,40 @@ class _NoLocation implements LocationSource {
   Future<void> openAppSettings() async {}
   @override
   Future<void> openLocationSettings() async {}
+}
+
+/// #47: every piece of text drawn at night is in a night colour, so nothing
+/// falls through to a default that was chosen for day or for Material's
+/// purple baseline. Faded versions (a disabled label) count as the colour.
+void expectNightText(WidgetTester tester, String screen) {
+  const c = AppColors.night;
+  final palette = {
+    for (final k in [
+      c.paper,
+      c.stone,
+      c.ink,
+      c.muted,
+      c.signal,
+      c.caution,
+      c.emergency,
+    ])
+      k.toARGB32() & 0xFFFFFF,
+  };
+  for (final e in find.byType(RichText).evaluate()) {
+    final p = e.renderObject! as RenderParagraph;
+    p.text.visitChildren((span) {
+      final colour = span.style?.color;
+      if (colour != null && colour.a > 0) {
+        expect(
+          palette.contains(colour.toARGB32() & 0xFFFFFF),
+          isTrue,
+          reason:
+              '$screen at night: "${span.toPlainText()}" is drawn in '
+              '#${colour.toARGB32().toRadixString(16)}, not a night colour '
+              '(${e.debugGetCreatorChain(8)})',
+        );
+      }
+      return true;
+    });
+  }
 }

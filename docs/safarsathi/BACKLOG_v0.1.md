@@ -168,7 +168,7 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   *Depends on #42. Real data arrives with #25; until then show the seeded
   placeholder and mark it as such.*
 
-- [ ] **#47 Night theme audit** — S
+- [x] **#47 Night theme audit** — S — *6 Oct; Material roles mapped to the palette, form errors amber not red, hints legible; 14 night goldens that fail on off-palette text — see ISSUE_47_NightAudit.md*
   Walk every built screen in `AppColors.night`. Check contrast on real
   devices, not just on the numbers in the doc. Grain drops to 2%. The
   emergency red gets no glow treatment.

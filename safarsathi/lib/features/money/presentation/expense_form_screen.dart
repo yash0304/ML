@@ -245,7 +245,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
               style: AppTokens.rowTitleStyle.copyWith(color: c.ink),
               decoration: InputDecoration(
                 hintText: 'Taxi, Shillong to Cherrapunji',
-                hintStyle: AppTokens.rowTitleStyle.copyWith(color: c.rule),
+                hintStyle: AppTokens.rowTitleStyle.copyWith(color: c.muted),
                 border: UnderlineInputBorder(
                   borderSide: BorderSide(color: c.rule),
                 ),
@@ -327,7 +327,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
                 ),
                 hintText: '3200.11',
                 hintStyle: AppTokens.numberStyle.copyWith(
-                  color: c.rule,
+                  color: c.muted,
                   fontSize: 22,
                 ),
                 border: UnderlineInputBorder(

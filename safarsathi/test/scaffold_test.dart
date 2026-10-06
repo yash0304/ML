@@ -69,6 +69,56 @@ void main() {
     }
   });
 
+  test('every Material colour role comes from the palette (#47)', () {
+    // Five roles set and the rest left on Material's purple baseline is how
+    // dialogs, pickers and menus drew lavender-grey at night.
+    for (final (theme, c) in [
+      (AppTokens.light, AppColors.day),
+      (AppTokens.dark, AppColors.night),
+    ]) {
+      final s = theme.colorScheme;
+      final palette = {
+        c.paper, c.stone, c.rule, c.ink, c.muted, c.signal, c.signalSoft,
+        c.caution, c.cautionSoft, c.emergency, c.emergencySoft,
+        // The snackbar action sits on the inverse ground.
+        AppColors.day.signal, AppColors.night.signal,
+      };
+      for (final (name, colour) in [
+        ('surface', s.surface),
+        ('onSurface', s.onSurface),
+        ('onSurfaceVariant', s.onSurfaceVariant),
+        ('surfaceContainerLowest', s.surfaceContainerLowest),
+        ('surfaceContainerLow', s.surfaceContainerLow),
+        ('surfaceContainer', s.surfaceContainer),
+        ('surfaceContainerHigh', s.surfaceContainerHigh),
+        ('surfaceContainerHighest', s.surfaceContainerHighest),
+        ('primary', s.primary),
+        ('onPrimary', s.onPrimary),
+        ('primaryContainer', s.primaryContainer),
+        ('secondary', s.secondary),
+        ('secondaryContainer', s.secondaryContainer),
+        ('onSecondaryContainer', s.onSecondaryContainer),
+        ('tertiary', s.tertiary),
+        ('error', s.error),
+        ('errorContainer', s.errorContainer),
+        ('outline', s.outline),
+        ('outlineVariant', s.outlineVariant),
+        ('inverseSurface', s.inverseSurface),
+        ('onInverseSurface', s.onInverseSurface),
+        ('inversePrimary', s.inversePrimary),
+      ]) {
+        expect(palette, contains(colour), reason: '${s.brightness} $name');
+      }
+      expect(s.surfaceTint.a, 0, reason: 'no elevation tint');
+      expect(theme.dialogTheme.backgroundColor, c.paper);
+      // Material paints form errors in `error`; red is the emergency tab's.
+      expect(s.error, isNot(c.emergency));
+      expect(contrast(s.inversePrimary, s.inverseSurface),
+          greaterThanOrEqualTo(4.5));
+      expect(contrast(s.onSurfaceVariant, c.stone), greaterThanOrEqualTo(4.5));
+    }
+  });
+
   test('cautionMark clears the 3:1 floor for non-text graphics', () {
     for (final c in [AppColors.day, AppColors.night]) {
       expect(contrast(c.cautionMark, c.paper), greaterThanOrEqualTo(3.0));

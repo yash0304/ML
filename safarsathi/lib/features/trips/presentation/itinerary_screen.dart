@@ -194,7 +194,7 @@ class _StopRow extends StatelessWidget {
                 index: index,
                 child: Padding(
                   padding: const EdgeInsets.only(left: AppTokens.s8),
-                  child: Icon(Icons.drag_handle, size: 20, color: c.rule),
+                  child: Icon(Icons.drag_handle, size: 20, color: c.muted),
                 ),
               ),
             ],

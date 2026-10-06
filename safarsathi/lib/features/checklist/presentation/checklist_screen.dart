@@ -175,7 +175,7 @@ class ChecklistScreen extends StatelessWidget {
           style: AppTokens.rowTitleStyle.copyWith(color: c.ink),
           decoration: InputDecoration(
             hintText: 'Spare specs',
-            hintStyle: AppTokens.rowTitleStyle.copyWith(color: c.rule),
+            hintStyle: AppTokens.rowTitleStyle.copyWith(color: c.muted),
           ),
           onSubmitted: (v) => Navigator.of(dialogContext).pop(v.trim()),
         ),

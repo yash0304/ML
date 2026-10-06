@@ -120,7 +120,7 @@ class _PlacePickerSheetState extends State<PlacePickerSheet> {
                     decoration: InputDecoration(
                       hintText: 'Cherrapunji, Meghalaya',
                       hintStyle: AppTokens.rowTitleStyle.copyWith(
-                        color: c.rule,
+                        color: c.muted,
                       ),
                       border: UnderlineInputBorder(
                         borderSide: BorderSide(color: c.rule),
@@ -182,7 +182,7 @@ class _PlacePickerSheetState extends State<PlacePickerSheet> {
               style: AppTokens.numberStyle.copyWith(color: c.ink),
               decoration: InputDecoration(
                 hintText: '25.5788, 91.8933',
-                hintStyle: AppTokens.numberStyle.copyWith(color: c.rule),
+                hintStyle: AppTokens.numberStyle.copyWith(color: c.muted),
                 border: UnderlineInputBorder(
                   borderSide: BorderSide(color: c.rule),
                 ),

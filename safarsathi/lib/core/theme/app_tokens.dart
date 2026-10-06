@@ -330,12 +330,59 @@ class AppTokens {
         thickness: hairline,
         space: hairline,
       ),
+      // EVERY ROLE, NOT FIVE (#47). Setting only surface/primary/error left
+      // the rest on Material's purple baseline: dialogs, date and time
+      // pickers, menus and the switch track drew in cool lavender greys —
+      // at night #2B2930 under warm charcoal, the one place the warmth was
+      // supposed to hold. A test now fails if any role leaves the palette.
+      //
+      // `error` is caution, not emergency. Material paints form errors in
+      // it, and red belongs to the emergency tab alone; a mistyped field is
+      // a caution.
       colorScheme: base.colorScheme.copyWith(
         surface: c.paper,
+        onSurface: c.ink,
+        onSurfaceVariant: c.muted,
+        surfaceDim: c.paper,
+        surfaceBright: c.stone,
+        surfaceContainerLowest: c.paper,
+        surfaceContainerLow: c.stone,
+        surfaceContainer: c.stone,
+        surfaceContainerHigh: c.stone,
+        surfaceContainerHighest: c.rule,
+        surfaceTint: Colors.transparent,
         primary: c.signal,
         onPrimary: c.paper,
-        error: c.emergency,
-        onSurface: c.ink,
+        primaryContainer: c.signalSoft,
+        onPrimaryContainer: c.ink,
+        secondary: c.signal,
+        onSecondary: c.paper,
+        secondaryContainer: c.signalSoft,
+        onSecondaryContainer: c.ink,
+        tertiary: c.caution,
+        onTertiary: c.paper,
+        tertiaryContainer: c.cautionSoft,
+        onTertiaryContainer: c.ink,
+        error: c.caution,
+        onError: c.paper,
+        errorContainer: c.cautionSoft,
+        onErrorContainer: c.ink,
+        outline: c.muted,
+        outlineVariant: c.rule,
+        inverseSurface: c.ink,
+        onInverseSurface: c.paper,
+        // The snackbar's action sits on inverseSurface, the other theme's
+        // ground, so it takes the other theme's green.
+        inversePrimary: isDark ? AppColors.day.signal : AppColors.night.signal,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: c.paper,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusSoft),
+          side: BorderSide(color: c.ink, width: hairline),
+        ),
       ),
       textTheme: base.textTheme.apply(
         fontFamily: _body,

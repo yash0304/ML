@@ -192,7 +192,7 @@ class _StopFormScreenState extends State<StopFormScreen> {
               style: AppTokens.rowTitleStyle.copyWith(color: c.ink),
               decoration: InputDecoration(
                 hintText: 'Shillong',
-                hintStyle: AppTokens.rowTitleStyle.copyWith(color: c.rule),
+                hintStyle: AppTokens.rowTitleStyle.copyWith(color: c.muted),
                 border: UnderlineInputBorder(
                   borderSide: BorderSide(color: c.rule),
                 ),
@@ -330,7 +330,7 @@ class _StopFormScreenState extends State<StopFormScreen> {
               style: AppTokens.captionStyle.copyWith(color: c.ink),
               decoration: InputDecoration(
                 hintText: 'Blue gate past the church',
-                hintStyle: AppTokens.captionStyle.copyWith(color: c.rule),
+                hintStyle: AppTokens.captionStyle.copyWith(color: c.muted),
                 border: OutlineInputBorder(
                   borderSide: BorderSide(color: c.rule),
                 ),

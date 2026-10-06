@@ -226,7 +226,7 @@ InputDecoration _ruled(AppColors c, String hint, TextStyle style) =>
       isDense: true,
       filled: false,
       hintText: hint,
-      hintStyle: style.copyWith(color: c.rule),
+      hintStyle: style.copyWith(color: c.muted),
       contentPadding: const EdgeInsets.symmetric(vertical: 6),
       enabledBorder: UnderlineInputBorder(
         borderSide: BorderSide(color: c.rule, width: AppTokens.hairline),

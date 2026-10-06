@@ -262,7 +262,7 @@ class _LegFormScreenState extends State<LegFormScreen> {
               style: AppTokens.numberStyle.copyWith(color: c.ink),
               decoration: InputDecoration(
                 hintText: 'ML 05 A 1234',
-                hintStyle: AppTokens.captionStyle.copyWith(color: c.rule),
+                hintStyle: AppTokens.captionStyle.copyWith(color: c.muted),
                 helperText:
                     'Goes in the plan you send home, and in an SOS text on '
                     'the day. The driver is chosen on the leg\'s page.',
@@ -283,7 +283,7 @@ class _LegFormScreenState extends State<LegFormScreen> {
               style: AppTokens.captionStyle.copyWith(color: c.ink),
               decoration: InputDecoration(
                 hintText: 'Sumo stand behind Police Bazar, leaves when full',
-                hintStyle: AppTokens.captionStyle.copyWith(color: c.rule),
+                hintStyle: AppTokens.captionStyle.copyWith(color: c.muted),
                 border: OutlineInputBorder(
                   borderSide: BorderSide(color: c.rule),
                 ),

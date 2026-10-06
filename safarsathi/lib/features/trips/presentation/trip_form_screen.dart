@@ -88,7 +88,7 @@ class _TripFormScreenState extends State<TripFormScreen> {
               decoration: InputDecoration(
                 hintText: 'Meghalaya, October',
                 hintStyle: AppTokens.titleStyle.copyWith(
-                  color: c.rule,
+                  color: c.muted,
                   fontSize: 20,
                 ),
                 border: UnderlineInputBorder(

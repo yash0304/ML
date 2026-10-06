@@ -392,7 +392,7 @@ class _Row extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppTokens.s8),
-              child: Icon(Icons.arrow_forward, size: 13, color: c.rule),
+              child: Icon(Icons.arrow_forward, size: 13, color: c.muted),
             ),
           ],
           Text(

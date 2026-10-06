@@ -153,7 +153,7 @@ Future<String?> _nameDialog(
         style: AppTokens.rowTitleStyle.copyWith(color: c.ink),
         decoration: InputDecoration(
           hintText: 'Priya',
-          hintStyle: AppTokens.rowTitleStyle.copyWith(color: c.rule),
+          hintStyle: AppTokens.rowTitleStyle.copyWith(color: c.muted),
         ),
         onSubmitted: (v) => Navigator.of(dialogContext).pop(v.trim()),
       ),
