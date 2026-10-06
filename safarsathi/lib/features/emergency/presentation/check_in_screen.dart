@@ -33,6 +33,11 @@ class CheckInScreen extends StatefulWidget {
   /// Records the check-in once a message has been opened to send.
   final Future<void> Function(CheckInStop stop, HereFix? fix) onRecorded;
 
+  /// Whether check-in reminders (#34) are on, and the switch for them. The
+  /// switch returns a sentence when it could not turn them on.
+  final Stream<bool>? remindersOn;
+  final Future<String?> Function(bool on)? onReminders;
+
   final Duration wait;
   final DateTime Function() clock;
 
@@ -46,6 +51,8 @@ class CheckInScreen extends StatefulWidget {
     required this.share,
     required this.onRecorded,
     this.initialStopId,
+    this.remindersOn,
+    this.onReminders,
     this.wait = const Duration(seconds: 12),
     this.clock = DateTime.now,
   });
@@ -61,6 +68,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
   bool _withLocation = true;
   bool _busy = false;
   String? _done;
+  String? _reminderProblem;
 
   CheckInStop? get _stop {
     for (final s in widget.stops) {
@@ -210,6 +218,31 @@ class _CheckInScreenState extends State<CheckInScreen> {
                 title: const Text('Send it another way (WhatsApp…)'),
                 onTap: () => _send(),
               ),
+              if (widget.remindersOn != null && widget.onReminders != null)
+                StreamBuilder<bool>(
+                  stream: widget.remindersOn,
+                  builder: (context, on) => SwitchListTile(
+                    key: const Key('checkin-reminders'),
+                    value: on.data ?? false,
+                    onChanged: (v) async {
+                      final problem = await widget.onReminders!(v);
+                      if (mounted) setState(() => _reminderProblem = problem);
+                    },
+                    title: const Text('Remind me if I forget'),
+                    subtitle: Text(
+                      _reminderProblem ??
+                          'A notification on this phone a while after each '
+                              'leg\'s planned arrival, if you have not checked '
+                              'in — and a second one later. It only reminds '
+                              'you; nothing is ever sent without you.',
+                      style: AppTokens.captionStyle.copyWith(
+                        color: _reminderProblem == null
+                            ? c.muted
+                            : c.caution,
+                      ),
+                    ),
+                  ),
+                ),
               if (_busy)
                 Padding(
                   padding: const EdgeInsets.all(AppTokens.gutter),

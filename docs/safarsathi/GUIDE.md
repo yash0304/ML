@@ -225,6 +225,11 @@ Sohra safely — 17:20", where you are, and where you're staying. You press
 Send. A text gets through on one bar with no data. The people are the same
 ones as for SOS (choose them on the SOS tab).
 
+On the same screen, **Remind me if I forget** turns on a notification about
+two hours after each leg's planned arrival if you haven't checked in, and a
+second one later. It only reminds you; nothing is sent without you. It needs
+the leg's arrival time (Transport → EDIT → Arrive).
+
 **In an emergency**
 
 **SOS.** Tap a number and it dials straight away, no copying. This screen is

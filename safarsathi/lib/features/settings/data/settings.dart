@@ -32,6 +32,11 @@ class SettingKeys {
   /// map SDK. The control that matters is restricting the key to this app's
   /// package name in the MapTiler dashboard.
   static const mapTilerKey = 'mapTilerKey';
+
+  /// Whether to remind the person to check in after a leg's arrival (#34).
+  /// Off until switched on — that switch is where notifications are asked
+  /// for, never at launch.
+  static const checkInReminders = 'checkInReminders';
 }
 
 ThemeMode themeModeFromName(String? name) => switch (name) {
@@ -88,6 +93,15 @@ class SettingsRepository {
 
   Future<void> setMapTilerKey(String key) =>
       write(SettingKeys.mapTilerKey, key.trim());
+
+  Stream<bool> watchCheckInReminders() =>
+      watch(SettingKeys.checkInReminders).map((v) => v == 'on');
+
+  Future<bool> readCheckInReminders() async =>
+      await read(SettingKeys.checkInReminders) == 'on';
+
+  Future<void> setCheckInReminders(bool on) =>
+      write(SettingKeys.checkInReminders, on ? 'on' : 'off');
 }
 
 /// What one trip is holding, for the cache screen.

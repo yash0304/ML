@@ -355,7 +355,7 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   the route with each place on its own milestone.
   *Depends on #18, #23.*
 - [x] **#33 Trusted contacts + check-in** — M — SMS intent, no server relay — *6 Oct; Trip page → Check in, recorded as a timeline arrival — see ISSUE_33_34_CheckIn.md*
-- [ ] **#34 Check-in escalation** — M — WorkManager timer, alert on ETA + buffer
+- [x] **#34 Check-in escalation** — M — WorkManager timer, alert on ETA + buffer — *6 Oct; a local notification at arrival + buffer and again at twice it, no WorkManager, never sends by itself — see ISSUE_33_34_CheckIn.md*
 - [x] **#35 Settings + cache management** — S — *theme override, corridor width, call history, per-trip cache clear*
 
 ---

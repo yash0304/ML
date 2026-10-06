@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
@@ -77,6 +79,7 @@ import 'features/trips/data/planned_stops.dart';
 import 'features/trips/data/driver.dart';
 import 'features/money/data/expense_export.dart';
 import 'features/emergency/data/check_in.dart';
+import 'features/emergency/data/check_in_reminders.dart';
 import 'features/emergency/presentation/check_in_screen.dart';
 import 'features/money/data/currency.dart';
 import 'features/money/presentation/currencies_screen.dart';
@@ -165,9 +168,61 @@ class _HomeState extends State<_Home> {
   TileStore? _tiles;
   late final Future<void> _ready = _bootstrap();
 
+  /// Check-in reminders (#34): rescheduled whenever anything they depend on
+  /// changes, and a tapped reminder opens the check-in screen at its stop.
+  late final ReminderScheduler _reminders = DeviceReminderScheduler(
+    onTapped: _openCheckInFor,
+  );
+  StreamSubscription<void>? _reminderSync;
+  List<CheckInReminder> _scheduled = const [];
+
+  void _startReminderSync() {
+    final db = widget.db;
+    _reminderSync = watchTables(db, {
+      db.trips,
+      db.legs,
+      db.stops,
+      db.timelineEntries,
+      db.trustedContacts,
+      db.appSettings,
+    }).asyncMap((_) async {
+      final due = await remindersDue(
+        db,
+        enabled: await _settings.readCheckInReminders(),
+      );
+      // Unchanged is common — most writes are to other tables' neighbours
+      // in the set — and rescheduling then would only churn the alarms.
+      if (listEquals(due, _scheduled)) return;
+      _scheduled = due;
+      await _reminders.replaceAll(due);
+    }).listen((_) {}, onError: (Object e) {
+      debugPrint('Check-in reminders not updated: $e');
+    });
+  }
+
+  Future<void> _openCheckInFor(int stopId) async {
+    final trip = await watchActiveTripContext(widget.db).first;
+    if (trip == null || !mounted) return;
+    await _openCheckIn(context, trip, stopId: stopId);
+  }
+
+  @override
+  void dispose() {
+    _reminderSync?.cancel();
+    super.dispose();
+  }
+
   Future<void> _bootstrap() async {
     // No seeding, in any build: an empty database opens on "No trip yet".
     await ensureActiveTrip(widget.db);
+    _startReminderSync();
+    // Opened by tapping a reminder: go straight to checking in.
+    _reminders.launchedForStop().then((stop) {
+      if (stop == null) return;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _openCheckInFor(stop),
+      );
+    }, onError: (_) {});
 
     final documents = await getApplicationDocumentsDirectory();
     _tiles = TileStore(
@@ -855,8 +910,9 @@ class _HomeState extends State<_Home> {
   /// "Reached Sohra safely" — #33. Opens on today's arrival stop.
   Future<void> _openCheckIn(
     BuildContext context,
-    ActiveTripContext trip,
-  ) async {
+    ActiveTripContext trip, {
+    int? stopId,
+  }) async {
     final db = widget.db;
     final stops = await (db.select(db.stops)
           ..where((s) => s.tripId.equals(trip.tripId))
@@ -871,10 +927,18 @@ class _HomeState extends State<_Home> {
       MaterialPageRoute<void>(
         builder: (_) => CheckInScreen(
           stops: [for (final s in stops) (id: s.id, name: s.name)],
-          initialStopId: checkInStopId(
-            legs: legs,
-            currentStopId: trip.currentStopId,
-          ),
+          initialStopId:
+              stopId ??
+              checkInStopId(legs: legs, currentStopId: trip.currentStopId),
+          remindersOn: _settings.watchCheckInReminders(),
+          onReminders: (on) async {
+            if (on && !await _reminders.requestPermission()) {
+              return 'Notifications are off for SafarSathi. Allow them in '
+                  'the phone\'s Settings to get reminders.';
+            }
+            await _settings.setCheckInReminders(on);
+            return null;
+          },
           trusted: watchTrusted(db),
           location: const DeviceLocation(),
           stayAt: (stopId) async {

@@ -43,6 +43,6 @@ Acceptance:
   turn reminders on, never at launch.
 
 Acceptance:
-- [ ] Which reminders are due is a pure function, pinned by tests.
-- [ ] A check-in cancels its stop's reminders.
-- [ ] Reminders off schedules nothing.
+- [x] Which reminders are due is a pure function, pinned by tests.
+- [x] A check-in cancels its stop's reminders.
+- [x] Reminders off schedules nothing.
