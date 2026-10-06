@@ -13,6 +13,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
+import '../data/currency.dart';
 import '../data/expense_editor.dart';
 import '../data/expense_tags.dart';
 import '../data/settlement.dart';
@@ -23,12 +24,17 @@ class ExpenseFormScreen extends StatefulWidget {
   final Future<void> Function(ExpenseDraft draft) onSave;
   final Future<void> Function()? onDelete;
 
+  /// The trip's saved currencies and their rates. Empty shows no choice:
+  /// a trip that never leaves India sees the form it always did.
+  final List<CurrencyRate> currencies;
+
   const ExpenseFormScreen({
     super.key,
     required this.travellers,
     required this.onSave,
     this.existing,
     this.onDelete,
+    this.currencies = const [],
   });
 
   @override
@@ -72,6 +78,33 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
           ? null
           : guessTag(widget.existing!.description));
   late bool _tagChosen = widget.existing?.category != null;
+
+  /// The currency spent in, and the rate this expense will keep. An edited
+  /// expense keeps the rate it was saved with unless its currency changes:
+  /// a rate typed later never rewrites what was already spent.
+  late String _currency = widget.existing?.currency ?? baseCurrency;
+  late double _rate = widget.existing?.rateToBase ?? 1.0;
+  late DateTime? _rateAt = widget.existing?.rateCapturedAt;
+
+  void _pickCurrency(String code) {
+    setState(() {
+      _currency = code;
+      if (code == baseCurrency) {
+        _rate = 1.0;
+        _rateAt = null;
+      } else if (code == widget.existing?.currency) {
+        _rate = widget.existing!.rateToBase;
+        _rateAt = widget.existing!.rateCapturedAt;
+      } else {
+        final r = widget.currencies.firstWhere((x) => x.code == code);
+        _rate = r.rateToBase;
+        _rateAt = r.capturedAt;
+      }
+    });
+    Haptics.select();
+  }
+
+  String _money(int minor) => formatMoney(minor, _currency);
 
   bool get _isEdit => widget.existing?.id != null;
   int get _amountMinor => parseRupees(_amount.text) ?? 0;
@@ -171,9 +204,9 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
         spentAt: _spentAt,
         stopId: widget.existing?.stopId,
         category: _tag,
-        currency: widget.existing?.currency ?? 'INR',
-        rateToBase: widget.existing?.rateToBase ?? 1.0,
-        rateCapturedAt: widget.existing?.rateCapturedAt,
+        currency: _currency,
+        rateToBase: _rate,
+        rateCapturedAt: _rateAt,
       ),
     );
     if (mounted) setState(() => _saving = false);
@@ -249,6 +282,35 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
           ),
 
           const StencilLabel('How much'),
+          if (widget.currencies.isNotEmpty ||
+              _currency != baseCurrency)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTokens.gutter,
+                0,
+                AppTokens.gutter,
+                AppTokens.s8,
+              ),
+              child: Wrap(
+                spacing: AppTokens.s8,
+                runSpacing: AppTokens.s8,
+                children: [
+                  for (final code in {
+                    baseCurrency,
+                    for (final r in widget.currencies) r.code,
+                    // An expense saved in a currency since removed still
+                    // shows it, so opening it does not silently change it.
+                    _currency,
+                  })
+                    _Chip(
+                      key: Key('currency-$code'),
+                      label: code,
+                      on: _currency == code,
+                      onTap: () => _pickCurrency(code),
+                    ),
+                ],
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
             child: TextField(
@@ -258,7 +320,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
               ),
               style: AppTokens.numberStyle.copyWith(color: c.ink, fontSize: 22),
               decoration: InputDecoration(
-                prefixText: '₹ ',
+                prefixText: '${currencyPrefix(_currency)} ',
                 prefixStyle: AppTokens.numberStyle.copyWith(
                   color: c.muted,
                   fontSize: 22,
@@ -275,6 +337,26 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
               onChanged: (_) => setState(() {}),
             ),
           ),
+          if (_currency != baseCurrency)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTokens.gutter,
+                AppTokens.s8,
+                AppTokens.gutter,
+                0,
+              ),
+              child: Text(
+                // The rate, its date, and what this comes to at home — said
+                // here, because "€40" means nothing to the split until it
+                // is rupees.
+                '= ${formatRupees(toBaseMinor(_amountMinor, _rate))} at '
+                '1 $_currency = ${formatRupees(toBaseMinor(100, _rate))}'
+                '${_rateAt == null ? '' : ', the rate saved ${_rateAt!.day}/'
+                    '${_rateAt!.month}'}. Balances are settled in rupees.',
+                key: const Key('expense-in-rupees'),
+                style: AppTokens.captionStyle.copyWith(color: c.muted),
+              ),
+            ),
 
           const StencilLabel('Who paid'),
           Padding(
@@ -302,6 +384,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
               traveller: t,
               included: _between.contains(t.id),
               shareMinor: _shares[t.id] ?? 0,
+              currency: _currency,
               editable: _customShares != null,
               onToggle: () => _toggle(t.id),
               onChanged: (minor) => setState(() {
@@ -401,8 +484,8 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
                   : even
                   ? 'Shares add up exactly.'
                   : _outBy > 0
-                  ? '${formatRupees(_outBy)} still to allocate.'
-                  : '${formatRupees(-_outBy)} over the amount.',
+                  ? '${_money(_outBy)} still to allocate.'
+                  : '${_money(-_outBy)} over the amount.',
               style: AppTokens.captionStyle.copyWith(
                 // Amber, not red. An unfinished split is not an emergency.
                 color: even ? c.signal : c.cautionMark,
@@ -410,7 +493,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
             ),
           ),
           Text(
-            formatRupees(_shareTotal),
+            _money(_shareTotal),
             style: AppTokens.numberStyle.copyWith(
               color: even ? c.ink : c.cautionMark,
             ),
@@ -425,6 +508,7 @@ class _ShareRow extends StatefulWidget {
   final Traveller traveller;
   final bool included;
   final int shareMinor;
+  final String currency;
   final bool editable;
   final VoidCallback onToggle;
   final ValueChanged<int> onChanged;
@@ -433,6 +517,7 @@ class _ShareRow extends StatefulWidget {
     required this.traveller,
     required this.included,
     required this.shareMinor,
+    this.currency = baseCurrency,
     required this.editable,
     required this.onToggle,
     required this.onChanged,
@@ -516,7 +601,7 @@ class _ShareRowState extends State<_ShareRow> {
                         style: AppTokens.numberStyle.copyWith(color: c.ink),
                         decoration: InputDecoration(
                           isDense: true,
-                          prefixText: '₹',
+                          prefixText: currencyPrefix(widget.currency),
                           prefixStyle: AppTokens.numberStyle.copyWith(
                             color: c.muted,
                           ),
@@ -527,7 +612,7 @@ class _ShareRowState extends State<_ShareRow> {
                         onChanged: (v) => widget.onChanged(parseRupees(v) ?? 0),
                       )
                     : Text(
-                        formatRupees(widget.shareMinor),
+                        formatMoney(widget.shareMinor, widget.currency),
                         textAlign: TextAlign.right,
                         style: AppTokens.numberStyle.copyWith(color: c.ink),
                       ),

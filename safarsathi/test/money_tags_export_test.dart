@@ -325,14 +325,16 @@ void main() {
       expect(csv.startsWith('﻿'), isTrue, reason: 'Excel needs the BOM');
       final lines = csv.substring(1).split('\n');
       expect(lines[0],
-          'Date,What for,Tag,Amount (INR),Paid by,Yash share,Priya share,Stop');
+          'Date,What for,Tag,Amount (INR),Currency,Amount spent,Rate to INR,'
+          'Paid by,Yash share,Priya share,Stop');
       // Oldest first, as a ledger reads.
-      expect(lines[1], '2026-10-01,Tea,Untagged,40.00,Priya,,40.00,');
+      expect(lines[1],
+          '2026-10-01,Tea,Untagged,40.00,INR,40.00,1.0,Priya,,40.00,');
       // Quotes and a comma in the description survive.
       expect(
         lines[2],
-        '2026-10-02,"Taxi, Shillong to ""Sohra""",Transport,3200.11,Yash,'
-        '1600.06,1600.05,Sohra',
+        '2026-10-02,"Taxi, Shillong to ""Sohra""",Transport,3200.11,INR,'
+        '3200.11,1.0,Yash,1600.06,1600.05,Sohra',
       );
       expect(csv, contains('Total,,,3240.11'));
       expect(csv, contains('By tag,,,Amount (INR)\nTransport,,,3200.11\n'

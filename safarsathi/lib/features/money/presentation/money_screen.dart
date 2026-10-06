@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/retro.dart';
+import '../data/currency.dart';
 import '../data/expense_tags.dart';
 import '../data/money_summary.dart';
 import '../data/settlement.dart';
@@ -41,6 +42,9 @@ class MoneyScreen extends StatelessWidget {
   /// hides the offer.
   final Future<int> Function()? onTagUntagged;
 
+  /// The trip's currencies and rates. Null hides the link.
+  final VoidCallback? onCurrencies;
+
   const MoneyScreen({
     super.key,
     required this.summary,
@@ -50,6 +54,7 @@ class MoneyScreen extends StatelessWidget {
     this.onTravellers,
     this.onExport,
     this.onTagUntagged,
+    this.onCurrencies,
   });
 
   @override
@@ -184,6 +189,21 @@ class MoneyScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              if (onCurrencies != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: AppTokens.s16),
+                  child: PressScale(
+                    key: const Key('money-currencies'),
+                    onTap: onCurrencies,
+                    child: Text(
+                      'CURRENCIES',
+                      style: AppTokens.stencilStyle.copyWith(
+                        fontSize: 10,
+                        color: c.signal,
+                      ),
+                    ),
+                  ),
+                ),
               if (onExport != null)
                 PressScale(
                   key: const Key('money-export'),
@@ -374,9 +394,26 @@ class MoneyScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppTokens.s8),
-          Text(
-            formatRupees(e.amountMinor),
-            style: AppTokens.numberStyle.copyWith(fontSize: 14, color: c.ink),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                formatRupees(e.amountMinor),
+                style: AppTokens.numberStyle.copyWith(
+                  fontSize: 14,
+                  color: c.ink,
+                ),
+              ),
+              // Spent abroad: what it was, under what it counts as.
+              if (e.isForeign && e.originalMinor != null)
+                Text(
+                  formatMoney(e.originalMinor!, e.currency),
+                  style: AppTokens.captionStyle.copyWith(
+                    fontSize: 11.5,
+                    color: c.muted,
+                  ),
+                ),
+            ],
           ),
         ],
       ),

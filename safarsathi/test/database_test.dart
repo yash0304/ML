@@ -44,7 +44,7 @@ void main() {
 
   test('every table exists', () async {
     final names = await tableNames();
-    expect(names, hasLength(19));
+    expect(names, hasLength(20));
     for (final expected in [
       'trips',
       'stops',
@@ -68,6 +68,8 @@ void main() {
       'map_tiles',
       // Added at v7: stops planned on the way.
       'planned_stops',
+      // Added at v9: the trip's currency rates (#39).
+      'currency_rates',
     ]) {
       expect(names, contains(expected));
     }
@@ -300,7 +302,7 @@ void main() {
       // then they fail only on the phones that skipped a version.
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
-      expect(db.schemaVersion, 8);
+      expect(db.schemaVersion, 9);
     });
 
     test('A REAL v4 DATABASE UPGRADES TO v5 WITH ITS CONTACTS INTACT', () async {
@@ -337,6 +339,7 @@ void main() {
       await v4.customStatement('DROP TABLE planned_stops');
       await v4.customStatement('ALTER TABLE legs DROP COLUMN driver_contact_id');
       await v4.customStatement('ALTER TABLE legs DROP COLUMN vehicle_number');
+      await v4.customStatement('DROP TABLE currency_rates');
       await v4.customStatement('PRAGMA user_version = 4');
       await v4.close();
 
@@ -359,7 +362,7 @@ void main() {
       expect(after.lat, 25.57);
 
       final version = await v5.customSelect('PRAGMA user_version').getSingle();
-      expect(version.read<int>('user_version'), 8);
+      expect(version.read<int>('user_version'), 9);
     });
 
     test('A REAL v5 DATABASE UPGRADES: stops kept, no stay chosen',
@@ -399,6 +402,7 @@ void main() {
       await v5.customStatement('DROP TABLE planned_stops');
       await v5.customStatement('ALTER TABLE legs DROP COLUMN driver_contact_id');
       await v5.customStatement('ALTER TABLE legs DROP COLUMN vehicle_number');
+      await v5.customStatement('DROP TABLE currency_rates');
       await v5.customStatement('PRAGMA user_version = 5');
       await v5.close();
 
@@ -418,7 +422,7 @@ void main() {
           contact.id);
 
       final version = await v6.customSelect('PRAGMA user_version').getSingle();
-      expect(version.read<int>('user_version'), 8);
+      expect(version.read<int>('user_version'), 9);
     });
 
     test('v3 created app_settings with its key as the primary key', () async {

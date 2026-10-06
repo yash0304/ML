@@ -3,6 +3,7 @@
 // What the Money screen needs, in one stream.
 
 import '../../../core/database/app_database.dart';
+import 'currency.dart';
 import 'settlement.dart';
 import '../../../core/database/watch_tables.dart';
 
@@ -17,6 +18,12 @@ class LedgerEntry {
   /// What it was for (an expense_tags key), or null when untagged.
   final String? tag;
 
+  /// The amount as spent, in [currency]. [amountMinor] is always paise.
+  final int? originalMinor;
+  final String currency;
+
+  bool get isForeign => currency != baseCurrency;
+
   const LedgerEntry({
     required this.id,
     required this.description,
@@ -25,6 +32,8 @@ class LedgerEntry {
     required this.splitCount,
     required this.spentAt,
     this.tag,
+    this.originalMinor,
+    this.currency = baseCurrency,
   });
 }
 
@@ -83,7 +92,11 @@ Stream<MoneySummary> watchMoneySummary(AppDatabase db, int tripId) {
   // its own query touches, so watching `expenses` alone left the screen stale
   // whenever a traveller was added or a split edited — invisible until #31
   // made either possible. Same bug the trip summary had at #16.
-  final tick = watchTables(db, {db.expenses, db.expenseSplits, db.travellers});
+  final tick = watchTables(db, {
+    db.expenses,
+    db.expenseSplits,
+    db.travellers,
+  });
 
   return tick.asyncMap((_) async {
     final rows = await (db.select(
@@ -105,16 +118,29 @@ Stream<MoneySummary> watchMoneySummary(AppDatabase db, int tripId) {
     for (final e
         in rows.toList()..sort((a, b) => b.spentAt.compareTo(a.spentAt))) {
       final mine = splits.where((s) => s.expenseId == e.id).toList();
-      total += e.amountMinor;
-      net[e.paidById] = (net[e.paidById] ?? 0) + e.amountMinor;
-      for (final s in mine) {
-        net[s.travellerId] = (net[s.travellerId] ?? 0) - s.shareMinor;
+      // IN RUPEES, SHARE BY SHARE. A €12.50 dinner split three ways is
+      // converted one share at a time, and the expense's rupee amount is
+      // their sum — so what the payer is owed is exactly what the others owe,
+      // in paise, however the rounding falls. INR at 1.0 is unchanged.
+      final base = baseShares(
+        {for (final s in mine) s.travellerId: s.shareMinor},
+        e.rateToBase,
+      );
+      final amount = base.isEmpty
+          ? toBaseMinor(e.amountMinor, e.rateToBase)
+          : base.values.fold(0, (a, b) => a + b);
+      total += amount;
+      net[e.paidById] = (net[e.paidById] ?? 0) + amount;
+      for (final s in base.entries) {
+        net[s.key] = (net[s.key] ?? 0) - s.value;
       }
       ledger.add(
         LedgerEntry(
           id: e.id,
           description: e.description,
-          amountMinor: e.amountMinor,
+          amountMinor: amount,
+          originalMinor: e.amountMinor,
+          currency: e.currency,
           paidByName: nameOf[e.paidById] ?? '—',
           splitCount: mine.length,
           spentAt: e.spentAt,

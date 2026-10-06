@@ -261,6 +261,7 @@ void main() {
     await v6.customStatement('DROP TABLE planned_stops');
     await v6.customStatement('ALTER TABLE legs DROP COLUMN driver_contact_id');
     await v6.customStatement('ALTER TABLE legs DROP COLUMN vehicle_number');
+    await v6.customStatement('DROP TABLE currency_rates');
     await v6.customStatement('PRAGMA user_version = 6');
     await v6.close();
 
@@ -272,7 +273,7 @@ void main() {
     );
     expect(await v7.select(v7.plannedStops).get(), hasLength(1));
     final version = await v7.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 8);
+    expect(version.read<int>('user_version'), 9);
   });
 
   group('the screens', () {

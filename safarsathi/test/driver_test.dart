@@ -249,6 +249,7 @@ void main() {
     );
     await v7.customStatement('ALTER TABLE legs DROP COLUMN driver_contact_id');
     await v7.customStatement('ALTER TABLE legs DROP COLUMN vehicle_number');
+    await v7.customStatement('DROP TABLE currency_rates');
     await v7.customStatement('PRAGMA user_version = 7');
     await v7.close();
 
@@ -260,7 +261,7 @@ void main() {
     expect(l.driverContactId, isNull);
     expect(l.vehicleNumber, isNull);
     final version = await v8.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 8);
+    expect(version.read<int>('user_version'), 9);
   });
 
   group('the screens', () {

@@ -429,6 +429,29 @@ class WeatherSnapshots extends Table {
 /// Not in the original data model — the expense feature was described before
 /// it was designed. Splits have to point at a person, and a free-text name
 /// per split would make balances unjoinable.
+/// A currency this trip spends in, with the rate the person typed (v9).
+///
+/// There is no live rate offline. This is a snapshot, shown with the date it
+/// was typed, and every expense copies the rate it was saved with — so
+/// changing a rate here never rewrites what was already spent.
+class CurrencyRates extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get tripId =>
+      integer().references(Trips, #id, onDelete: KeyAction.cascade)();
+
+  /// ISO 4217, upper case: EUR, BDT, BTN.
+  TextColumn get code => text().withLength(min: 3, max: 3)();
+
+  /// Rupees for one unit: 1 EUR = 92.40 INR is stored as 92.40.
+  RealColumn get rateToBase => real()();
+  DateTimeColumn get capturedAt => dateTime()();
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => [
+    {tripId, code},
+  ];
+}
+
 class Travellers extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get tripId =>

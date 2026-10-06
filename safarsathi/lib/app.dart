@@ -76,6 +76,8 @@ import 'features/trips/presentation/planned_stop_dialog.dart';
 import 'features/trips/data/planned_stops.dart';
 import 'features/trips/data/driver.dart';
 import 'features/money/data/expense_export.dart';
+import 'features/money/data/currency.dart';
+import 'features/money/presentation/currencies_screen.dart';
 import 'features/trips/data/stay.dart';
 import 'features/weather/data/weather_sync.dart';
 import 'features/weather/presentation/weather_screen.dart';
@@ -1170,6 +1172,20 @@ class _HomeState extends State<_Home> {
             onTagUntagged: () => _money.tagUntaggedFromDescriptions(
               trip.tripId,
             ),
+            onCurrencies: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => CurrenciesScreen(
+                  rates: watchCurrencyRates(db, trip.tripId),
+                  onSave: (code, rate) => saveCurrencyRate(
+                    db,
+                    tripId: trip.tripId,
+                    code: code,
+                    rate: rate,
+                  ),
+                  onDelete: (r) => deleteCurrencyRate(db, r.id),
+                ),
+              ),
+            ),
             // A CSV through the share sheet: "Save to Files", Drive, Gmail or
             // WhatsApp, whichever the phone offers. Written to the app's temp
             // folder first, which the system clears; nothing is uploaded.
@@ -1322,10 +1338,17 @@ class _HomeState extends State<_Home> {
     }
     if (!context.mounted) return;
 
+    final currencies = await (db.select(db.currencyRates)
+          ..where((r) => r.tripId.equals(tripId))
+          ..orderBy([(r) => OrderingTerm(expression: r.code)]))
+        .get();
+    if (!context.mounted) return;
+
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (formContext) => ExpenseFormScreen(
           travellers: travellers,
+          currencies: currencies,
           existing: existing,
           onDelete: expenseId == null
               ? null

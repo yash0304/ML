@@ -11,6 +11,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
+import 'currency.dart';
 import 'expense_tags.dart';
 import 'settlement.dart';
 
@@ -66,6 +67,9 @@ Future<String> expensesCsv(AppDatabase db, int tripId) async {
     'What for',
     'Tag',
     'Amount (INR)',
+    'Currency',
+    'Amount spent',
+    'Rate to INR',
     'Paid by',
     for (final t in travellers) '${t.name} share',
     'Stop',
@@ -75,13 +79,17 @@ Future<String> expensesCsv(AppDatabase db, int tripId) async {
   final byTag = <String?, int>{};
   final net = {for (final t in travellers) t.id: 0};
   for (final e in expenses) {
-    final shares = {
+    // Rupees share by share, exactly as the Money tab counts them (#39).
+    final shares = baseShares({
       for (final s in splits)
         if (s.expenseId == e.id) s.travellerId: s.shareMinor,
-    };
-    total += e.amountMinor;
-    byTag[e.category] = (byTag[e.category] ?? 0) + e.amountMinor;
-    net[e.paidById] = (net[e.paidById] ?? 0) + e.amountMinor;
+    }, e.rateToBase);
+    final amount = shares.isEmpty
+        ? toBaseMinor(e.amountMinor, e.rateToBase)
+        : shares.values.fold(0, (a, b) => a + b);
+    total += amount;
+    byTag[e.category] = (byTag[e.category] ?? 0) + amount;
+    net[e.paidById] = (net[e.paidById] ?? 0) + amount;
     for (final s in shares.entries) {
       net[s.key] = (net[s.key] ?? 0) - s.value;
     }
@@ -89,7 +97,10 @@ Future<String> expensesCsv(AppDatabase db, int tripId) async {
       _day(e.spentAt),
       e.description,
       tagLabel(e.category),
+      _rupees(amount),
+      e.currency,
       _rupees(e.amountMinor),
+      e.rateToBase,
       nameOf[e.paidById] ?? '',
       for (final t in travellers)
         shares.containsKey(t.id) ? _rupees(shares[t.id]!) : '',

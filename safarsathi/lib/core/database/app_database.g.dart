@@ -8133,6 +8133,376 @@ class TravellersCompanion extends UpdateCompanion<Traveller> {
   }
 }
 
+class $CurrencyRatesTable extends CurrencyRates
+    with TableInfo<$CurrencyRatesTable, CurrencyRate> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CurrencyRatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _tripIdMeta = const VerificationMeta('tripId');
+  @override
+  late final GeneratedColumn<int> tripId = GeneratedColumn<int>(
+    'trip_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES trips (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+    'code',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 3,
+      maxTextLength: 3,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rateToBaseMeta = const VerificationMeta(
+    'rateToBase',
+  );
+  @override
+  late final GeneratedColumn<double> rateToBase = GeneratedColumn<double>(
+    'rate_to_base',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _capturedAtMeta = const VerificationMeta(
+    'capturedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> capturedAt = GeneratedColumn<DateTime>(
+    'captured_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tripId,
+    code,
+    rateToBase,
+    capturedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'currency_rates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CurrencyRate> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('trip_id')) {
+      context.handle(
+        _tripIdMeta,
+        tripId.isAcceptableOrUnknown(data['trip_id']!, _tripIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tripIdMeta);
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('rate_to_base')) {
+      context.handle(
+        _rateToBaseMeta,
+        rateToBase.isAcceptableOrUnknown(
+          data['rate_to_base']!,
+          _rateToBaseMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_rateToBaseMeta);
+    }
+    if (data.containsKey('captured_at')) {
+      context.handle(
+        _capturedAtMeta,
+        capturedAt.isAcceptableOrUnknown(data['captured_at']!, _capturedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_capturedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {tripId, code},
+  ];
+  @override
+  CurrencyRate map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CurrencyRate(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      tripId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}trip_id'],
+      )!,
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code'],
+      )!,
+      rateToBase: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}rate_to_base'],
+      )!,
+      capturedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}captured_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CurrencyRatesTable createAlias(String alias) {
+    return $CurrencyRatesTable(attachedDatabase, alias);
+  }
+}
+
+class CurrencyRate extends DataClass implements Insertable<CurrencyRate> {
+  final int id;
+  final int tripId;
+
+  /// ISO 4217, upper case: EUR, BDT, BTN.
+  final String code;
+
+  /// Rupees for one unit: 1 EUR = 92.40 INR is stored as 92.40.
+  final double rateToBase;
+  final DateTime capturedAt;
+  const CurrencyRate({
+    required this.id,
+    required this.tripId,
+    required this.code,
+    required this.rateToBase,
+    required this.capturedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['trip_id'] = Variable<int>(tripId);
+    map['code'] = Variable<String>(code);
+    map['rate_to_base'] = Variable<double>(rateToBase);
+    map['captured_at'] = Variable<DateTime>(capturedAt);
+    return map;
+  }
+
+  CurrencyRatesCompanion toCompanion(bool nullToAbsent) {
+    return CurrencyRatesCompanion(
+      id: Value(id),
+      tripId: Value(tripId),
+      code: Value(code),
+      rateToBase: Value(rateToBase),
+      capturedAt: Value(capturedAt),
+    );
+  }
+
+  factory CurrencyRate.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CurrencyRate(
+      id: serializer.fromJson<int>(json['id']),
+      tripId: serializer.fromJson<int>(json['tripId']),
+      code: serializer.fromJson<String>(json['code']),
+      rateToBase: serializer.fromJson<double>(json['rateToBase']),
+      capturedAt: serializer.fromJson<DateTime>(json['capturedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'tripId': serializer.toJson<int>(tripId),
+      'code': serializer.toJson<String>(code),
+      'rateToBase': serializer.toJson<double>(rateToBase),
+      'capturedAt': serializer.toJson<DateTime>(capturedAt),
+    };
+  }
+
+  CurrencyRate copyWith({
+    int? id,
+    int? tripId,
+    String? code,
+    double? rateToBase,
+    DateTime? capturedAt,
+  }) => CurrencyRate(
+    id: id ?? this.id,
+    tripId: tripId ?? this.tripId,
+    code: code ?? this.code,
+    rateToBase: rateToBase ?? this.rateToBase,
+    capturedAt: capturedAt ?? this.capturedAt,
+  );
+  CurrencyRate copyWithCompanion(CurrencyRatesCompanion data) {
+    return CurrencyRate(
+      id: data.id.present ? data.id.value : this.id,
+      tripId: data.tripId.present ? data.tripId.value : this.tripId,
+      code: data.code.present ? data.code.value : this.code,
+      rateToBase: data.rateToBase.present
+          ? data.rateToBase.value
+          : this.rateToBase,
+      capturedAt: data.capturedAt.present
+          ? data.capturedAt.value
+          : this.capturedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CurrencyRate(')
+          ..write('id: $id, ')
+          ..write('tripId: $tripId, ')
+          ..write('code: $code, ')
+          ..write('rateToBase: $rateToBase, ')
+          ..write('capturedAt: $capturedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, tripId, code, rateToBase, capturedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CurrencyRate &&
+          other.id == this.id &&
+          other.tripId == this.tripId &&
+          other.code == this.code &&
+          other.rateToBase == this.rateToBase &&
+          other.capturedAt == this.capturedAt);
+}
+
+class CurrencyRatesCompanion extends UpdateCompanion<CurrencyRate> {
+  final Value<int> id;
+  final Value<int> tripId;
+  final Value<String> code;
+  final Value<double> rateToBase;
+  final Value<DateTime> capturedAt;
+  const CurrencyRatesCompanion({
+    this.id = const Value.absent(),
+    this.tripId = const Value.absent(),
+    this.code = const Value.absent(),
+    this.rateToBase = const Value.absent(),
+    this.capturedAt = const Value.absent(),
+  });
+  CurrencyRatesCompanion.insert({
+    this.id = const Value.absent(),
+    required int tripId,
+    required String code,
+    required double rateToBase,
+    required DateTime capturedAt,
+  }) : tripId = Value(tripId),
+       code = Value(code),
+       rateToBase = Value(rateToBase),
+       capturedAt = Value(capturedAt);
+  static Insertable<CurrencyRate> custom({
+    Expression<int>? id,
+    Expression<int>? tripId,
+    Expression<String>? code,
+    Expression<double>? rateToBase,
+    Expression<DateTime>? capturedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tripId != null) 'trip_id': tripId,
+      if (code != null) 'code': code,
+      if (rateToBase != null) 'rate_to_base': rateToBase,
+      if (capturedAt != null) 'captured_at': capturedAt,
+    });
+  }
+
+  CurrencyRatesCompanion copyWith({
+    Value<int>? id,
+    Value<int>? tripId,
+    Value<String>? code,
+    Value<double>? rateToBase,
+    Value<DateTime>? capturedAt,
+  }) {
+    return CurrencyRatesCompanion(
+      id: id ?? this.id,
+      tripId: tripId ?? this.tripId,
+      code: code ?? this.code,
+      rateToBase: rateToBase ?? this.rateToBase,
+      capturedAt: capturedAt ?? this.capturedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (tripId.present) {
+      map['trip_id'] = Variable<int>(tripId.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (rateToBase.present) {
+      map['rate_to_base'] = Variable<double>(rateToBase.value);
+    }
+    if (capturedAt.present) {
+      map['captured_at'] = Variable<DateTime>(capturedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CurrencyRatesCompanion(')
+          ..write('id: $id, ')
+          ..write('tripId: $tripId, ')
+          ..write('code: $code, ')
+          ..write('rateToBase: $rateToBase, ')
+          ..write('capturedAt: $capturedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -10909,6 +11279,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $TravellersTable travellers = $TravellersTable(this);
+  late final $CurrencyRatesTable currencyRates = $CurrencyRatesTable(this);
   late final $ExpensesTable expenses = $ExpensesTable(this);
   late final $ExpenseSplitsTable expenseSplits = $ExpenseSplitsTable(this);
   late final $TimelineEntriesTable timelineEntries = $TimelineEntriesTable(
@@ -10938,6 +11309,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     checklistItems,
     weatherSnapshots,
     travellers,
+    currencyRates,
     expenses,
     expenseSplits,
     timelineEntries,
@@ -11093,6 +11465,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('travellers', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'trips',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('currency_rates', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -11340,6 +11719,24 @@ final class $$TripsTableReferences
     ).filter((f) => f.tripId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_travellersRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$CurrencyRatesTable, List<CurrencyRate>>
+  _currencyRatesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.currencyRates,
+    aliasName: 'trips__id__currency_rates__trip_id',
+  );
+
+  $$CurrencyRatesTableProcessedTableManager get currencyRatesRefs {
+    final manager = $$CurrencyRatesTableTableManager(
+      $_db,
+      $_db.currencyRates,
+    ).filter((f) => f.tripId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_currencyRatesRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -11664,6 +12061,31 @@ class $$TripsTableFilterComposer extends Composer<_$AppDatabase, $TripsTable> {
           }) => $$TravellersTableFilterComposer(
             $db: $db,
             $table: $db.travellers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> currencyRatesRefs(
+    Expression<bool> Function($$CurrencyRatesTableFilterComposer f) f,
+  ) {
+    final $$CurrencyRatesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.currencyRates,
+      getReferencedColumn: (t) => t.tripId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CurrencyRatesTableFilterComposer(
+            $db: $db,
+            $table: $db.currencyRates,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -12051,6 +12473,31 @@ class $$TripsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> currencyRatesRefs<T extends Object>(
+    Expression<T> Function($$CurrencyRatesTableAnnotationComposer a) f,
+  ) {
+    final $$CurrencyRatesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.currencyRates,
+      getReferencedColumn: (t) => t.tripId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CurrencyRatesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.currencyRates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> expensesRefs<T extends Object>(
     Expression<T> Function($$ExpensesTableAnnotationComposer a) f,
   ) {
@@ -12150,6 +12597,7 @@ class $$TripsTableTableManager
             bool callLogsRefs,
             bool checklistItemsRefs,
             bool travellersRefs,
+            bool currencyRatesRefs,
             bool expensesRefs,
             bool timelineEntriesRefs,
             bool trustedContactsRefs,
@@ -12221,6 +12669,7 @@ class $$TripsTableTableManager
                 callLogsRefs = false,
                 checklistItemsRefs = false,
                 travellersRefs = false,
+                currencyRatesRefs = false,
                 expensesRefs = false,
                 timelineEntriesRefs = false,
                 trustedContactsRefs = false,
@@ -12237,6 +12686,7 @@ class $$TripsTableTableManager
                     if (callLogsRefs) db.callLogs,
                     if (checklistItemsRefs) db.checklistItems,
                     if (travellersRefs) db.travellers,
+                    if (currencyRatesRefs) db.currencyRates,
                     if (expensesRefs) db.expenses,
                     if (timelineEntriesRefs) db.timelineEntries,
                     if (trustedContactsRefs) db.trustedContacts,
@@ -12397,6 +12847,27 @@ class $$TripsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (currencyRatesRefs)
+                        await $_getPrefetchedData<
+                          Trip,
+                          $TripsTable,
+                          CurrencyRate
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TripsTableReferences
+                              ._currencyRatesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TripsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).currencyRatesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.tripId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (expensesRefs)
                         await $_getPrefetchedData<Trip, $TripsTable, Expense>(
                           currentTable: table,
@@ -12486,6 +12957,7 @@ typedef $$TripsTableProcessedTableManager =
         bool callLogsRefs,
         bool checklistItemsRefs,
         bool travellersRefs,
+        bool currencyRatesRefs,
         bool expensesRefs,
         bool timelineEntriesRefs,
         bool trustedContactsRefs,
@@ -19660,6 +20132,325 @@ typedef $$TravellersTableProcessedTableManager =
         bool expenseSplitsRefs,
       })
     >;
+typedef $$CurrencyRatesTableCreateCompanionBuilder =
+    CurrencyRatesCompanion Function({
+      Value<int> id,
+      required int tripId,
+      required String code,
+      required double rateToBase,
+      required DateTime capturedAt,
+    });
+typedef $$CurrencyRatesTableUpdateCompanionBuilder =
+    CurrencyRatesCompanion Function({
+      Value<int> id,
+      Value<int> tripId,
+      Value<String> code,
+      Value<double> rateToBase,
+      Value<DateTime> capturedAt,
+    });
+
+final class $$CurrencyRatesTableReferences
+    extends BaseReferences<_$AppDatabase, $CurrencyRatesTable, CurrencyRate> {
+  $$CurrencyRatesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TripsTable _tripIdTable(_$AppDatabase db) =>
+      db.trips.createAlias('currency_rates__trip_id__trips__id');
+
+  $$TripsTableProcessedTableManager get tripId {
+    final $_column = $_itemColumn<int>('trip_id')!;
+
+    final manager = $$TripsTableTableManager(
+      $_db,
+      $_db.trips,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_tripIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$CurrencyRatesTableFilterComposer
+    extends Composer<_$AppDatabase, $CurrencyRatesTable> {
+  $$CurrencyRatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get rateToBase => $composableBuilder(
+    column: $table.rateToBase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TripsTableFilterComposer get tripId {
+    final $$TripsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tripId,
+      referencedTable: $db.trips,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TripsTableFilterComposer(
+            $db: $db,
+            $table: $db.trips,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CurrencyRatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CurrencyRatesTable> {
+  $$CurrencyRatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get rateToBase => $composableBuilder(
+    column: $table.rateToBase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TripsTableOrderingComposer get tripId {
+    final $$TripsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tripId,
+      referencedTable: $db.trips,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TripsTableOrderingComposer(
+            $db: $db,
+            $table: $db.trips,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CurrencyRatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CurrencyRatesTable> {
+  $$CurrencyRatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<double> get rateToBase => $composableBuilder(
+    column: $table.rateToBase,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => column,
+  );
+
+  $$TripsTableAnnotationComposer get tripId {
+    final $$TripsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tripId,
+      referencedTable: $db.trips,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TripsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.trips,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CurrencyRatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CurrencyRatesTable,
+          CurrencyRate,
+          $$CurrencyRatesTableFilterComposer,
+          $$CurrencyRatesTableOrderingComposer,
+          $$CurrencyRatesTableAnnotationComposer,
+          $$CurrencyRatesTableCreateCompanionBuilder,
+          $$CurrencyRatesTableUpdateCompanionBuilder,
+          (CurrencyRate, $$CurrencyRatesTableReferences),
+          CurrencyRate,
+          PrefetchHooks Function({bool tripId})
+        > {
+  $$CurrencyRatesTableTableManager(_$AppDatabase db, $CurrencyRatesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CurrencyRatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CurrencyRatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CurrencyRatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> tripId = const Value.absent(),
+                Value<String> code = const Value.absent(),
+                Value<double> rateToBase = const Value.absent(),
+                Value<DateTime> capturedAt = const Value.absent(),
+              }) => CurrencyRatesCompanion(
+                id: id,
+                tripId: tripId,
+                code: code,
+                rateToBase: rateToBase,
+                capturedAt: capturedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int tripId,
+                required String code,
+                required double rateToBase,
+                required DateTime capturedAt,
+              }) => CurrencyRatesCompanion.insert(
+                id: id,
+                tripId: tripId,
+                code: code,
+                rateToBase: rateToBase,
+                capturedAt: capturedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CurrencyRatesTable, CurrencyRate>(table),
+                  $$CurrencyRatesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({tripId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (tripId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.tripId,
+                                referencedTable: $$CurrencyRatesTableReferences
+                                    ._tripIdTable(db),
+                                referencedColumn: $$CurrencyRatesTableReferences
+                                    ._tripIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CurrencyRatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CurrencyRatesTable,
+      CurrencyRate,
+      $$CurrencyRatesTableFilterComposer,
+      $$CurrencyRatesTableOrderingComposer,
+      $$CurrencyRatesTableAnnotationComposer,
+      $$CurrencyRatesTableCreateCompanionBuilder,
+      $$CurrencyRatesTableUpdateCompanionBuilder,
+      (CurrencyRate, $$CurrencyRatesTableReferences),
+      CurrencyRate,
+      PrefetchHooks Function({bool tripId})
+    >;
 typedef $$ExpensesTableCreateCompanionBuilder =
     ExpensesCompanion Function({
       Value<int> id,
@@ -22056,6 +22847,8 @@ class $AppDatabaseManager {
       $$WeatherSnapshotsTableTableManager(_db, _db.weatherSnapshots);
   $$TravellersTableTableManager get travellers =>
       $$TravellersTableTableManager(_db, _db.travellers);
+  $$CurrencyRatesTableTableManager get currencyRates =>
+      $$CurrencyRatesTableTableManager(_db, _db.currencyRates);
   $$ExpensesTableTableManager get expenses =>
       $$ExpensesTableTableManager(_db, _db.expenses);
   $$ExpenseSplitsTableTableManager get expenseSplits =>

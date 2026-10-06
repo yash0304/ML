@@ -256,6 +256,14 @@ to tap **Save**. To do them all at once, go to Money → **Where it went** →
 **Tag the untagged ones from what they say**. **Where it went** shows each
 tag's total. Tap a tag to see only its lines in the ledger.
 
+**To spend in another currency**
+
+Money → **CURRENCIES** → type the code (EUR, BDT, BTN) and how many rupees
+you were given for one, then **Save rate**. The expense form then shows
+currency chips. Pick one, and under the amount it shows what that comes to
+in rupees and which rate it used. Everything still settles in rupees. Changing
+a rate later only affects expenses saved after.
+
 **To download the expenses**
 
 Money → **EXPORT** (top right). It makes a spreadsheet file (CSV) and opens

@@ -122,6 +122,7 @@ const _excludedSettings = {SettingKeys.mapTilerKey};
 /// on the way in. Reversed, it satisfies them on the way out.
 const backupTableOrder = [
   'trips',
+  'currencyRates',
   'stops',
   'legs',
   'plannedStops',
@@ -161,6 +162,10 @@ Future<List<Map<String, dynamic>>> _readTable(
   switch (name) {
     case 'trips':
       return [for (final r in await db.select(db.trips).get()) r.toJson()];
+    case 'currencyRates':
+      return [
+        for (final r in await db.select(db.currencyRates).get()) r.toJson(),
+      ];
     case 'stops':
       return [for (final r in await db.select(db.stops).get()) r.toJson()];
     case 'legs':
@@ -344,6 +349,8 @@ Future<void> _clearTable(AppDatabase db, String name) async {
   switch (name) {
     case 'trips':
       await db.delete(db.trips).go();
+    case 'currencyRates':
+      await db.delete(db.currencyRates).go();
     case 'stops':
       await db.delete(db.stops).go();
     case 'legs':
@@ -388,6 +395,12 @@ Future<void> _writeTable(
     case 'trips':
       await db.batch(
         (b) => b.insertAll(db.trips, [for (final r in rows) Trip.fromJson(r)]),
+      );
+    case 'currencyRates':
+      await db.batch(
+        (b) => b.insertAll(db.currencyRates, [
+          for (final r in rows) CurrencyRate.fromJson(r),
+        ]),
       );
     case 'stops':
       await db.batch(

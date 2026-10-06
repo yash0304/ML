@@ -33,6 +33,7 @@ part 'app_database.g.dart';
     ChecklistItems,
     WeatherSnapshots,
     Travellers,
+    CurrencyRates,
     Expenses,
     ExpenseSplits,
     TimelineEntries,
@@ -48,7 +49,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Exposed as a constant so a backup file can be checked against it
   /// without opening a database.
-  static const currentSchemaVersion = 8;
+  static const currentSchemaVersion = 9;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -106,6 +107,11 @@ class AppDatabase extends _$AppDatabase {
         // legs get neither: nobody recorded them.
         await m.addColumn(legs, legs.driverContactId);
         await m.addColumn(legs, legs.vehicleNumber);
+      }
+      if (from < 9) {
+        // v9 adds the trip's currency rates (#39). A new table; every
+        // existing expense is already INR at 1.0.
+        await m.createTable(currencyRates);
       }
     },
 

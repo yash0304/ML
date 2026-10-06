@@ -377,7 +377,7 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   contacts per country.
   *Depends on #4.*
 
-- [ ] **#39 Multi-currency expenses** — S
+- [x] **#39 Multi-currency expenses** — S — *6 Oct; rates per trip with their date, each expense keeps its own; settles in paise — see ISSUE_39_Currency.md*
   Manual exchange-rate snapshot per country at setup.
   *Depends on #31.*
 
