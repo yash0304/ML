@@ -354,7 +354,7 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   Typed transport details, and the corridor list ordered by distance along
   the route with each place on its own milestone.
   *Depends on #18, #23.*
-- [ ] **#33 Trusted contacts + check-in** — M — SMS intent, no server relay
+- [x] **#33 Trusted contacts + check-in** — M — SMS intent, no server relay — *6 Oct; Trip page → Check in, recorded as a timeline arrival — see ISSUE_33_34_CheckIn.md*
 - [ ] **#34 Check-in escalation** — M — WorkManager timer, alert on ETA + buffer
 - [x] **#35 Settings + cache management** — S — *theme override, corridor width, call history, per-trip cache clear*
 

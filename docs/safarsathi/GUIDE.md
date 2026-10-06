@@ -217,6 +217,14 @@ If your numbers came from a spreadsheet without locations, import the newer
 sheet that has **Latitude** and **Longitude** columns. Entries already in the
 diary get their location added, and no copies are made.
 
+**To tell home you have arrived**
+
+Trip page → **Check in**. It opens on where today's leg arrives; tap
+another stop if needed. Tap a person and your SMS app opens with "Reached
+Sohra safely — 17:20", where you are, and where you're staying. You press
+Send. A text gets through on one bar with no data. The people are the same
+ones as for SOS (choose them on the SOS tab).
+
 **In an emergency**
 
 **SOS.** Tap a number and it dials straight away, no copying. This screen is

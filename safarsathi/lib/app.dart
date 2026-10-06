@@ -76,6 +76,8 @@ import 'features/trips/presentation/planned_stop_dialog.dart';
 import 'features/trips/data/planned_stops.dart';
 import 'features/trips/data/driver.dart';
 import 'features/money/data/expense_export.dart';
+import 'features/emergency/data/check_in.dart';
+import 'features/emergency/presentation/check_in_screen.dart';
 import 'features/money/data/currency.dart';
 import 'features/money/presentation/currencies_screen.dart';
 import 'features/trips/data/stay.dart';
@@ -850,6 +852,59 @@ class _HomeState extends State<_Home> {
     );
   }
 
+  /// "Reached Sohra safely" — #33. Opens on today's arrival stop.
+  Future<void> _openCheckIn(
+    BuildContext context,
+    ActiveTripContext trip,
+  ) async {
+    final db = widget.db;
+    final stops = await (db.select(db.stops)
+          ..where((s) => s.tripId.equals(trip.tripId))
+          ..orderBy([(s) => OrderingTerm(expression: s.sequenceOrder)]))
+        .get();
+    final legs = await (db.select(
+      db.legs,
+    )..where((l) => l.tripId.equals(trip.tripId))).get();
+    if (!context.mounted) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CheckInScreen(
+          stops: [for (final s in stops) (id: s.id, name: s.name)],
+          initialStopId: checkInStopId(
+            legs: legs,
+            currentStopId: trip.currentStopId,
+          ),
+          trusted: watchTrusted(db),
+          location: const DeviceLocation(),
+          stayAt: (stopId) async {
+            final stop = await (db.select(
+              db.stops,
+            )..where((s) => s.id.equals(stopId))).getSingleOrNull();
+            if (stop == null) return null;
+            final diary = await (db.select(
+              db.contacts,
+            )..where((c) => c.tripId.equals(trip.tripId))).get();
+            final stay = chosenStay(stop, diary);
+            return stay == null ? null : '${stay.name}, ${stay.phoneRaw}';
+          },
+          openSms: (uri) =>
+              launchUrl(uri, mode: LaunchMode.externalApplication),
+          share: (text) => SharePlus.instance.share(
+            ShareParams(text: text, subject: 'Checked in'),
+          ),
+          onRecorded: (stop, fix) => recordCheckIn(
+            db,
+            tripId: trip.tripId,
+            stopId: stop.id,
+            stopName: stop.name,
+            fix: fix,
+          ),
+        ),
+      ),
+    );
+  }
+
   /// "Who is taking you?" for one leg — pick, clear, or add a new number —
   /// then, since one taxi usually does the whole trip, an offer to use the
   /// same driver on the legs that have nobody yet.
@@ -1130,6 +1185,7 @@ class _HomeState extends State<_Home> {
                 ShareParams(text: text, subject: '${trip.name} — the plan'),
               );
             },
+            onCheckIn: () => _openCheckIn(context, trip),
             onAddStay: (stopId) => _openForm(
               context,
               trip,

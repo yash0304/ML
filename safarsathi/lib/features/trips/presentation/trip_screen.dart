@@ -54,6 +54,9 @@ class TripScreen extends StatelessWidget {
   /// Sends the plan — each night's stop and stay — to someone at home.
   final VoidCallback? onSharePlan;
 
+  /// "Reached Sohra safely" to the trusted people (#33).
+  final VoidCallback? onCheckIn;
+
   /// Sample data from the demo, and duplicate entries, each with a fix.
   final Stream<TripHealth>? health;
   final Future<void> Function()? onRemoveSamples;
@@ -72,6 +75,7 @@ class TripScreen extends StatelessWidget {
     this.onAddStay,
     this.onChooseStay,
     this.onSharePlan,
+    this.onCheckIn,
     this.health,
     this.onRemoveSamples,
     this.onRemoveDuplicates,
@@ -160,6 +164,15 @@ class TripScreen extends StatelessWidget {
                         onTap: onLegs!,
                       ),
                   ],
+                  if (onCheckIn != null)
+                    _Shortcut(
+                      key: const Key('trip-check-in'),
+                      icon: Icons.where_to_vote_outlined,
+                      title: 'Check in',
+                      subtitle: 'Tell home you have arrived. A text, so one '
+                          'bar is enough.',
+                      onTap: onCheckIn!,
+                    ),
                   if (onSharePlan != null)
                     _Shortcut(
                       icon: Icons.send_outlined,
@@ -431,6 +444,7 @@ class _Shortcut extends StatelessWidget {
   final VoidCallback onTap;
 
   const _Shortcut({
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,
