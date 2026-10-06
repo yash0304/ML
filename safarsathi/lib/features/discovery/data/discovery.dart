@@ -11,6 +11,7 @@ import 'corridor.dart';
 import 'geo.dart';
 import 'polyline.dart';
 import '../../trips/data/planned_stops.dart';
+import '../../../core/database/watch_tables.dart';
 
 /// One place on the corridor, with everything the list and detail need.
 class CorridorPlace {
@@ -158,23 +159,18 @@ class LegDiscovery {
 /// road as a plane, and a place 200 m off across a gorge is an hour of
 /// driving.
 Stream<LegDiscovery> watchLegDiscovery(AppDatabase db, int legId) {
-  final tick = db
-      .customSelect(
-        'SELECT 1',
-        // CONTACTS IS HERE ON PURPOSE. Importing a sheet, confirming a number
-        // or editing a note all change what this leg shows, and a Drift
-        // stream only fires for the tables it names — leave this out and the
-        // leg screen goes stale with no error anywhere.
-        readsFrom: {
-          db.legs,
-          db.stops,
-          db.pois,
-          db.poiContacts,
-          db.contacts,
-          db.plannedStops,
-        },
-      )
-      .watch();
+  // CONTACTS IS HERE ON PURPOSE. Importing a sheet, confirming a number
+  // or editing a note all change what this leg shows, and a Drift
+  // stream only fires for the tables it names — leave this out and the
+  // leg screen goes stale with no error anywhere.
+  final tick = watchTables(db, {
+    db.legs,
+    db.stops,
+    db.pois,
+    db.poiContacts,
+    db.contacts,
+    db.plannedStops,
+  });
 
   return tick.asyncMap((_) async {
     final leg = await (db.select(

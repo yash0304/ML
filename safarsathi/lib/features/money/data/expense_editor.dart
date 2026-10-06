@@ -10,6 +10,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
+import 'expense_tags.dart';
 import 'settlement.dart';
 
 /// Parses what a person actually types into exact minor units.
@@ -233,6 +234,26 @@ class ExpenseEditor {
       }
       return id;
     });
+  }
+
+  /// Tags every untagged expense of [tripId] whose description makes the
+  /// tag plain ("Taxi…" → Transport). Only on a tap, and only untagged ones:
+  /// a tag somebody chose is never second-guessed. Returns how many it
+  /// tagged; the rest still need a tag picked by hand.
+  Future<int> tagUntaggedFromDescriptions(int tripId) async {
+    final untagged = await (db.select(
+      db.expenses,
+    )..where((e) => e.tripId.equals(tripId) & e.category.isNull())).get();
+    var tagged = 0;
+    for (final e in untagged) {
+      final tag = guessTag(e.description);
+      if (tag == null) continue;
+      await (db.update(db.expenses)..where((x) => x.id.equals(e.id))).write(
+        ExpensesCompanion(category: Value(tag)),
+      );
+      tagged++;
+    }
+    return tagged;
   }
 
   Future<void> deleteExpense(int id) =>

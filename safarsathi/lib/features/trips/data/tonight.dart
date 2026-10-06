@@ -14,6 +14,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/util/sun.dart';
 import '../../contacts/data/contacts_dao.dart';
 import 'stay.dart';
+import '../../../core/database/watch_tables.dart';
 
 enum TonightKind {
   /// Tonight's bed, during the trip.
@@ -113,9 +114,7 @@ List<Contact> staysAt(List<Contact> diary, int stopId) => [
 /// Tonight, live. Ticks on stops and contacts: editing a stop's dates or
 /// saving the homestay's number both change what this card should say.
 Stream<Tonight?> watchTonight(AppDatabase db, int tripId, {DateTime? now}) =>
-    db
-        .customSelect('SELECT 1', readsFrom: {db.stops, db.contacts})
-        .watch()
+    watchTables(db, {db.stops, db.contacts})
         .asyncMap((_) async {
           final stops = await (db.select(db.stops)
                 ..where((s) => s.tripId.equals(tripId))

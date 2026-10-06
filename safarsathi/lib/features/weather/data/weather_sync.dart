@@ -7,6 +7,7 @@ import 'package:drift/drift.dart';
 import '../../../core/database/app_database.dart';
 import '../../discovery/data/geo.dart';
 import 'weather_client.dart';
+import '../../../core/database/watch_tables.dart';
 
 /// A stored snapshot with its age worked out.
 class StopWeather {
@@ -95,12 +96,7 @@ class WeatherSync {
 
   /// Every stop's weather for a trip, in itinerary order.
   Stream<List<StopWeather>> watchTripWeather(int tripId) {
-    final tick = db
-        .customSelect(
-          'SELECT 1',
-          readsFrom: {db.stops, db.weatherSnapshots},
-        )
-        .watch();
+    final tick = watchTables(db, {db.stops, db.weatherSnapshots});
 
     return tick.asyncMap((_) async {
       final stops =

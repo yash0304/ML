@@ -14,15 +14,19 @@ import 'dart:async';
 /// stops alone, before contacts arrive, would flash "not ready" on every trip
 /// for one frame and then correct itself. A screen that lies briefly is worse
 /// than a screen that is briefly empty.
+///
+/// LISTENABLE MORE THAN ONCE. Each listener gets its own pair of
+/// subscriptions. This was a single-subscription controller, and a screen
+/// built in a ListView disposes a section scrolled off the top and builds it
+/// again on the way back: the second listen threw "Stream has already been
+/// listened to" and the Trip page came back blank — reported as "whenever I
+/// scroll down and go back up it is blank". The sources must allow several
+/// listeners too; every Drift stream does.
 Stream<R> combineLatest2<A, B, R>(
   Stream<A> a,
   Stream<B> b,
   R Function(A, B) combine,
-) {
-  late StreamController<R> controller;
-  StreamSubscription<A>? subA;
-  StreamSubscription<B>? subB;
-
+) => Stream.multi((controller) {
   A? latestA;
   B? latestB;
   var hasA = false;
@@ -38,42 +42,32 @@ Stream<R> combineLatest2<A, B, R>(
     if (doneA && doneB) controller.close();
   }
 
-  controller = StreamController<R>(
-    onListen: () {
-      subA = a.listen(
-        (value) {
-          latestA = value;
-          hasA = true;
-          emit();
-        },
-        onError: controller.addError,
-        onDone: () {
-          doneA = true;
-          closeIfDone();
-        },
-      );
-      subB = b.listen(
-        (value) {
-          latestB = value;
-          hasB = true;
-          emit();
-        },
-        onError: controller.addError,
-        onDone: () {
-          doneB = true;
-          closeIfDone();
-        },
-      );
+  final subA = a.listen(
+    (value) {
+      latestA = value;
+      hasA = true;
+      emit();
     },
-    onCancel: () async {
-      // Both subscriptions are cancelled even if the first throws, or a
-      // database stream is left open behind a disposed screen.
-      await Future.wait([
-        if (subA != null) subA!.cancel(),
-        if (subB != null) subB!.cancel(),
-      ]);
+    onError: controller.addError,
+    onDone: () {
+      doneA = true;
+      closeIfDone();
+    },
+  );
+  final subB = b.listen(
+    (value) {
+      latestB = value;
+      hasB = true;
+      emit();
+    },
+    onError: controller.addError,
+    onDone: () {
+      doneB = true;
+      closeIfDone();
     },
   );
 
-  return controller.stream;
-}
+  // Both are cancelled even if the first throws, or a database stream is
+  // left open behind a disposed screen.
+  controller.onCancel = () => Future.wait([subA.cancel(), subB.cancel()]);
+});

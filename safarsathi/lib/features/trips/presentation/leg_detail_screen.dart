@@ -19,6 +19,7 @@ import '../../contacts/presentation/diary_widgets.dart' show TrustDot;
 import '../../discovery/data/place_details.dart' show foodLine;
 import '../../discovery/data/discovery.dart';
 import '../data/planned_stops.dart' show PlannedOnTheWay;
+import '../../../core/database/watch_tables.dart';
 import '../../discovery/data/poi_category.dart' show placeCategoryLabel;
 
 class LegDetailScreen extends StatelessWidget {
@@ -227,11 +228,9 @@ class LegTransport {
 /// Reads stops too, for their coordinates, so it ticks on both tables: a
 /// stream that watched only `legs` would keep an old sunset after a stop was
 /// moved.
-Stream<LegTransport> watchLegTransport(AppDatabase db, int legId) => db
-    // Contacts too: the driver's name and number come from the diary.
-    .customSelect('SELECT 1', readsFrom: {db.legs, db.stops, db.contacts})
-    .watch()
-    .asyncMap((_) async {
+// Contacts too: the driver's name and number come from the diary.
+Stream<LegTransport> watchLegTransport(AppDatabase db, int legId) =>
+    watchTables(db, {db.legs, db.stops, db.contacts}).asyncMap((_) async {
       final leg = await (db.select(
         db.legs,
       )..where((l) => l.id.equals(legId))).getSingle();

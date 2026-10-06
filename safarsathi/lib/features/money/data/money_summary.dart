@@ -4,6 +4,7 @@
 
 import '../../../core/database/app_database.dart';
 import 'settlement.dart';
+import '../../../core/database/watch_tables.dart';
 
 class LedgerEntry {
   final int id;
@@ -13,6 +14,9 @@ class LedgerEntry {
   final int splitCount;
   final DateTime spentAt;
 
+  /// What it was for (an expense_tags key), or null when untagged.
+  final String? tag;
+
   const LedgerEntry({
     required this.id,
     required this.description,
@@ -20,7 +24,16 @@ class LedgerEntry {
     required this.paidByName,
     required this.splitCount,
     required this.spentAt,
+    this.tag,
   });
+}
+
+/// One tag's share of the spending.
+class TagTotal {
+  final String? tag;
+  final int totalMinor;
+  final int count;
+  const TagTotal({this.tag, required this.totalMinor, required this.count});
 }
 
 class MoneySummary {
@@ -37,6 +50,21 @@ class MoneySummary {
     required this.settlements,
     required this.ledger,
   });
+
+  /// Where it went: each tag's total, largest first, untagged included so
+  /// the parts always add up to the whole.
+  List<TagTotal> get byTag {
+    final total = <String?, int>{};
+    final count = <String?, int>{};
+    for (final e in ledger) {
+      total[e.tag] = (total[e.tag] ?? 0) + e.amountMinor;
+      count[e.tag] = (count[e.tag] ?? 0) + 1;
+    }
+    return [
+      for (final k in total.keys)
+        TagTotal(tag: k, totalMinor: total[k]!, count: count[k]!),
+    ]..sort((a, b) => b.totalMinor.compareTo(a.totalMinor));
+  }
 
   int get perHeadMinor =>
       travellerCount == 0 ? 0 : totalMinor ~/ travellerCount;
@@ -55,12 +83,7 @@ Stream<MoneySummary> watchMoneySummary(AppDatabase db, int tripId) {
   // its own query touches, so watching `expenses` alone left the screen stale
   // whenever a traveller was added or a split edited — invisible until #31
   // made either possible. Same bug the trip summary had at #16.
-  final tick = db
-      .customSelect(
-        'SELECT 1',
-        readsFrom: {db.expenses, db.expenseSplits, db.travellers},
-      )
-      .watch();
+  final tick = watchTables(db, {db.expenses, db.expenseSplits, db.travellers});
 
   return tick.asyncMap((_) async {
     final rows = await (db.select(
@@ -95,6 +118,7 @@ Stream<MoneySummary> watchMoneySummary(AppDatabase db, int tripId) {
           paidByName: nameOf[e.paidById] ?? '—',
           splitCount: mine.length,
           spentAt: e.spentAt,
+          tag: e.category,
         ),
       );
     }

@@ -14,6 +14,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/widgets/retro.dart';
 import '../data/expense_editor.dart';
+import '../data/expense_tags.dart';
 import '../data/settlement.dart';
 
 class ExpenseFormScreen extends StatefulWidget {
@@ -59,6 +60,18 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
   Map<int, int>? _customShares;
 
   bool _saving = false;
+
+  /// What it was for. An existing tag is the person's choice and stays; a
+  /// new expense's tag follows the description until a chip is tapped.
+  ///
+  /// An older expense saved before tags existed opens with a guess lit, so
+  /// tagging it is one tap on Save — still the person's save, never ours.
+  late String? _tag =
+      widget.existing?.category ??
+      (widget.existing == null
+          ? null
+          : guessTag(widget.existing!.description));
+  late bool _tagChosen = widget.existing?.category != null;
 
   bool get _isEdit => widget.existing?.id != null;
   int get _amountMinor => parseRupees(_amount.text) ?? 0;
@@ -157,7 +170,7 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
         shares: _shares,
         spentAt: _spentAt,
         stopId: widget.existing?.stopId,
-        category: widget.existing?.category,
+        category: _tag,
         currency: widget.existing?.currency ?? 'INR',
         rateToBase: widget.existing?.rateToBase ?? 1.0,
         rateCapturedAt: widget.existing?.rateCapturedAt,
@@ -204,7 +217,34 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
                   borderSide: BorderSide(color: c.rule),
                 ),
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: (text) => setState(() {
+                if (!_tagChosen) _tag = guessTag(text);
+              }),
+            ),
+          ),
+
+          const StencilLabel('Tag'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
+            child: Wrap(
+              spacing: AppTokens.s8,
+              runSpacing: AppTokens.s8,
+              children: [
+                for (final t in expenseTags.entries)
+                  _Chip(
+                    key: Key('tag-${t.key}'),
+                    label: t.value,
+                    on: _tag == t.key,
+                    onTap: () {
+                      setState(() {
+                        _tagChosen = true;
+                        // Tapping the lit one clears it: untagged is allowed.
+                        _tag = _tag == t.key ? null : t.key;
+                      });
+                      Haptics.select();
+                    },
+                  ),
+              ],
             ),
           ),
 
@@ -503,7 +543,12 @@ class _Chip extends StatelessWidget {
   final String label;
   final bool on;
   final VoidCallback onTap;
-  const _Chip({required this.label, required this.on, required this.onTap});
+  const _Chip({
+    super.key,
+    required this.label,
+    required this.on,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

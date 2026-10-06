@@ -12,6 +12,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
 import 'leg_generator.dart';
+import '../../../core/database/watch_tables.dart';
 
 /// A stop as the editor screens pass it around.
 class StopDraft {
@@ -425,9 +426,7 @@ class ActiveTripContext {
 /// Watches stops as well as trips, so adding a stop or changing its dates
 /// moves the current stop without a restart.
 Stream<ActiveTripContext?> watchActiveTripContext(AppDatabase db) {
-  final tick = db
-      .customSelect('SELECT 1', readsFrom: {db.trips, db.stops})
-      .watch();
+  final tick = watchTables(db, {db.trips, db.stops});
 
   return tick.asyncMap((_) async {
     final trip = await (db.select(

@@ -11,6 +11,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../core/database/watch_tables.dart';
 
 class SettingKeys {
   SettingKeys._();
@@ -114,12 +115,13 @@ class CacheSummary {
 }
 
 Stream<List<CacheSummary>> watchCacheSummaries(AppDatabase db) {
-  final tick = db
-      .customSelect(
-        'SELECT 1',
-        readsFrom: {db.trips, db.legs, db.pois, db.weatherSnapshots, db.stops},
-      )
-      .watch();
+  final tick = watchTables(db, {
+    db.trips,
+    db.legs,
+    db.pois,
+    db.weatherSnapshots,
+    db.stops,
+  });
 
   return tick.asyncMap((_) async {
     final trips = await db.select(db.trips).get();

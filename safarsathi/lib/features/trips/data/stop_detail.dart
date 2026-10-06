@@ -8,6 +8,7 @@ import '../../../core/database/app_database.dart';
 import '../../weather/data/weather_client.dart';
 import '../../contacts/data/contacts_dao.dart' show ContactCategory;
 import 'trip_editor.dart';
+import '../../../core/database/watch_tables.dart';
 
 class StopDetail {
   final Stop stop;
@@ -68,19 +69,14 @@ class StopDetail {
 }
 
 Stream<StopDetail> watchStopDetail(AppDatabase db, int stopId) {
-  final tick = db
-      .customSelect(
-        'SELECT 1',
-        readsFrom: {
-          db.stops,
-          db.legs,
-          db.pois,
-          db.contacts,
-          db.checklistItems,
-          db.weatherSnapshots,
-        },
-      )
-      .watch();
+  final tick = watchTables(db, {
+    db.stops,
+    db.legs,
+    db.pois,
+    db.contacts,
+    db.checklistItems,
+    db.weatherSnapshots,
+  });
 
   return tick.asyncMap((_) async {
     final stop = await (db.select(

@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/database/watch_tables.dart';
 
 class LegRow {
   final int id;
@@ -57,9 +58,7 @@ class LegRow {
 
 /// Reads from both tables, because a leg's label is two stop names.
 Stream<List<LegRow>> watchLegSummaries(AppDatabase db, int tripId) {
-  final tick = db
-      .customSelect('SELECT 1', readsFrom: {db.legs, db.stops})
-      .watch();
+  final tick = watchTables(db, {db.legs, db.stops});
 
   return tick.asyncMap((_) async {
     final legs =

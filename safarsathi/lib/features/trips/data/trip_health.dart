@@ -18,6 +18,7 @@
 // number, same stop, same category. Nothing the person typed can be caught.
 
 import '../../../core/database/app_database.dart';
+import '../../../core/database/watch_tables.dart';
 
 /// The demo's seven numbers, digits only. The +91 90000 000xx block was
 /// chosen for the demo precisely because it is not anybody's number.
@@ -109,10 +110,8 @@ TripHealth checkHealth(List<Contact> diary, List<Expense> expenses) {
   );
 }
 
-Stream<TripHealth> watchTripHealth(AppDatabase db, int tripId) => db
-    .customSelect('SELECT 1', readsFrom: {db.contacts, db.expenses})
-    .watch()
-    .asyncMap((_) async {
+Stream<TripHealth> watchTripHealth(AppDatabase db, int tripId) =>
+    watchTables(db, {db.contacts, db.expenses}).asyncMap((_) async {
       final diary = await (db.select(
         db.contacts,
       )..where((c) => c.tripId.equals(tripId))).get();

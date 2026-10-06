@@ -189,6 +189,14 @@ void main() {
   });
 
   group('expense form', () {
+    // The form grew a Tag row; the default 800x600 test surface no longer
+    // shows the split rows without scrolling.
+    void tall(WidgetTester tester) {
+      tester.view.physicalSize = const Size(420, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+    }
+
     final travellers = [
       person(1, 'Yash'),
       person(2, 'Priya'),
@@ -209,6 +217,7 @@ void main() {
     testWidgets('will not save without a description and an amount', (
       tester,
     ) async {
+      tall(tester);
       var saved = false;
       await tester.pumpWidget(form(onSave: (_) async => saved = true));
 
@@ -221,6 +230,7 @@ void main() {
     testWidgets('an even split is offered and adds up exactly', (
       tester,
     ) async {
+      tall(tester);
       ExpenseDraft? saved;
       await tester.pumpWidget(form(onSave: (d) async => saved = d));
 
@@ -238,6 +248,7 @@ void main() {
     });
 
     testWidgets('deselecting someone re-splits the rest', (tester) async {
+      tall(tester);
       ExpenseDraft? saved;
       await tester.pumpWidget(form(onSave: (d) async => saved = d));
 
@@ -257,6 +268,7 @@ void main() {
     testWidgets('AN UNBALANCED HAND-SET SPLIT CANNOT BE SAVED', (
       tester,
     ) async {
+      tall(tester);
       await tester.pumpWidget(form());
 
       await tester.enterText(find.byType(TextField).first, 'Taxi');
@@ -275,6 +287,7 @@ void main() {
     });
 
     testWidgets('nobody sharing is refused and says so', (tester) async {
+      tall(tester);
       await tester.pumpWidget(form());
       await tester.enterText(find.byType(TextField).first, 'Taxi');
       await tester.enterText(find.byType(TextField).at(1), '100');
@@ -291,6 +304,7 @@ void main() {
     testWidgets('an existing uneven split opens in hand-set mode', (
       tester,
     ) async {
+      tall(tester);
       // Reverting to even on open would silently rewrite a deliberate
       // arrangement.
       await tester.pumpWidget(
@@ -310,6 +324,7 @@ void main() {
     });
 
     testWidgets('lays out at phone width in both themes', (tester) async {
+      tall(tester);
       tester.view.physicalSize = const Size(400, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);

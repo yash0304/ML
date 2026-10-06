@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/motion.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/retro.dart';
+import '../data/expense_tags.dart';
 import '../data/money_summary.dart';
 import '../data/settlement.dart';
 
@@ -32,6 +33,14 @@ class MoneyScreen extends StatelessWidget {
   /// an expense needs at least one traveller to be paid by.
   final VoidCallback? onTravellers;
 
+  /// Writes the ledger to a spreadsheet file and offers to share or save it.
+  /// Null hides the button.
+  final Future<void> Function()? onExport;
+
+  /// Tags the untagged expenses from what they say; returns how many. Null
+  /// hides the offer.
+  final Future<int> Function()? onTagUntagged;
+
   const MoneyScreen({
     super.key,
     required this.summary,
@@ -39,6 +48,8 @@ class MoneyScreen extends StatelessWidget {
     this.onAdd,
     this.onOpen,
     this.onTravellers,
+    this.onExport,
+    this.onTagUntagged,
   });
 
   @override
@@ -81,15 +92,14 @@ class MoneyScreen extends StatelessWidget {
                   const StencilLabel('Settle up'),
                   ..._settlements(c, data),
                   _settleNote(c, data),
-                  const StencilLabel('Ledger'),
-                  for (final e in data.ledger)
-                    onOpen == null
-                        ? _ledgerRow(c, e)
-                        : GestureDetector(
-                            onTap: () => onOpen!(e.id),
-                            behavior: HitTestBehavior.opaque,
-                            child: _ledgerRow(c, e),
-                          ),
+                  // WHERE IT WENT, then the lines themselves. One widget,
+                  // because tapping a tag filters the ledger under it.
+                  _TagsAndLedger(
+                    data: data,
+                    onOpen: onOpen,
+                    onTagUntagged: onTagUntagged,
+                    row: (e) => _ledgerRow(c, e),
+                  ),
                   _currencyNote(c),
                 ],
               );
@@ -162,13 +172,38 @@ class MoneyScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${data.travellerCount} travelling'.toUpperCase(),
-            style: AppTokens.stencilStyle.copyWith(
-              fontSize: 10,
-              letterSpacing: 1.6,
-              color: c.muted,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${data.travellerCount} travelling'.toUpperCase(),
+                  style: AppTokens.stencilStyle.copyWith(
+                    fontSize: 10,
+                    letterSpacing: 1.6,
+                    color: c.muted,
+                  ),
+                ),
+              ),
+              if (onExport != null)
+                PressScale(
+                  key: const Key('money-export'),
+                  onTap: onExport,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.download_outlined, size: 15, color: c.signal),
+                      const SizedBox(width: 4),
+                      Text(
+                        'EXPORT',
+                        style: AppTokens.stencilStyle.copyWith(
+                          fontSize: 10,
+                          color: c.signal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: AppTokens.s4),
           Text(
@@ -327,8 +362,9 @@ class MoneyScreen extends StatelessWidget {
                   style: AppTokens.rowTitleStyle.copyWith(color: c.ink),
                 ),
                 Text(
-                  '${e.paidByName} paid · split ${e.splitCount} '
-                  '${e.splitCount == 1 ? "way" : "ways"} · ${_date(e.spentAt)}',
+                  '${tagLabel(e.tag)} · ${e.paidByName} paid · split '
+                  '${e.splitCount} ${e.splitCount == 1 ? "way" : "ways"} · '
+                  '${_date(e.spentAt)}',
                   style: AppTokens.captionStyle.copyWith(
                     fontSize: 11.5,
                     color: c.muted,
@@ -379,6 +415,156 @@ class MoneyScreen extends StatelessWidget {
         'you saved it — there is no live rate offline.',
         style: AppTokens.captionStyle.copyWith(color: c.muted),
       ),
+    );
+  }
+}
+
+/// Where the money went, by tag, and the ledger under it. Tapping a tag shows
+/// only its lines; tapping it again shows them all.
+class _TagsAndLedger extends StatefulWidget {
+  final MoneySummary data;
+  final void Function(int expenseId)? onOpen;
+  final Widget Function(LedgerEntry e) row;
+  final Future<int> Function()? onTagUntagged;
+
+  const _TagsAndLedger({
+    required this.data,
+    required this.row,
+    this.onOpen,
+    this.onTagUntagged,
+  });
+
+  @override
+  State<_TagsAndLedger> createState() => _TagsAndLedgerState();
+}
+
+class _TagsAndLedgerState extends State<_TagsAndLedger> {
+  /// The tag filtered on. A record so "untagged" (null) is a filter too.
+  ({String? tag})? _only;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context);
+    final data = widget.data;
+    final tags = data.byTag;
+    final only = _only;
+    final shown = only == null
+        ? data.ledger
+        : [
+            for (final e in data.ledger)
+              if (e.tag == only.tag) e,
+          ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const StencilLabel('Where it went'),
+        for (final t in tags)
+          InkWell(
+            key: Key('tag-total-${t.tag ?? 'none'}'),
+            onTap: () => setState(
+              () => _only = only != null && only.tag == t.tag
+                  ? null
+                  : (tag: t.tag),
+            ),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
+              padding: const EdgeInsets.symmetric(vertical: AppTokens.s8),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: c.rule, width: AppTokens.hairline),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${tagLabel(t.tag)} · ${t.count}',
+                      style: AppTokens.rowTitleStyle.copyWith(
+                        color: only != null && only.tag == t.tag
+                            ? c.signal
+                            : c.ink,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    formatRupees(t.totalMinor),
+                    style: AppTokens.numberStyle.copyWith(
+                      fontSize: 14,
+                      color: c.ink,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        if (widget.onTagUntagged != null && tags.any((t) => t.tag == null))
+          InkWell(
+            key: const Key('tag-untagged'),
+            onTap: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final untagged = tags.firstWhere((t) => t.tag == null).count;
+              final done = await widget.onTagUntagged!();
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(
+                    done == untagged
+                        ? 'Tagged all $done from what they say.'
+                        : 'Tagged $done of $untagged. The rest need a tag '
+                              'picked by hand — open each one.',
+                  ),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTokens.gutter,
+                AppTokens.s8,
+                AppTokens.gutter,
+                0,
+              ),
+              child: Text(
+                'Tag the untagged ones from what they say',
+                style: AppTokens.captionStyle.copyWith(color: c.signal),
+              ),
+            ),
+          ),
+        Row(
+          children: [
+            Expanded(
+              child: StencilLabel(
+                only == null ? 'Ledger' : 'Ledger · ${tagLabel(only.tag)}',
+              ),
+            ),
+            if (only != null)
+              Padding(
+                padding: const EdgeInsets.only(
+                  right: AppTokens.gutter,
+                  top: AppTokens.s16,
+                ),
+                child: PressScale(
+                  key: const Key('ledger-show-all'),
+                  onTap: () => setState(() => _only = null),
+                  child: Text(
+                    'SHOW ALL',
+                    style: AppTokens.stencilStyle.copyWith(
+                      fontSize: 10,
+                      color: c.signal,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        for (final e in shown)
+          widget.onOpen == null
+              ? widget.row(e)
+              : GestureDetector(
+                  onTap: () => widget.onOpen!(e.id),
+                  behavior: HitTestBehavior.opaque,
+                  child: widget.row(e),
+                ),
+      ],
     );
   }
 }

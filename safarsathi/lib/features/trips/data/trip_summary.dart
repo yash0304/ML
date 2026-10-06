@@ -7,6 +7,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/database/app_database.dart';
 import 'trip_editor.dart';
+import '../../../core/database/watch_tables.dart';
 
 class StopSummary {
   final int id;
@@ -81,12 +82,7 @@ Stream<TripSummary> watchTripSummary(
   int tripId, {
   int? currentStopId,
 }) {
-  final tick = db
-      .customSelect(
-        'SELECT 1',
-        readsFrom: {db.trips, db.stops, db.legs, db.contacts},
-      )
-      .watch();
+  final tick = watchTables(db, {db.trips, db.stops, db.legs, db.contacts});
 
   return tick.asyncMap((_) async {
     final trip = await (db.select(

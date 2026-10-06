@@ -244,6 +244,26 @@ To split with people: Money → **Who is on this trip** → add their names
 (first names only — no accounts, nothing is sent anywhere). Then the app works
 out the fewest payments needed to settle up at the end.
 
+**To tag what each spend was for**
+
+Each expense has a **Tag** row: Food, Stay, Transport, Fuel, Entry &
+tickets, Guides & tips, Shopping, Other. The app lights a guess from what you
+type ("Taxi…" → Transport); tap another tag to change it, or tap the lit one
+to clear it.
+
+Expenses saved before tags existed open with a guess lit, so you only need
+to tap **Save**. To do them all at once, go to Money → **Where it went** →
+**Tag the untagged ones from what they say**. **Where it went** shows each
+tag's total. Tap a tag to see only its lines in the ledger.
+
+**To download the expenses**
+
+Money → **EXPORT** (top right). It makes a spreadsheet file (CSV) and opens
+the share sheet. Choose **Save to Files** or **Drive** to keep it, or send it
+on WhatsApp or Gmail. It has every expense with its date, tag, amount and
+who paid, plus each person's share, the totals by tag, and who pays whom.
+It opens in Excel or Google Sheets.
+
 **To look at the map**
 
 More → **The map.** It draws what you downloaded, with your stops and route

@@ -75,6 +75,7 @@ import 'features/trips/presentation/stay_picker_sheet.dart';
 import 'features/trips/presentation/planned_stop_dialog.dart';
 import 'features/trips/data/planned_stops.dart';
 import 'features/trips/data/driver.dart';
+import 'features/money/data/expense_export.dart';
 import 'features/trips/data/stay.dart';
 import 'features/weather/data/weather_sync.dart';
 import 'features/weather/presentation/weather_screen.dart';
@@ -86,6 +87,7 @@ import 'features/trips/presentation/stop_form_screen.dart';
 import 'features/trips/presentation/trip_form_screen.dart';
 import 'features/trips/presentation/trip_list_screen.dart';
 import 'features/trips/presentation/trip_screen.dart';
+import 'core/database/watch_tables.dart';
 
 class SafarSathiApp extends StatelessWidget {
   /// Passed down rather than reached for globally. There is no repository
@@ -752,9 +754,7 @@ class _HomeState extends State<_Home> {
     // with, so a location pasted in Edit did not appear until the page was
     // closed and opened again — and neither did a new name or stop.
     // Ticks on stops too: choosing this as the stay is a write to the stop.
-    final live = db
-        .customSelect('SELECT 1', readsFrom: {db.contacts, db.stops})
-        .watch()
+    final live = watchTables(db, {db.contacts, db.stops})
         .asyncMap((_) async {
           final row = await (db.select(
             db.contacts,
@@ -1167,6 +1167,26 @@ class _HomeState extends State<_Home> {
             onAdd: () => _openExpense(context, trip.tripId),
             onOpen: (id) => _openExpense(context, trip.tripId, expenseId: id),
             onTravellers: () => _openTravellers(context, trip.tripId),
+            onTagUntagged: () => _money.tagUntaggedFromDescriptions(
+              trip.tripId,
+            ),
+            // A CSV through the share sheet: "Save to Files", Drive, Gmail or
+            // WhatsApp, whichever the phone offers. Written to the app's temp
+            // folder first, which the system clears; nothing is uploaded.
+            onExport: () async {
+              final csv = await expensesCsv(db, trip.tripId);
+              final temp = await getTemporaryDirectory();
+              final file = File(
+                '${temp.path}/${expensesFileName(trip.name, DateTime.now())}',
+              );
+              await file.writeAsString(csv, flush: true);
+              await SharePlus.instance.share(
+                ShareParams(
+                  files: [XFile(file.path, mimeType: 'text/csv')],
+                  subject: '${trip.name} — expenses',
+                ),
+              );
+            },
           ),
         ),
         ShellDestination(
