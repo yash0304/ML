@@ -37,6 +37,10 @@ class SettingKeys {
   /// Off until switched on — that switch is where notifications are asked
   /// for, never at launch.
   static const checkInReminders = 'checkInReminders';
+
+  /// Whether the route log (#30) is on. Restarted when the app opens, without
+  /// asking again: the permission was given when it was switched on.
+  static const routeLogging = 'routeLogging';
 }
 
 ThemeMode themeModeFromName(String? name) => switch (name) {
@@ -102,6 +106,15 @@ class SettingsRepository {
 
   Future<void> setCheckInReminders(bool on) =>
       write(SettingKeys.checkInReminders, on ? 'on' : 'off');
+
+  Stream<bool> watchRouteLogging() =>
+      watch(SettingKeys.routeLogging).map((v) => v == 'on');
+
+  Future<bool> readRouteLogging() async =>
+      await read(SettingKeys.routeLogging) == 'on';
+
+  Future<void> setRouteLogging(bool on) =>
+      write(SettingKeys.routeLogging, on ? 'on' : 'off');
 }
 
 /// What one trip is holding, for the cache screen.

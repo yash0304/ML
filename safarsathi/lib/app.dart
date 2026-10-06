@@ -80,6 +80,11 @@ import 'features/trips/data/driver.dart';
 import 'features/money/data/expense_export.dart';
 import 'features/emergency/data/check_in.dart';
 import 'features/emergency/data/check_in_reminders.dart';
+import 'features/map/data/track_logger.dart';
+import 'features/trips/data/timeline.dart';
+import 'features/trips/presentation/timeline_note_screen.dart';
+import 'features/trips/presentation/timeline_screen.dart';
+import 'package:image_picker/image_picker.dart';
 import 'features/emergency/presentation/check_in_screen.dart';
 import 'features/money/data/currency.dart';
 import 'features/money/presentation/currencies_screen.dart';
@@ -209,13 +214,31 @@ class _HomeState extends State<_Home> {
   @override
   void dispose() {
     _reminderSync?.cancel();
+    _track.stop();
     super.dispose();
+  }
+
+  /// The route log (#30). Restarted at launch if it was left on, without
+  /// asking again — the permission was given when it was switched on.
+  late final TrackLogger _track = TrackLogger(
+    db: widget.db,
+    location: const DeviceLocation(),
+  );
+
+  Future<void> _resumeRouteLog() async {
+    if (!await _settings.readRouteLogging()) return;
+    final trip = await watchActiveTripContext(widget.db).first;
+    if (trip == null) return;
+    final problem = await _track.start(trip.tripId, ask: false);
+    // Permission withdrawn since: say off rather than claim to be logging.
+    if (problem != null) await _settings.setRouteLogging(false);
   }
 
   Future<void> _bootstrap() async {
     // No seeding, in any build: an empty database opens on "No trip yet".
     await ensureActiveTrip(widget.db);
     _startReminderSync();
+    unawaited(_resumeRouteLog());
     // Opened by tapping a reminder: go straight to checking in.
     _reminders.launchedForStop().then((stop) {
       if (stop == null) return;
@@ -907,6 +930,79 @@ class _HomeState extends State<_Home> {
     );
   }
 
+  /// The trip as it went — #30.
+  Future<void> _openTimeline(
+    BuildContext context,
+    ActiveTripContext trip,
+  ) async {
+    final db = widget.db;
+    Widget photo(String path) => Image.file(
+      File(path),
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => const Icon(Icons.broken_image_outlined),
+    );
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (timelineContext) => TimelineScreen(
+          timeline: watchTimeline(db, trip.tripId),
+          photo: photo,
+          logging: _settings.watchRouteLogging(),
+          onLogging: (on) async {
+            if (on) {
+              final problem = await _track.start(trip.tripId);
+              if (problem != null) return problem;
+            } else {
+              await _track.stop();
+            }
+            await _settings.setRouteLogging(on);
+            return null;
+          },
+          onAddNote: () => Navigator.of(timelineContext).push(
+            MaterialPageRoute<void>(
+              builder: (_) => TimelineNoteScreen(
+                photo: photo,
+                pickPhoto: _pickTimelinePhoto,
+                onSave: (text, photos) => addTimelineNote(
+                  db,
+                  tripId: trip.tripId,
+                  stopId: trip.currentStopId,
+                  text: text,
+                  photoPaths: photos,
+                ),
+              ),
+            ),
+          ),
+          onDelete: (note) async {
+            await deleteTimelineEntry(db, note.id);
+            for (final p in photosOf(note)) {
+              final f = File(p);
+              if (f.existsSync()) await f.delete();
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  /// One photo through the system picker or the camera app, copied into the
+  /// app's own folder so it outlives the picker's temporary file. No
+  /// permission: the picker hands over only what the person chose.
+  Future<String?> _pickTimelinePhoto({required bool camera}) async {
+    final picked = await ImagePicker().pickImage(
+      source: camera ? ImageSource.camera : ImageSource.gallery,
+      maxWidth: 2048,
+      imageQuality: 85,
+    );
+    if (picked == null) return null;
+    final docs = await getApplicationDocumentsDirectory();
+    final dir = Directory('${docs.path}/timeline');
+    await dir.create(recursive: true);
+    final name = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final copy = await File(picked.path).copy('${dir.path}/$name');
+    return copy.path;
+  }
+
   /// "Reached Sohra safely" — #33. Opens on today's arrival stop.
   Future<void> _openCheckIn(
     BuildContext context,
@@ -1250,6 +1346,7 @@ class _HomeState extends State<_Home> {
               );
             },
             onCheckIn: () => _openCheckIn(context, trip),
+            onTimeline: () => _openTimeline(context, trip),
             onAddStay: (stopId) => _openForm(
               context,
               trip,

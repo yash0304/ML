@@ -21,6 +21,7 @@ import '../../../core/theme/motion.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../discovery/data/geo.dart';
 import '../../discovery/data/polyline.dart';
+import '../../trips/data/timeline.dart' show loggedTrack;
 import '../data/here.dart';
 import '../data/tile_provider.dart';
 import '../data/tile_store.dart';
@@ -32,10 +33,15 @@ class TripMapView {
   final List<({String name, LatLng at})> stops;
   final int tileCount;
 
+  /// Where the phone actually went, from the route log (#30). Empty when it
+  /// was never on.
+  final List<LatLng> track;
+
   const TripMapView({
     required this.route,
     required this.stops,
     required this.tileCount,
+    this.track = const [],
   });
 
   bool get hasTiles => tileCount > 0;
@@ -83,6 +89,7 @@ Future<TripMapView> readTripMap(
           (name: s.name, at: LatLng(s.lat!, s.lon!)),
     ],
     tileCount: (await usage.getSingle()).read(count) ?? 0,
+    track: await loggedTrack(db, tripId),
   );
 }
 
@@ -231,6 +238,7 @@ class _TripMapScreenState extends State<TripMapScreen> {
                       provider: widget.provider,
                       store: widget.store,
                       route: view.route,
+                      track: view.track,
                       stops: view.stops,
                       hasTiles: view.hasTiles,
                       height: double.infinity,

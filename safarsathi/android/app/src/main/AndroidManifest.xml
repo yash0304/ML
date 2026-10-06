@@ -36,6 +36,13 @@
          permission: a reminder minutes late is fine, and asking for one
          is not. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- THE ROUTE LOG (#30). A foreground service the person starts, with a
+         notification for as long as it runs. Android counts that as
+         location in use, which is why there is still no
+         ACCESS_BACKGROUND_LOCATION in this file. The service itself is
+         declared by geolocator (type "location"). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
 
     <application
         android:label="SafarSathi"

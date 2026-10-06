@@ -29,6 +29,10 @@ class TripMap extends StatelessWidget {
   /// The route, decoded. Empty draws no line.
   final List<LatLng> route;
 
+  /// The road actually driven, from the route log. Drawn over the plan in
+  /// ink, thinner, so the two read apart: what was meant, what happened.
+  final List<LatLng> track;
+
   /// Where the stops are, in order.
   final List<({String name, LatLng at})> stops;
 
@@ -57,6 +61,7 @@ class TripMap extends StatelessWidget {
     required this.provider,
     required this.store,
     this.route = const [],
+    this.track = const [],
     this.stops = const [],
     this.hasTiles = true,
     this.height = 260,
@@ -163,6 +168,19 @@ class TripMap extends StatelessWidget {
                       ],
                       strokeWidth: 3,
                       color: c.signal,
+                    ),
+                  ],
+                ),
+              if (track.length > 1)
+                fm.PolylineLayer(
+                  key: const Key('logged-track'),
+                  polylines: [
+                    fm.Polyline(
+                      points: [
+                        for (final p in track) ll.LatLng(p.lat, p.lon),
+                      ],
+                      strokeWidth: 2,
+                      color: c.ink,
                     ),
                   ],
                 ),

@@ -57,6 +57,9 @@ class TripScreen extends StatelessWidget {
   /// "Reached Sohra safely" to the trusted people (#33).
   final VoidCallback? onCheckIn;
 
+  /// The trip as it went: arrivals, notes, photos, the road driven (#30).
+  final VoidCallback? onTimeline;
+
   /// Sample data from the demo, and duplicate entries, each with a fix.
   final Stream<TripHealth>? health;
   final Future<void> Function()? onRemoveSamples;
@@ -76,6 +79,7 @@ class TripScreen extends StatelessWidget {
     this.onChooseStay,
     this.onSharePlan,
     this.onCheckIn,
+    this.onTimeline,
     this.health,
     this.onRemoveSamples,
     this.onRemoveDuplicates,
@@ -172,6 +176,15 @@ class TripScreen extends StatelessWidget {
                       subtitle: 'Tell home you have arrived. A text, so one '
                           'bar is enough.',
                       onTap: onCheckIn!,
+                    ),
+                  if (onTimeline != null)
+                    _Shortcut(
+                      key: const Key('trip-timeline'),
+                      icon: Icons.timeline,
+                      title: 'Timeline',
+                      subtitle: 'The trip as it went — arrivals, notes, '
+                          'photos, and the road driven.',
+                      onTap: onTimeline!,
                     ),
                   if (onSharePlan != null)
                     _Shortcut(

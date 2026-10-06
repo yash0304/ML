@@ -257,6 +257,19 @@ To split with people: Money → **Who is on this trip** → add their names
 (first names only — no accounts, nothing is sent anywhere). Then the app works
 out the fewest payments needed to settle up at the end.
 
+**The timeline**
+
+Trip page → **Timeline**. Each day of the trip, with your check-ins as
+arrivals ("Reached Sohra · 12:00 — 54 km driven, 4 h") and your notes and
+photos between them. **Add a note** at the bottom, with a photo from your
+gallery or the camera.
+
+**Log my route** (top of the Timeline) records where you drive from the
+GPS, with no signal needed. It costs about 4% of the battery a day. A
+notification shows while it runs, and closing the app from Recents stops it.
+With it on, arrivals show the road actually driven, and the map draws your
+track over the planned route.
+
 **To tag what each spend was for**
 
 Each expense has a **Tag** row: Food, Stay, Transport, Fuel, Entry &

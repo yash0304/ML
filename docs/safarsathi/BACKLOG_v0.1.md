@@ -327,7 +327,7 @@ Read `DESIGN_VISUAL_v2.md` before starting any of these, §0 first.
   Blocking items come from #20, rendered in the same list.
   *Depends on #16, #20.*
 
-- [ ] **#30 Timeline / GPS logging** — L — *split before starting* — *see §9*
+- [x] **#30 Timeline / GPS logging** — L — *split before starting* — *see §9* — *6 Oct; split 30a timeline + notes/photos, 30b route log as a user-started foreground service (still no background location) — see ISSUE_30_Timeline.md*
   Background location service, Polarsteps-style. The rail is the road: stops
   render as milestone caps, notes and photos as plain dots. **The logging
   toggle states its battery cost on screen.**
